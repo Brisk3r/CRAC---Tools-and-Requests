@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Aquatic Centre Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #simulation-wrapper {
+            width: 804px; /* Canvas width + border */
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow: hidden; /* Ensures content stays within rounded corners */
+        }
+        #stats-container {
+            display: flex;
+            justify-content: center; /* Center the cards */
+            align-items: stretch; /* Make cards same height */
+            width: 100%;
+            padding: 12px 0;
+            background-color: #e9ecef;
+            border-bottom: 2px solid #ccc;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background-color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            flex: 1; /* Allow cards to grow */
+            min-width: 120px;
+            margin: 5px;
+            font-size: 0.9rem;
+            border-left: 5px solid;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-card strong {
+            color: #333;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+        }
+        .stat-card-large {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .stat-card-small {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        #controls-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 15px 0;
+            background-color: #374151; /* Dark grey */
+        }
+        .control-btn {
+            background-color: #4b5563;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px #1f2937;
+        }
+        .control-btn:hover {
+            background-color: #6b7280;
+        }
+        .control-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #1f2937;
+        }
+        #canvas-container {
+            position: relative; /* Needed for the overlay */
+            line-height: 0;
+        }
+        #carnival-alert {
+            position: absolute;
+            top: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #F05A28;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 100;
+            animation: fadeInOut 5s forwards;
+        }
+        @keyframes fadeInOut {
+          0% { opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+    </style>
+     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+<body>
+    <div id="simulation-wrapper">
+        <!-- Daily Stats Panel -->
+        <div id="stats-container">
+            <div id="time-stats" class="stat-card">Loading...</div>
+            <div id="visitor-stats" class="stat-card">Loading...</div>
+             <div id="lap-swimmer-stats" class="stat-card">Loading...</div>
+            <div id="canteen-stats" class="stat-card">Loading...</div>
+            <div id="net-profit-stats" class="stat-card">Loading...</div>
+        </div>
+         <!-- Weekly Stats Panel -->
+         <div id="stats-container" style="border-top: 2px dashed #aaa; background-color: #d1d5db;">
+            <div id="weekly-net-profit-stats" class="stat-card">Loading...</div>
+            <div id="weekly-gross-revenue-stats" class="stat-card">Loading...</div>
+            <div id="weekly-op-cost-stats" class="stat-card">Loading...</div>
+        </div>
+        <!-- Manager's Control Panel -->
+        <div id="controls-container">
+            <button id="launch-carnival-btn" class="control-btn">
+                <span>🎉</span> Launch Carnival
+            </button>
+            <button id="start-program-btn" class="control-btn">
+                <span>🧘</span> Start Aqua Program
+            </button>
+            <button id="kiosk-special-btn" class="control-btn">
+                <span>🥤</span> Canteen Special
+            </button>
+        </div>
+        <!-- Simulation Canvas -->
+        <div id="canvas-container"></div>
+        <!-- Carnival Alert Message -->
+        <div id="carnival-alert">CARNIVAL IN PROGRESS!</div>
+    </div>
+    <script>
+        let visitors = [];
+        let dailyGrossRevenue = 0;
+        let dailyTotalOpCost = 0;
+        let dailyCanteenItems = 0;
+        let weeklyGrossRevenue = 0;
+        let weeklyTotalOpCost = 0;
+        let particles = [];
+
+        const OPERATING_HOURS = [
+            { day: "Mon", open: 5.5, close: 19 }, { day: "Tue", open: 5.5, close: 19 },
+            { day: "Wed", open: 5.5, close: 19 }, { day: "Thu", open: 5.5, close: 19 },
+            { day: "Fri", open: 5.5, close: 19 }, { day: "Sat", open: 7,   close: 19 },
+            { day: "Sun", open: 8,   close: 18 }
+        ];
+
+        let simTime = { 
+            month: 0, day: 0, hour: Math.floor(OPERATING_HOURS[0].open)
+        };
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const FRAMES_PER_HOUR = 60; 
+
+        const revenuePerCasual = 15;
+        const revenuePerLTS = 20;
+        const revenuePerLap = 12; 
+        const revenuePerCarnival = 8;
+        const revenuePerProgram = 25; 
+        const HOURLY_COSTS = { fiftyMeter: 50, twentyFiveMeter: 40, programPool: 30 };
+
+        let carnivalTimer = 0;
+        const carnivalDuration = 4;
+
+        const energeticPlayful = {
+            blue: '#00A9E0', orange: '#F7A823', red: '#F05A28',
+            green: '#A8D151', purple: '#8F3F97', grey: '#4B5563'
+        };
+
+        const zones = {
+            fiftyMeter:   { x: 50, y: 50, w: 150, h: 500, label: '50m Pool', color: energeticPlayful.blue },
+            twentyFiveMeter: { x: 250, y: 50, w: 200, h: 300, label: '25m Pool', color: energeticPlayful.red },
+            programPool:  { x: 500, y: 50, w: 250, h: 250, label: 'Program Pool', color: energeticPlayful.green },
+        };
+
+        // --- p5.js color variables ---
+        let nightColor, dayColor, sunsetColor, sunriseColor;
+
+        let timeStatEl, visitorStatEl, lapSwimmerStatEl, canteenStatEl, netProfitStatEl, carnivalAlertEl;
+        let weeklyNetProfitStatEl, weeklyGrossRevenueStatEl, weeklyOpCostStatEl;
+        
+        function setup() {
+            let canvas = createCanvas(800, 600);
+            canvas.parent('canvas-container');
+            
+            nightColor = color(10, 20, 40);
+            dayColor = color(173, 216, 230);
+            sunriseColor = color(255, 218, 185);
+            sunsetColor = color(255, 140, 0);
+
+            // Get stat elements
+            timeStatEl = document.getElementById('time-stats');
+            visitorStatEl = document.getElementById('visitor-stats');
+            lapSwimmerStatEl = document.getElementById('lap-swimmer-stats');
+            canteenStatEl = document.getElementById('canteen-stats');
+            netProfitStatEl = document.getElementById('net-profit-stats');
+            weeklyNetProfitStatEl = document.getElementById('weekly-net-profit-stats');
+            weeklyGrossRevenueStatEl = document.getElementById('weekly-gross-revenue-stats');
+            weeklyOpCostStatEl = document.getElementById('weekly-op-cost-stats');
+            carnivalAlertEl = document.getElementById('carnival-alert');
+            
+            // --- Style stat cards ---
+            timeStatEl.style.borderColor = '#6b7280';
+            visitorStatEl.style.borderColor = energeticPlayful.blue;
+            lapSwimmerStatEl.style.borderColor = energeticPlayful.grey;
+            canteenStatEl.style.borderColor = energeticPlayful.orange;
+            netProfitStatEl.style.borderColor = '#10B981';
+            weeklyNetProfitStatEl.style.borderColor = '#10B981';
+            weeklyGrossRevenueStatEl.style.borderColor = '#3B82F6';
+            weeklyOpCostStatEl.style.borderColor = '#EF4444';
+
+            // --- Button Listeners ---
+            document.getElementById('launch-carnival-btn').addEventListener('click', () => {
+                if (carnivalTimer <= 0 && isCentreOpen()) {
+                    carnivalTimer = carnivalDuration;
+                    carnivalAlertEl.style.animation = 'none';
+                    carnivalAlertEl.offsetHeight; 
+                    carnivalAlertEl.style.animation = 'fadeInOut 4s forwards';
+                    for(let i=0; i < 150; i++) visitors.push(new Visitor('carnival'));
+                }
+            });
+            document.getElementById('start-program-btn').addEventListener('click', () => {
+                if(isCentreOpen()) for (let i = 0; i < 15; i++) visitors.push(new Visitor('program'));
+            });
+            document.getElementById('kiosk-special-btn').addEventListener('click', () => {
+                if(isCentreOpen()) for(const v of visitors) v.makeCanteenPurchase(8.50, true);
+            });
+        }
+        
+        function getSeason() {
+            const month = simTime.month;
+            if (month >= 5 && month <= 7) return "Winter";
+            if (month >= 2 && month <= 4) return "Autumn";
+            if (month >= 8 && month <= 10) return "Spring";
+            return "Summer";
+        }
+
+        function updateTime() {
+            if (frameCount % FRAMES_PER_HOUR === 0) {
+                simTime.hour++;
+                calculateHourlyCosts();
+                
+                const todaysHours = OPERATING_HOURS[simTime.day];
+                if (simTime.hour >= todaysHours.close) {
+                    weeklyGrossRevenue += dailyGrossRevenue;
+                    weeklyTotalOpCost += dailyTotalOpCost;
+                    
+                    dailyGrossRevenue = 0; dailyTotalOpCost = 0; dailyCanteenItems = 0;
+                    visitors = []; particles = [];
+                    
+                    simTime.day = (simTime.day + 1) % 7;
+                    const nextDayHours = OPERATING_HOURS[simTime.day];
+                    simTime.hour = Math.floor(nextDayHours.open);
+
+                    if (simTime.day === 0) {
+                         simTime.month = (simTime.month + 1) % 12;
+                         if(simTime.month === 0) {
+                            weeklyGrossRevenue = 0;
+                            weeklyTotalOpCost = 0;
+                         }
+                    }
+                }
+            }
+        }
+
+        function isCentreOpen() {
+            const todaysHours = OPERATING_HOURS[simTime.day];
+            return simTime.hour >= todaysHours.open && simTime.hour < todaysHours.close;
+        }
+
+        function calculateHourlyCosts() {
+            if (!isCentreOpen()) return;
+            const activeZones = new Set();
+            const season = getSeason();
+
+            visitors.forEach(v => {
+                 for(const key in zones) if (v.zone === zones[key]) activeZones.add(key);
+            });
+            activeZones.forEach(zoneKey => {
+                if (zoneKey === 'fiftyMeter' && season === 'Winter') {} else {
+                    dailyTotalOpCost += HOURLY_COSTS[zoneKey];
+                }
+            });
+        }
+
+        function realisticSpawning() {
+            if (!isCentreOpen()) return;
+            const hour = simTime.hour;
+            const isWeekday = simTime.day < 5;
+            const isSaturday = simTime.day === 5;
+
+            // LTS
+            if ((isWeekday && ((hour >= 9 && hour < 12) || (hour >= 15 && hour < 19))) || (isSaturday && hour >= 9 && hour < 12)) {
+                 if(random() < 0.8) for(let i=0; i<4; i++) visitors.push(new Visitor('lts'));
+            }
+            
+            // Lap Swimmers
+             if(hour >= 5 && hour < 9) {
+                if(random() < 0.9) for(let i=0; i<5; i++) visitors.push(new Visitor('lap'));
+            }
+
+            // Casuals
+            if (!isWeekday && hour >= 9 && hour < 17) {
+                if(random() < 0.9) for(let i=0; i<8; i++) visitors.push(new Visitor('casual'));
+            }
+            if(isWeekday && hour >= 17 && hour < 19) {
+                 if(random() < 0.6) for(let i=0; i<3; i++) visitors.push(new Visitor('casual'));
+            }
+        }
+
+        function drawBackgroundAndLighting() {
+            const hour = simTime.hour;
+            let bgColor = nightColor;
+
+            if (hour >= 5 && hour < 8) { // Sunrise
+                let amt = map(hour, 5, 8, 0, 1);
+                bgColor = lerpColor(lerpColor(nightColor, sunriseColor, 0.5), dayColor, amt);
+            } else if (hour >= 8 && hour < 17) { // Day
+                bgColor = dayColor;
+            } else if (hour >= 17 && hour < 19) { // Sunset
+                let amt = map(hour, 17, 19, 0, 1);
+                bgColor = lerpColor(dayColor, sunsetColor, amt);
+            } else if (hour >= 19) { // Night
+                bgColor = nightColor;
+            }
+            background(bgColor);
+
+            if (hour < 7 || hour > 18) {
+                for (const key in zones) {
+                    const zone = zones[key];
+                    noStroke();
+                    fill(255, 255, 200, 40);
+                    rect(zone.x, zone.y, zone.w, zone.h, 15);
+                    rect(zone.x, zone.y, zone.w, zone.h, 15);
+                }
+            }
+        }
+
+
+        function draw() {
+            drawBackgroundAndLighting();
+            updateTime();
+            drawZones();
+
+            if (isCentreOpen()) {
+                if (carnivalTimer > 0) {
+                    if (frameCount % FRAMES_PER_HOUR === 0) {
+                        carnivalTimer--;
+                        // Add a steady stream of carnival visitors each hour
+                        for(let i=0; i<30; i++) visitors.push(new Visitor('carnival'));
+                    }
+                } else {
+                     if (frameCount % FRAMES_PER_HOUR === 0) {
+                        realisticSpawning();
+                     }
+                }
+
+                for (let i = visitors.length - 1; i >= 0; i--) {
+                    visitors[i].update();
+                    visitors[i].display();
+                    if (visitors[i].isDone()) visitors.splice(i, 1);
+                }
+            } else {
+                fill(0, 0, 0, 150); rect(0, 0, width, height);
+                fill(255); textSize(48); textAlign(CENTER, CENTER); textStyle(BOLD);
+                text("CENTRE CLOSED", width / 2, height / 2);
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].display();
+                if (particles[i].isDead()) particles.splice(i, 1);
+            }
+            
+            const dailyNetProfit = dailyGrossRevenue - dailyTotalOpCost;
+            const canteenRevenue = dailyGrossRevenue - visitors.reduce((acc, v) => acc + v.entryFee, 0);
+            const lapSwimmerCount = visitors.filter(v => v.type === 'lap').length;
+            const timeString = `${monthNames[simTime.month]}, ${dayNames[simTime.day]} ${String(simTime.hour).padStart(2,'0')}:00`;
+            timeStatEl.innerHTML = `<strong>Time</strong><div class="stat-card-large">${timeString}</div><div class="stat-card-small">${getSeason()}</div>`;
+            visitorStatEl.innerHTML = `<strong>Total Visitors</strong>${visitors.length}`;
+            lapSwimmerStatEl.innerHTML = `<strong>Lap Swimmers</strong>${lapSwimmerCount}`;
+            canteenStatEl.innerHTML = `<strong>Canteen Sales</strong><div class="stat-card-large">$${canteenRevenue.toFixed(2)}</div><div class="stat-card-small">${dailyCanteenItems} items</div>`;
+            netProfitStatEl.innerHTML = `<strong>Today's Profit</strong><div class="stat-card-large" style="color:${dailyNetProfit >= 0 ? '#10B981' : '#EF4444'};">$${dailyNetProfit.toFixed(2)}</div>`;
+            
+            const weeklyNetProfit = (weeklyGrossRevenue + dailyGrossRevenue) - (weeklyTotalOpCost + dailyTotalOpCost);
+            weeklyNetProfitStatEl.innerHTML = `<strong>Weekly Net Profit</strong><div class="stat-card-large" style="color:${weeklyNetProfit >= 0 ? '#10B981' : '#EF4444'};">$${weeklyNetProfit.toFixed(2)}</div>`;
+            weeklyGrossRevenueStatEl.innerHTML = `<strong>Weekly Gross</strong>$${(weeklyGrossRevenue + dailyGrossRevenue).toFixed(2)}`;
+            weeklyOpCostStatEl.innerHTML = `<strong>Weekly Cost</strong>$${(weeklyTotalOpCost + dailyTotalOpCost).toFixed(2)}`;
+        }
+
+        function drawZones() { 
+             const season = getSeason();
+             for (const key in zones) {
+                const zone = zones[key];
+                const isClosed = (key === 'fiftyMeter' && season === 'Winter');
+                let c = isClosed ? color(150) : color(zone.color);
+                
+                fill(red(c), green(c), blue(c), 30);
+                stroke(c);
+                strokeWeight(2);
+                rect(zone.x, zone.y, zone.w, zone.h, 10);
+                
+                // Draw lane lines
+                if (key === 'fiftyMeter' || key === 'twentyFiveMeter') {
+                    stroke(red(c), green(c), blue(c), 50);
+                    strokeWeight(1);
+                    for (let i = 1; i < 8; i++) {
+                        const lineX = zone.x + (zone.w / 8) * i;
+                        drawingContext.setLineDash([5, 10]);
+                        line(lineX, zone.y, lineX, zone.y + zone.h);
+                        drawingContext.setLineDash([]);
+                    }
+                }
+
+                fill(isClosed ? 200 : 0, 100); noStroke(); textAlign(CENTER, CENTER); textSize(16); textStyle(BOLD);
+                text(zone.label, zone.x + zone.w / 2, zone.y + 20);
+                
+                if(isClosed) {
+                    fill(50, 150); noStroke();
+                    rect(zone.x, zone.y, zone.w, zone.h, 10);
+                    fill(255); textSize(24);
+                    text("CLOSED FOR WINTER", zone.x + zone.w / 2, zone.y + zone.h / 2);
+                }
+            }
+        }
+
+        class Visitor {
+            constructor(type) {
+                this.type = type;
+                this.lifespan = random(2, 4) * FRAMES_PER_HOUR;
+                this.zone = this.assignZone();
+                if (!this.zone) { this.lifespan = 0; return; }
+                
+                this.entryFee = 0;
+                this.lane = null;
+
+                // Set position and velocity based on zone type
+                if (this.zone === zones.fiftyMeter || this.zone === zones.twentyFiveMeter) {
+                    this.lane = floor(random(8));
+                    const laneX = this.zone.x + (this.zone.w / 8) * (this.lane + 0.5);
+                    this.pos = createVector(laneX, random(this.zone.y, this.zone.y + this.zone.h));
+                    this.vel = createVector(0, random([-2, -1.5, 1.5, 2]));
+                } else {
+                    this.pos = createVector(random(this.zone.x, this.zone.x + this.zone.w), random(this.zone.y, this.zone.y + this.zone.h));
+                    this.vel = p5.Vector.random2D().mult(random(0.5, 2));
+                }
+
+                switch(this.type) {
+                    case 'casual': this.size = 12; this.color = energeticPlayful.blue; this.entryFee = revenuePerCasual; break;
+                    case 'lts': this.size = 10; this.color = energeticPlayful.green; this.entryFee = revenuePerLTS; break;
+                    case 'carnival': this.size = 14; this.color = energeticPlayful.orange; this.vel.y *= 1.5; this.entryFee = revenuePerCarnival; break;
+                    case 'program': this.size = 13; this.color = energeticPlayful.purple; this.entryFee = revenuePerProgram; break;
+                    case 'lap': this.size = 12; this.color = energeticPlayful.grey; this.entryFee = revenuePerLap; break;
+                }
+                dailyGrossRevenue += this.entryFee;
+            }
+
+            assignZone() {
+                const season = getSeason();
+                switch (this.type) {
+                    case 'lts': case 'program': return zones.programPool;
+                    case 'carnival':
+                         if (season === 'Winter') return zones.twentyFiveMeter;
+                         return random() > 0.5 ? zones.fiftyMeter : zones.twentyFiveMeter;
+                    case 'lap':
+                        if (season === 'Winter') return zones.twentyFiveMeter;
+                        return random() > 0.4 ? zones.fiftyMeter : zones.twentyFiveMeter;
+                    case 'casual': 
+                        const available = [zones.twentyFiveMeter, zones.programPool];
+                        if(season !== 'Winter') available.push(zones.fiftyMeter);
+                        return random(available);
+                    default: return null;
+                }
+            }
+
+            makeCanteenPurchase(amount, isSpecial=false) {
+                dailyGrossRevenue += amount;
+                dailyCanteenItems++;
+                for(let i = 0; i < (isSpecial ? 15 : 5); i++) particles.push(new Particle(this.pos.x, this.pos.y, energeticPlayful.orange));
+            }
+
+            update() { 
+                this.lifespan--;
+
+                // Movement
+                if (this.lane !== null) {
+                    // Vertical lane swimming
+                    this.pos.y += this.vel.y;
+                    if (this.pos.y < this.zone.y + this.size/2 || this.pos.y > this.zone.y + this.zone.h - this.size/2) {
+                        this.vel.y *= -1;
+                    }
+                } else {
+                    // Random movement
+                    this.pos.add(this.vel);
+                    if (this.pos.x < this.zone.x || this.pos.x > this.zone.x + this.zone.w) this.vel.x *= -1;
+                    if (this.pos.y < this.zone.y || this.pos.y > this.zone.y + this.zone.h) this.vel.y *= -1;
+                }
+                
+                if (random() < 0.005) this.makeCanteenPurchase(random(2.5, 12));
+                
+                if (frameCount % 8 === 0) {
+                     particles.push(new Particle(this.pos.x, this.pos.y, color(255, 255, 255, 50), -this.vel.x * 0.2, -this.vel.y * 0.2));
+                }
+            }
+
+            display() { 
+                noStroke();
+                fill(red(this.color), green(this.color), blue(this.color), 50);
+                ellipse(this.pos.x, this.pos.y, this.size * 1.5);
+                fill(this.color);
+                ellipse(this.pos.x, this.pos.y, this.size);
+            }
+
+            isDone() { return this.lifespan <= 0; }
+        }
+
+        class Particle { 
+            constructor(x, y, pColor = color(255, 223, 0), vx, vy){
+                this.pos = createVector(x, y);
+                // Make ripple velocity slower
+                this.vel = createVector(vx, vy) || p5.Vector.random2D().mult(random(0.5, 1.5));
+                this.lifespan = 60; // Longer lifespan for ripples
+                this.color = pColor;
+                this.baseSize = random(1, 3);
+            }
+            update(){ 
+                this.pos.add(this.vel); 
+                this.lifespan--; 
+            }
+            display(){
+                noStroke();
+                // Map alpha and size to lifespan for fade and expand effect
+                let currentAlpha = map(this.lifespan, 60, 0, 50, 0);
+                let currentSize = map(this.lifespan, 60, 0, this.baseSize, this.baseSize * 5);
+                fill(red(this.color), green(this.color), blue(this.color), currentAlpha);
+                ellipse(this.pos.x, this.pos.y, currentSize);
+            }
+            isDead(){ return this.lifespan <= 0; }
+        }
+    </script>
+</body>
+</html>
