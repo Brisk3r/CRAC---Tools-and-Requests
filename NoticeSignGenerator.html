@@ -1,220 +1,226 @@
 <!DOCTYPE html>
 <html lang="en-AU">
-<head> 
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Printable Sign Generator - Clarence Regional Aquatic Centre</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; margin: 20px; background-color: #f4f4f8; color: #333; }
-        .container { background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
-        h1 { color: #0056b3; }
-        label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], textarea, select, input[type="number"], input[type="color"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 1em;
+        /* Custom styles for the application */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        input[type="color"] { padding: 5px; min-height: 45px; }
-        textarea { min-height: 120px; resize: vertical; }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
-            transition: background-color 0.2s;
-        }
-        button:hover { background-color: #0056b3; }
-        .controls-wrapper { border: 1px solid #e0e0e0; padding: 15px; margin-bottom:10px; border-radius: 5px; background-color: #f9f9fa;}
-        .control-group { margin-bottom: 10px; }
-        .control-group label { font-size: 0.9em; margin-top: 0; color: #555; }
-        .inline-controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
-        .inline-controls label { margin-right: 5px; }
-        .inline-controls select, .inline-controls input { width: auto; flex-grow: 1; }
 
+        /* Styles for the A4 preview pane on screen */
         #previewPane {
-            margin-top: 30px;
-            border: 2px dashed #ccc;
-            padding: 20mm; /* A4 margins */
             width: 210mm;
             min-height: 297mm;
-            background-color: white;
+            padding: 20mm;
             box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
             margin-left: auto;
             margin-right: auto;
-            box-shadow: 0 0 15px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
         }
-        #signLogoPreview {
-            display: none;
-            max-width: 450px;
-            max-height: 150px;
-            margin: 0 auto 30px auto; /* Increased bottom margin */
-        }
-        #signTitlePreview {
-            word-wrap: break-word;
-            font-weight: bold;
-            margin-bottom: 30px; /* Added margin below title */
-        }
-        #signImagePreview {
-            display: none;
-            max-width: 100%;
-            max-height: 200px;
-            margin: 15px auto;
-        }
-        #signContentPreview {
-            word-wrap: break-word;
-            flex-grow: 1; /* Allows content to take up available space */
-        }
-        #signContentPreview ul, #signContentPreview ol { margin-left: 20px; padding-left: 20px; text-align: left; } /* Keep lists left-aligned for readability */
-        #signContentPreview p { margin: 0 0 1em 0; padding: 0; }
-        #signContentPreview p:last-child { margin-bottom: 0; }
-        #signFooterPreview {
-            word-wrap: break-word;
-            margin-top: 40px; /* Increased top margin */
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-
+        
+        /* Styles for printing */
         @media print {
-            body { margin: 0; background-color: white; }
-            .container { box-shadow: none; margin: 0; padding: 0; border-radius: 0; max-width: 100%; }
-            /* FIXED: The selector "h1 + p" is more specific and won't hide content paragraphs. */
-            .controls, button#printButton, h1, h2, h1 + p { display: none; }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            /* Hide all elements with the 'no-print' class */
+            .no-print {
+                display: none !important;
+            }
+            /* Ensure the preview pane takes up the entire page when printing */
+            #previewPane {
+                width: 100%;
+                height: 100vh;
+                margin: 0;
+                padding: 20mm;
+                border: none;
+                box-shadow: none;
+                display: flex; /* Using flex to ensure content is laid out correctly */
+                flex-direction: column;
+            }
             @page {
                 size: A4;
                 margin: 0;
             }
-            #previewPane {
-                width: 100%;
-                height: 100%;
-                border: none;
-                margin: 0;
-                padding: 20mm; /* Ensure print margins are consistent */
-                box-shadow: none;
-                display: block; /* Use block for more reliable printing */
-            }
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800">
 
-<div class="container">
-    <h1>A4 Printable Sign Generator</h1>
-    <p>Fill in the details below to generate your sign. The preview will update automatically.</p>
-
-    <div class="controls">
-        <!-- Logo Control -->
-        <label for="signLogoPreview">Logo:</label>
-        <select id="signLogoPreview" onchange="updatePreview()">
-            <option value="https://clarencevalley.admin.opencities.com/files/7e5544c3-9b09-40bf-be11-70d0dbd36b19/CRAC-Large-Wordmark.png" selected>Clarence Regional Aquatic Centre</option>
-            <option value="">No Logo</option>
-            <option value="https://clarencevalley.admin.opencities.com/files/7e5544c3-9b09-40bf-be11-70d0dbd36b19/CRAC-Large-Wordmark.png">YCP</option>            
-        </select>
-
-        <!-- Title Controls -->
-        <label for="signTitleInput">Title:</label>
-        <input type="text" id="signTitleInput" oninput="updatePreview()" value="50m Olympic Pool Shut for Winter">
-        <div class="controls-wrapper">
-            <div class="inline-controls control-group">
-                <label for="titleFontFamily">Font:</label>
-                <select id="titleFontFamily" onchange="updatePreview()">
-                    <option value="Arial, sans-serif" selected>Arial</option>
-                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-                </select>
-                <label for="titleFontSize">Size (px):</label>
-                <input type="number" id="titleFontSize" value="48" min="10" max="100" oninput="updatePreview()">
-                <label for="titleColor">Color:</label>
-                <input type="color" id="titleColor" value="#FF0000" oninput="updatePreview()">
-                <label for="titleTextAlign">Align:</label>
-                <select id="titleTextAlign" onchange="updatePreview()">
-                    <option value="left">Left</option>
-                    <option value="center" selected>Center</option>
-                    <option value="right">Right</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Content Controls -->
-        <label for="signContentInput">Content:</label>
-        <textarea id="signContentInput" oninput="updatePreview()" placeholder="Enter main content..."></textarea>
-        <div class="controls-wrapper">
-            <div class="inline-controls control-group">
-                <label for="contentFontFamily">Font:</label>
-                <select id="contentFontFamily" onchange="updatePreview()">
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif" selected>Helvetica Neue</option>
-                    <option value="Verdana, sans-serif">Verdana</option>
-                    <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-                </select>
-                <label for="contentFontSize">Size (px):</label>
-                <input type="number" id="contentFontSize" value="16" min="8" max="72" oninput="updatePreview()">
-                <label for="contentTextAlign">Align:</label>
-                <select id="contentTextAlign" onchange="updatePreview()">
-                    <option value="left">Left</option>
-                    <option value="center" selected>Center</option>
-                    <option value="right">Right</option>
-                </select>
-            </div>
-            <div class="control-group" style="margin-top:15px;">
-                <label for="contentColumns">Layout:</label>
-                <select id="contentColumns" onchange="updatePreview()">
-                    <option value="1" selected>Single Column</option>
-                    <option value="2">Two Columns</option>
-                </select>
-            </div>
-        </div>
-
-        <label for="signImageInput">Image (optional, appears in content):</label>
-        <input type="file" id="signImageInput" accept="image/*" onchange="handleImage(event)">
-
-        <!-- Footer Controls -->
-        <label for="signFooterInput">Footer:</label>
-        <input type="text" id="signFooterInput" oninput="updatePreview()" value="Clarence Regional Aquatic Centre">
-        <div class="controls-wrapper">
-            <div class="inline-controls control-group">
-                <label for="footerFontFamily">Font:</label>
-                <select id="footerFontFamily" onchange="updatePreview()">
-                    <option value="Arial, sans-serif">Arial</option>
-                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif" selected>Helvetica Neue</option>
-                </select>
-                <label for="footerFontSize">Size (px):</label>
-                <input type="number" id="footerFontSize" value="12" min="6" max="48" oninput="updatePreview()">
-                <label for="footerTextAlign">Align:</label>
-                <select id="footerTextAlign" onchange="updatePreview()">
-                    <option value="left">Left</option>
-                    <option value="center" selected>Center</option>
-                    <option value="right">Right</option>
-                </select>
-            </div>
-        </div>
-
-        <button id="printButton" onclick="printSign()">Print Sign</button>
+<div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    
+    <!-- Header Section - Hidden on Print -->
+    <div class="no-print mb-8 text-center">
+        <h1 class="text-4xl font-bold text-blue-700">A4 Printable Sign Generator</h1>
+        <p class="text-gray-600 mt-2">Fill in the details below to generate your sign. The preview will update automatically.</p>
     </div>
 
-    <h2>Preview</h2>
-    <div id="previewPane">
-        <img id="signLogoPreview" src="#" alt="Sign logo">
-        <div id="signTitlePreview"></div>
-        <img id="signImagePreview" src="#" alt="Sign image">
-        <div id="signContentPreview"></div>
-        <div id="signFooterPreview"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Controls Panel -->
+        <div class="no-print bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-gray-700">Controls</h2>
+            
+            <div class="space-y-6">
+                <!-- Logo Control -->
+                <div>
+                    <label for="signLogoSelector" class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                    <select id="signLogoSelector" onchange="updatePreview()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <!-- FIXED: Updated the CRAC logo URL as per user request -->
+                        <option value="https://clarencevalley.admin.opencities.com/files/7e5544c3-9b09-40bf-be11-70d0dbd36b19/CRAC-Large-Wordmark.png" selected>Clarence Regional Aquatic Centre</option>
+                        <option value="https://placehold.co/400x100/EFEFEF/1D1D1D?text=YCP+Yamba+Community+Pool">YCP Yamba Community Pool</option>
+                        <option value="">No Logo</option>
+                    </select>
+                </div>
+
+                <!-- Title Controls -->
+                <div>
+                    <label for="signTitleInput" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" id="signTitleInput" oninput="updatePreview()" value="50m Olympic Pool Shut for Winter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    <div class="mt-3 p-4 bg-gray-50 rounded-md border">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                            <div>
+                                <label for="titleFontFamily" class="block text-xs font-medium text-gray-600">Font</label>
+                                <select id="titleFontFamily" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="'Inter', sans-serif" selected>Inter</option>
+                                    <option value="Arial, sans-serif">Arial</option>
+                                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
+                                    <option value="Verdana, sans-serif">Verdana</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="titleFontSize" class="block text-xs font-medium text-gray-600">Size (px)</label>
+                                <input type="number" id="titleFontSize" value="48" min="10" max="100" oninput="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="titleColor" class="block text-xs font-medium text-gray-600">Color</label>
+                                <input type="color" id="titleColor" value="#FF0000" oninput="updatePreview()" class="w-full h-10 mt-1 p-1 border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="titleTextAlign" class="block text-xs font-medium text-gray-600">Align</label>
+                                <select id="titleTextAlign" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="left">Left</option>
+                                    <option value="center" selected>Center</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Controls -->
+                <div>
+                    <label for="signContentInput" class="block text-sm font-medium text-gray-700 mb-1">Content (use * for bullets, 1. for numbered lists)</label>
+                    <textarea id="signContentInput" oninput="updatePreview()" placeholder="Enter main content..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm h-32"></textarea>
+                    <div class="mt-3 p-4 bg-gray-50 rounded-md border">
+                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                            <div>
+                                <label for="contentFontFamily" class="block text-xs font-medium text-gray-600">Font</label>
+                                <select id="contentFontFamily" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="'Inter', sans-serif" selected>Inter</option>
+                                    <option value="Arial, sans-serif">Arial</option>
+                                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
+                                    <option value="Verdana, sans-serif">Verdana</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="contentFontSize" class="block text-xs font-medium text-gray-600">Size (px)</label>
+                                <input type="number" id="contentFontSize" value="16" min="8" max="72" oninput="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="contentTextAlign" class="block text-xs font-medium text-gray-600">Align</label>
+                                <select id="contentTextAlign" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="left">Left</option>
+                                    <option value="center" selected>Center</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="contentColumns" class="block text-xs font-medium text-gray-600">Layout</label>
+                                <select id="contentColumns" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="1" selected>Single Column</option>
+                                    <option value="2">Two Columns</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload -->
+                <div>
+                    <label for="signImageInput" class="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
+                    <input type="file" id="signImageInput" accept="image/*" onchange="handleImage(event)" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+
+                <!-- Footer Controls -->
+                <div>
+                    <label for="signFooterInput" class="block text-sm font-medium text-gray-700 mb-1">Footer</label>
+                    <input type="text" id="signFooterInput" oninput="updatePreview()" value="Clarence Regional Aquatic Centre" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    <div class="mt-3 p-4 bg-gray-50 rounded-md border">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 items-center">
+                            <div>
+                                <label for="footerFontFamily" class="block text-xs font-medium text-gray-600">Font</label>
+                                <select id="footerFontFamily" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="'Inter', sans-serif" selected>Inter</option>
+                                    <option value="Arial, sans-serif">Arial</option>
+                                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="footerFontSize" class="block text-xs font-medium text-gray-600">Size (px)</label>
+                                <input type="number" id="footerFontSize" value="12" min="6" max="48" oninput="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="footerTextAlign" class="block text-xs font-medium text-gray-600">Align</label>
+                                <select id="footerTextAlign" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                                    <option value="left">Left</option>
+                                    <option value="center" selected>Center</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print Button -->
+            <div class="mt-8 text-center">
+                <button onclick="printSign()" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                    Print Sign
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div>
+             <h2 class="no-print text-2xl font-bold mb-4 text-center text-gray-700">Preview</h2>
+            <div id="previewPane" class="bg-white flex flex-col">
+                <img id="signLogoPreview" src="#" alt="Sign logo" class="hidden self-center mb-8" style="max-width: 450px; max-height: 150px;" onerror="this.style.display='none';">
+                <div id="signTitlePreview" class="break-words font-bold mb-8"></div>
+                <img id="signImagePreview" src="#" alt="Sign image" class="hidden self-center my-4" style="max-width: 100%; max-height: 200px;" onerror="this.style.display='none';">
+                <div id="signContentPreview" class="break-words flex-grow"></div>
+                <div id="signFooterPreview" class="break-words mt-auto pt-5 border-t border-gray-200"></div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
     let imageDataUrl = null;
 
+    /**
+     * Handles the selection of an image file, converting it to a data URL for preview.
+     * @param {Event} event - The file input change event.
+     */
     function handleImage(event) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -228,64 +234,76 @@
             updatePreview();
         }
     }
+    
+    /**
+     * Escapes HTML special characters to prevent XSS.
+     * @param {string} str - The string to escape.
+     * @returns {string} The escaped string.
+     */
+    function escapeHTML(str) {
+        const p = document.createElement("p");
+        p.appendChild(document.createTextNode(str));
+        return p.innerHTML;
+    }
 
+    /**
+     * Formats raw text from the textarea into HTML, supporting paragraphs and lists.
+     * @param {string} text - The raw text content.
+     * @returns {string} The formatted HTML content.
+     */
     function formatContentForDisplay(text) {
         let htmlContent = '';
         const lines = text.split('\n');
-        let currentListType = null;
         let listOpen = false;
+        let currentListType = null; // 'ul' or 'ol'
 
         lines.forEach(line => {
             const trimmedLine = line.trim();
-            let listItem = false;
+            let isListItem = false;
 
+            // Check for unordered list items (* or -)
             if (trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ')) {
-                if (currentListType !== 'ul' && listOpen) { htmlContent += `</ul>`; listOpen = false; }
+                if (currentListType !== 'ul' && listOpen) { htmlContent += `</${currentListType}>`; listOpen = false; }
                 if (!listOpen) { htmlContent += '<ul>'; listOpen = true; currentListType = 'ul'; }
-                htmlContent += `<li>${trimmedLine.substring(2)}</li>`;
-                listItem = true;
+                htmlContent += `<li class="ml-5">${escapeHTML(trimmedLine.substring(2))}</li>`;
+                isListItem = true;
+            // Check for ordered list items (e.g., "1. ")
             } else if (trimmedLine.match(/^\d+\.\s+/)) {
-                if (currentListType !== 'ol' && listOpen) { htmlContent += `</ol>`; listOpen = false; }
+                if (currentListType !== 'ol' && listOpen) { htmlContent += `</${currentListType}>`; listOpen = false; }
                 if (!listOpen) { htmlContent += '<ol>'; listOpen = true; currentListType = 'ol'; }
-                htmlContent += `<li>${trimmedLine.substring(trimmedLine.indexOf('.') + 2)}</li>`;
-                listItem = true;
+                htmlContent += `<li class="ml-5">${escapeHTML(trimmedLine.substring(trimmedLine.indexOf('.') + 2))}</li>`;
+                isListItem = true;
             }
 
-            if (!listItem) {
-                if (listOpen) { htmlContent += `</${currentListType}>`; listOpen = false; currentListType = null; }
-                if (trimmedLine === '') {
-                    htmlContent += '<p>&nbsp;</p>';
-                } else {
-                    const pTag = document.createElement('p');
-                    pTag.appendChild(document.createTextNode(line));
-                    htmlContent += pTag.outerHTML;
+            // If it's not a list item, treat it as a paragraph
+            if (!isListItem) {
+                if (listOpen) {
+                    htmlContent += `</${currentListType}>`;
+                    listOpen = false;
+                    currentListType = null;
                 }
+                // Add paragraphs, preserving empty lines for spacing
+                htmlContent += `<p>${line ? escapeHTML(line) : '&nbsp;'}</p>`;
             }
         });
 
-        if (listOpen) { htmlContent += `</${currentListType}>`; }
+        if (listOpen) {
+            htmlContent += `</${currentListType}>`;
+        }
         return htmlContent;
     }
     
+    /**
+     * Triggers the browser's print dialog. 
+     * The @media print styles handle the formatting.
+     */
     function printSign() {
-        const previewPane = document.getElementById('previewPane');
-        const styles = document.querySelector('style').innerHTML;
-        const printWindow = window.open('', '_blank');
-
-        printWindow.document.write('<html><head><title>Print Sign</title>');
-        printWindow.document.write('<style>' + styles + '</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(previewPane.outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-
-        setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-        }, 500); // 0.5 second delay
+        window.print();
     }
 
+    /**
+     * Updates the entire preview pane based on the current values in the control inputs.
+     */
     function updatePreview() {
         // --- Logo ---
         const logoPreview = document.getElementById('signLogoPreview');
@@ -333,12 +351,15 @@
         footerPreview.style.textAlign = document.getElementById('footerTextAlign').value;
     }
 
+    // --- Initial Setup ---
     document.addEventListener('DOMContentLoaded', () => {
+        // Set default content for the textarea
         const contentInput = document.getElementById('signContentInput');
         contentInput.value = "As of Saturday, May 31st, the 50m Olympic Pool and surrounding " +
-            "areas is closed to the public. We appreciate all of our dedicated " +
+            "areas is closed to the public.\n\nWe appreciate all of our dedicated " +
             "swimmers who have enjoyed it this season and can't wait to welcome " +
             "you all back in spring!";
+        // Initial call to render the preview when the page loads
         updatePreview();
     });
 </script>
