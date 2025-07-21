@@ -22,11 +22,18 @@
         #previewPane {
             width: 210mm;
             min-height: 297mm;
+            max-height: 297mm; /* Enforce max height */
             padding: 20mm;
             box-sizing: border-box;
             box-shadow: 0 0 15px rgba(0,0,0,0.15);
             margin-left: auto;
             margin-right: auto;
+            border: 2px solid #ccc; /* Default border */
+            transition: border-color 0.3s;
+        }
+
+        #previewPane.overflowing {
+            border-color: #ef4444; /* Red border for overflow */
         }
         
         /* Styles for printing */
@@ -45,9 +52,9 @@
                 height: 100vh;
                 margin: 0;
                 padding: 20mm;
-                border: none;
+                border: none !important; /* Remove border for printing */
                 box-shadow: none;
-                display: flex; /* Using flex to ensure content is laid out correctly */
+                display: flex;
                 flex-direction: column;
             }
             @page {
@@ -118,7 +125,7 @@
                     </div>
                 </div>
 
-                <!-- FIXED: Symbol Control using Lucide Icon names -->
+                <!-- Symbol Control -->
                 <div>
                     <label for="signSymbolSelector" class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
                     <select id="signSymbolSelector" onchange="updatePreview()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -220,13 +227,17 @@
         <div>
              <h2 class="no-print text-2xl font-bold mb-4 text-center text-gray-700">Preview</h2>
             <div id="previewPane" class="bg-white flex flex-col">
-                <img id="signLogoPreview" src="#" alt="Sign logo" class="hidden self-center mb-8" style="max-width: 450px; max-height: 150px;" onerror="this.style.display='none';">
-                <div id="signTitlePreview" class="break-words font-bold mb-8"></div>
+                <img id="signLogoPreview" src="#" alt="Sign logo" class="hidden self-center mb-4 flex-shrink-0" style="max-width: 450px; max-height: 150px;" onerror="this.style.display='none';">
+                <div id="signTitlePreview" class="break-words font-bold mb-4 flex-shrink-0"></div>
                 <!-- Symbol Preview Container -->
-                <div id="signSymbolPreview" class="self-center my-6"></div>
-                <img id="signImagePreview" src="#" alt="Sign image" class="hidden self-center my-4" style="max-width: 100%; max-height: 200px;" onerror="this.style.display='none';">
+                <div id="signSymbolPreview" class="self-center my-4 flex-shrink-0"></div>
+                <img id="signImagePreview" src="#" alt="Sign image" class="hidden self-center my-4 flex-shrink-0" style="max-width: 100%; max-height: 200px;" onerror="this.style.display='none';">
                 <div id="signContentPreview" class="break-words flex-grow"></div>
-                <div id="signFooterPreview" class="break-words mt-auto pt-5 border-t border-gray-200"></div>
+                <div id="signFooterPreview" class="break-words mt-auto pt-4 border-t border-gray-200 flex-shrink-0"></div>
+            </div>
+            <!-- Overflow Warning Message -->
+            <div id="overflow-warning" class="no-print text-center text-red-600 font-bold mt-2 hidden">
+                Warning: Content may print on more than one page. Try reducing font size or removing an element.
             </div>
         </div>
     </div>
@@ -320,6 +331,27 @@
     }
 
     /**
+     * Checks if the content in the preview pane is overflowing and updates UI accordingly.
+     */
+    function checkLayoutOverflow() {
+        // Use a short timeout to allow the browser to render before we measure.
+        setTimeout(() => {
+            const previewPane = document.getElementById('previewPane');
+            const warningElement = document.getElementById('overflow-warning');
+            
+            // scrollHeight is the total height of content, clientHeight is the visible height of the box
+            if (previewPane.scrollHeight > previewPane.clientHeight) {
+                previewPane.classList.add('overflowing');
+                warningElement.classList.remove('hidden');
+            } else {
+                previewPane.classList.remove('overflowing');
+                warningElement.classList.add('hidden');
+            }
+        }, 50); // 50ms delay is usually enough for rendering
+    }
+
+
+    /**
      * Updates the entire preview pane based on the current values in the control inputs.
      */
     function updatePreview() {
@@ -349,7 +381,6 @@
             const iconElement = document.createElement('i');
             iconElement.setAttribute('data-lucide', selectedIconName);
             
-            // Special styling for some icons
             if(selectedIconName === 'octagon-alert' || selectedIconName === 'ban') {
                  iconElement.classList.add('text-red-600');
             }
@@ -390,6 +421,9 @@
         footerPreview.style.fontFamily = document.getElementById('footerFontFamily').value;
         footerPreview.style.fontSize = document.getElementById('footerFontSize').value + 'px';
         footerPreview.style.textAlign = document.getElementById('footerTextAlign').value;
+
+        // --- Check for overflow ---
+        checkLayoutOverflow();
     }
 
     // --- Initial Setup ---
