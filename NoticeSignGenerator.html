@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Custom styles for the application */
         body {
@@ -75,8 +77,7 @@
                 <div>
                     <label for="signLogoSelector" class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
                     <select id="signLogoSelector" onchange="updatePreview()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        <!-- FIXED: Updated the CRAC logo URL as per user request -->
-                        <option value="https://clarencevalley.admin.opencities.com/files/7e5544c3-9b09-40bf-be11-70d0dbd36b19/CRAC-Large-Wordmark.png" selected>Clarence Regional Aquatic Centre</option>
+                        <option value="https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/98325202cc3f831a80e250d16d0c56168515c40a/CRAC%20Large%20Wordmark2.png" selected>Clarence Regional Aquatic Centre</option>
                         <option value="https://placehold.co/400x100/EFEFEF/1D1D1D?text=YCP+Yamba+Community+Pool">YCP Yamba Community Pool</option>
                         <option value="">No Logo</option>
                     </select>
@@ -115,6 +116,21 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- FIXED: Symbol Control using Lucide Icon names -->
+                <div>
+                    <label for="signSymbolSelector" class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
+                    <select id="signSymbolSelector" onchange="updatePreview()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="" selected>No Symbol</option>
+                        <option value="arrow-left">Arrow Left</option>
+                        <option value="arrow-right">Arrow Right</option>
+                        <option value="arrow-up">Arrow Forward (Up)</option>
+                        <option value="camera">Camera</option>
+                        <option value="octagon-alert">Warning / Stop</option>
+                        <option value="ban">No Entry</option>
+                        <option value="info">Information</option>
+                    </select>
                 </div>
 
                 <!-- Content Controls -->
@@ -206,6 +222,8 @@
             <div id="previewPane" class="bg-white flex flex-col">
                 <img id="signLogoPreview" src="#" alt="Sign logo" class="hidden self-center mb-8" style="max-width: 450px; max-height: 150px;" onerror="this.style.display='none';">
                 <div id="signTitlePreview" class="break-words font-bold mb-8"></div>
+                <!-- Symbol Preview Container -->
+                <div id="signSymbolPreview" class="self-center my-6"></div>
                 <img id="signImagePreview" src="#" alt="Sign image" class="hidden self-center my-4" style="max-width: 100%; max-height: 200px;" onerror="this.style.display='none';">
                 <div id="signContentPreview" class="break-words flex-grow"></div>
                 <div id="signFooterPreview" class="break-words mt-auto pt-5 border-t border-gray-200"></div>
@@ -226,7 +244,7 @@
         reader.onload = function(e) {
             imageDataUrl = e.target.result;
             updatePreview();
-        }
+        };
         if (event.target.files && event.target.files[0]) {
             reader.readAsDataURL(event.target.files[0]);
         } else {
@@ -323,6 +341,29 @@
         titlePreview.style.color = document.getElementById('titleColor').value;
         titlePreview.style.textAlign = document.getElementById('titleTextAlign').value;
 
+        // --- Symbol (using Lucide) ---
+        const symbolPreview = document.getElementById('signSymbolPreview');
+        const selectedIconName = document.getElementById('signSymbolSelector').value;
+        symbolPreview.innerHTML = ''; // Clear previous symbol
+        if (selectedIconName) {
+            const iconElement = document.createElement('i');
+            iconElement.setAttribute('data-lucide', selectedIconName);
+            
+            // Special styling for some icons
+            if(selectedIconName === 'octagon-alert' || selectedIconName === 'ban') {
+                 iconElement.classList.add('text-red-600');
+            }
+            
+            symbolPreview.appendChild(iconElement);
+            lucide.createIcons({
+                attrs: {
+                    'stroke-width': 1.5,
+                    width: 100,
+                    height: 100,
+                },
+            });
+        }
+
         // --- Content ---
         const contentPreview = document.getElementById('signContentPreview');
         const contentText = document.getElementById('signContentInput').value;
@@ -361,6 +402,8 @@
             "you all back in spring!";
         // Initial call to render the preview when the page loads
         updatePreview();
+        // Initialise Lucide icons
+        lucide.createIcons();
     });
 </script>
 
