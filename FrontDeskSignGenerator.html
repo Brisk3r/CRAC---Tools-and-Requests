@@ -27,8 +27,8 @@
         }
         
         #qr-code-container {
-            width: 128px; /* Standard QR code size */
-            height: 128px;
+            width: 256px; /* Standard QR code size */
+            height: 256px;
             margin: 2rem auto 0 auto;
             border: 1px solid #eee;
             padding: 5px;
@@ -146,8 +146,8 @@ For assistance creating your account our friendly customer service team are read
         // Initialize QR Code
         let qrcode = new QRCode(qrcodeContainer, {
             text: "https://clarencevalley.nsw.gov.au", // Default URL
-            width: 128,
-            height: 128,
+            width: 256,
+            height: 256,
             colorDark : "#000000",
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
