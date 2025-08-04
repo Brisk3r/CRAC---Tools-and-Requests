@@ -24,8 +24,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <script type="text/babel">
-        // --- CONFIGURATION: PASTE YOUR GOOGLE SHEET URLs HERE ---
-        const publishedCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRovJAGLxF54AOoXaBqwZaS2UoRRvxePyVPpBkQgbY4cQFRTlKcYLDjVS5pXkeI6O7gje8z0VAYmnjy/pub?output=csv";
+        // --- CONFIGURATION: PASTE YOUR GOOGLE APPS SCRIPT URL HERE ---
         const appsScriptUrl = "https://script.google.com/macros/s/AKfycbzW-S_FhCmMyUZNsqRKRdTEj2jVtbTAZ0bLctLNGPj9L2PNLcruiP-UEy00Bq5pYG5L/exec";
         // ---------------------------------------------------------
 
@@ -177,6 +176,7 @@
             const { useState, useEffect, useMemo } = React;
             const [allTasks, setAllTasks] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
+            const [statusMessage, setStatusMessage] = useState('');
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [selectedTask, setSelectedTask] = useState(null);
             const [newColumnStatus, setNewColumnStatus] = useState(null);
@@ -185,32 +185,21 @@
             const [error, setError] = useState(null);
 
             const fetchTasks = async () => {
-                if (!publishedCsvUrl || publishedCsvUrl.includes("PASTE_YOUR")) { setError("Configuration Error: Please paste your Google Sheet CSV URL."); setIsLoading(false); return; }
+                // Use the Apps Script URL for reading data now
+                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) { setError("Configuration Error: Please paste your Google Apps Script URL."); setIsLoading(false); return; }
                 setIsLoading(true);
+                setStatusMessage('Loading Projects...');
                 try {
-                    const response = await fetch(`${publishedCsvUrl}&_=${new Date().getTime()}`); // Append cache-busting query param
-                    if (!response.ok) throw new Error('Network response was not ok. Check sharing permissions.');
-                    const csvText = await response.text();
-                    const lines = csvText.split(/\r?\n/);
-                    const headers = lines[0].split(',').map(h => h.trim());
-                    const tasks = lines.slice(1).map(line => {
-                        const data = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-                        if (data.length !== headers.length) return null;
-                        const task = headers.reduce((obj, header, i) => {
-                            let value = (data[i] || "").trim();
-                            if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1).replace(/""/g, '"');
-                            obj[header] = value;
-                            return obj;
-                        }, {});
-                        try { task.updates = JSON.parse(task.updates || '[]'); } catch (e) { task.updates = []; }
-                        return task;
-                    }).filter(t => t && t.id);
-                    setAllTasks(tasks);
+                    const response = await fetch(appsScriptUrl);
+                    if (!response.ok) throw new Error('Network response was not ok. Check script deployment and permissions.');
+                    const tasks = await response.json();
+                    setAllTasks(Array.isArray(tasks) ? tasks : []);
                     setError(null);
                 } catch (err) {
                     setError(`Could not fetch tasks: ${err.message}`);
                 } finally {
                     setIsLoading(false);
+                    setStatusMessage('');
                 }
             };
             
@@ -231,7 +220,10 @@
             const handleCloseModal = () => { setIsModalOpen(false); setSelectedTask(null); setNewColumnStatus(null); };
 
             const handleSaveTask = async (taskData) => {
-                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) { alert("Configuration Error: Please paste your Google Apps Script URL."); return; }
+                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) {
+                    alert("Configuration Error: Please paste your Google Apps Script URL.");
+                    return;
+                }
                 const payload = { ...taskData };
                 if (!payload.id) { 
                     payload.status = newColumnStatus; 
@@ -239,12 +231,14 @@
                     payload.assignedTo = currentUser === 'Admin' ? '' : currentUser;
                 }
                 
+                handleCloseModal();
+                setStatusMessage('Syncing with Google Sheets...');
+
                 try {
                     const response = await fetch(appsScriptUrl, {
                         method: 'POST',
                         body: JSON.stringify(payload),
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Use text/plain for simple requests
-                        mode: 'cors', // Explicitly set mode
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     });
                     
                     if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
@@ -252,11 +246,12 @@
                     const result = await response.json();
                     if (result.status !== 'success') throw new Error(result.message);
                     
+                    // On success, refetch the data immediately.
                     await fetchTasks();
                 } catch (err) {
                     setError(`Failed to save task: ${err.message}`);
                 } finally {
-                    handleCloseModal();
+                    setStatusMessage('');
                 }
             };
 
@@ -281,7 +276,7 @@
                         </div>
                     </header>
                     {error && <div className="bg-red-800 border border-red-600 text-white p-4 rounded-lg mb-4">{error}</div>}
-                    {isLoading ? (<div className="flex-grow flex items-center justify-center text-white text-lg"><Loader size={24} className="mr-2"/>Loading Projects...</div>) : (
+                    {isLoading || statusMessage ? (<div className="flex-grow flex items-center justify-center text-white text-lg"><Loader size={24} className="mr-2"/>{statusMessage || 'Loading...'}</div>) : (
                         <main>
                             {view === 'board' ? (<div className="flex flex-col md:flex-row gap-6"><KanbanColumn title="To Do" tasks={columns['To Do']} onAddTask={() => handleOpenModalForNew('To Do')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'To Do')} /><KanbanColumn title="In Progress" tasks={columns['In Progress']} onAddTask={() => handleOpenModalForNew('In Progress')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'In Progress')} /><KanbanColumn title="Completed" tasks={columns['Completed']} onAddTask={() => handleOpenModalForNew('Completed')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'Completed')} /></div>
                             ) : ( <TimelineView tasks={userTasks} onEditTask={handleOpenModalForEdit} /> )}
