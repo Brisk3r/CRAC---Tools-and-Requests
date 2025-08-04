@@ -43,6 +43,7 @@
         const GanttChartSquare = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 8h7"/><path d="M8 12h6"/><path d="M11 16h5"/></Icon>;
         const Calendar = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></Icon>;
         const LogOut = (props) => <Icon {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
+        const Loader = (props) => <Icon {...props} className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></Icon>;
 
         // --- Child Components ---
         const priorityMap = { High: { icon: <ChevronsUp size={16} className="text-red-400"/>, text: 'High', color: 'text-red-400' }, Medium: { icon: <Equal size={16} className="text-yellow-400"/>, text: 'Medium', color: 'text-yellow-400' }, Low: { icon: <ChevronDown size={16} className="text-green-400"/>, text: 'Low', color: 'text-green-400' } };
@@ -57,10 +58,25 @@
             const [startDate, setStartDate] = useState(today);
             const [dueDate, setDueDate] = useState(today);
             const [newUpdate, setNewUpdate] = useState('');
+            const [isSaving, setIsSaving] = useState(false);
 
             useEffect(() => { if (task) { setTitle(task.title || ''); setDescription(task.description || ''); setPriority(task.priority || 'Medium'); setStartDate(task.startDate || today); setDueDate(task.dueDate || today); } }, [task]);
-            const handleSave = () => { onSave({ ...(task || {}), title, description, priority, startDate, dueDate }); };
-            const handleAddUpdate = () => { if (!newUpdate.trim()) return; const update = { text: newUpdate, date: new Date().toISOString() }; onSave({ ...task, updates: [...(task.updates || []), update] }); setNewUpdate(''); };
+            
+            const handleSave = async () => {
+                setIsSaving(true);
+                await onSave({ ...(task || {}), title, description, priority, startDate, dueDate });
+                // No need to set isSaving to false, as the component will unmount.
+            };
+            
+            const handleAddUpdate = async () => {
+                if (!newUpdate.trim()) return;
+                setIsSaving(true);
+                const update = { text: newUpdate, date: new Date().toISOString() };
+                await onSave({ ...task, updates: [...(task.updates || []), update] });
+                setNewUpdate('');
+                // We can keep this one as the modal stays open.
+                setIsSaving(false); 
+            };
 
             return (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -76,8 +92,8 @@
                                 <div><label htmlFor="dueDate" className="block text-sm font-medium text-gray-300 mb-1">Due Date</label><input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /></div>
                             </div>
                         </div>
-                        {task?.id && (<div className="mt-6 pt-4 border-t border-gray-700"><h3 className="text-lg font-semibold text-blue-400 mb-3">Updates</h3><div className="space-y-3 max-h-40 overflow-y-auto pr-2">{task.updates?.sort((a,b) => new Date(b.date) - new Date(a.date)).map((upd, i) => (<div key={i} className="text-sm bg-gray-700/50 p-2 rounded-md"><p className="text-gray-300">{upd.text}</p><p className="text-xs text-gray-500 text-right">{new Date(upd.date).toLocaleString()}</p></div>))}</div><div className="mt-4 flex gap-2"><input type="text" placeholder="Add a new update..." value={newUpdate} onChange={e => setNewUpdate(e.target.value)} className="flex-grow bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><button onClick={handleAddUpdate} className="bg-blue-600 hover:bg-blue-700 font-semibold py-2 px-4 rounded-lg">Add</button></div></div>)}
-                        <div className="flex justify-end pt-6"><button onClick={handleSave} className="bg-green-600 hover:bg-green-700 font-bold py-2 px-6 rounded-lg">{task?.id ? 'Save Changes' : 'Create Task'}</button></div>
+                        {task?.id && (<div className="mt-6 pt-4 border-t border-gray-700"><h3 className="text-lg font-semibold text-blue-400 mb-3">Updates</h3><div className="space-y-3 max-h-40 overflow-y-auto pr-2">{task.updates?.sort((a,b) => new Date(b.date) - new Date(a.date)).map((upd, i) => (<div key={i} className="text-sm bg-gray-700/50 p-2 rounded-md"><p className="text-gray-300">{upd.text}</p><p className="text-xs text-gray-500 text-right">{new Date(upd.date).toLocaleString()}</p></div>))}</div><div className="mt-4 flex gap-2"><input type="text" placeholder="Add a new update..." value={newUpdate} onChange={e => setNewUpdate(e.target.value)} className="flex-grow bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><button onClick={handleAddUpdate} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center w-24">{isSaving ? <Loader size={16}/> : 'Add'}</button></div></div>)}
+                        <div className="flex justify-end pt-6"><button onClick={handleSave} disabled={isSaving} className="bg-green-600 hover:bg-green-700 font-bold py-2 px-6 rounded-lg flex items-center justify-center w-40">{isSaving ? <Loader size={20}/> : (task?.id ? 'Save Changes' : 'Create Task')}</button></div>
                     </div>
                 </div>
             );
@@ -94,7 +110,7 @@
 
             return (
                 <div draggable onDragStart={handleDragStart} onClick={() => onEdit(task)} className="bg-gray-800 p-3 rounded-lg shadow-md cursor-pointer hover:bg-gray-700/50 transition-colors border-l-4 border-gray-800 hover:border-blue-500">
-                    <p className="font-bold text-gray-200 mb-2">{task.title}</p>
+                    <div className="flex justify-between items-start"><p className="font-bold text-gray-200 mb-2 pr-2">{task.title}</p>{task.assignedTo && <span className="text-xs bg-gray-700 text-blue-300 font-semibold px-2 py-0.5 rounded-full shrink-0">{task.assignedTo}</span>}</div>
                     <div className="flex justify-between items-center text-xs">
                         <div className={`flex items-center gap-1.5 font-semibold ${priority.color}`}>{priority.icon} {priority.text}</div>
                         {task.dueDate && <div className={`flex items-center gap-1.5 font-semibold ${dateColor}`}><Calendar size={14}/> {new Date(task.dueDate).toLocaleDateString('en-AU', {day:'numeric', month:'short'})}</div>}
@@ -170,33 +186,34 @@
             const [currentUser, setCurrentUser] = useState(localStorage.getItem('project-tracker-user'));
             const [error, setError] = useState(null);
 
-            const fetchTasks = () => {
-                if (!publishedCsvUrl || publishedCsvUrl === "PASTE_YOUR_PUBLISHED_CSV_URL_HERE") { setError("Configuration Error: Please paste your Google Sheet CSV URL."); setIsLoading(false); return; }
+            const fetchTasks = async () => {
+                if (!publishedCsvUrl || publishedCsvUrl.includes("PASTE_YOUR")) { setError("Configuration Error: Please paste your Google Sheet CSV URL."); setIsLoading(false); return; }
                 setIsLoading(true);
-                fetch(publishedCsvUrl)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network response was not ok');
-                        return response.text();
-                    })
-                    .then(csvText => {
-                        const lines = csvText.split(/\r?\n/);
-                        const headers = lines[0].split(',');
-                        const tasks = lines.slice(1).map(line => {
-                            const data = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-                            const task = headers.reduce((obj, header, i) => {
-                                let value = data[i] || "";
-                                if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-                                obj[header.trim()] = value;
-                                return obj;
-                            }, {});
-                            try { task.updates = JSON.parse(task.updates || '[]'); } catch (e) { task.updates = []; }
-                            return task;
-                        }).filter(t => t.id);
-                        setAllTasks(tasks);
-                        setError(null);
-                    })
-                    .catch(err => setError("Could not fetch tasks. Check the CSV URL and sheet permissions."))
-                    .finally(() => setIsLoading(false));
+                try {
+                    const response = await fetch(`${publishedCsvUrl}&_=${new Date().getTime()}`); // Append cache-busting query param
+                    if (!response.ok) throw new Error('Network response was not ok. Check sharing permissions.');
+                    const csvText = await response.text();
+                    const lines = csvText.split(/\r?\n/);
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const tasks = lines.slice(1).map(line => {
+                        const data = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                        if (data.length !== headers.length) return null;
+                        const task = headers.reduce((obj, header, i) => {
+                            let value = (data[i] || "").trim();
+                            if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1).replace(/""/g, '"');
+                            obj[header] = value;
+                            return obj;
+                        }, {});
+                        try { task.updates = JSON.parse(task.updates || '[]'); } catch (e) { task.updates = []; }
+                        return task;
+                    }).filter(t => t && t.id);
+                    setAllTasks(tasks);
+                    setError(null);
+                } catch (err) {
+                    setError(`Could not fetch tasks: ${err.message}`);
+                } finally {
+                    setIsLoading(false);
+                }
             };
             
             useEffect(() => { fetchTasks(); }, []);
@@ -216,7 +233,7 @@
             const handleCloseModal = () => { setIsModalOpen(false); setSelectedTask(null); setNewColumnStatus(null); };
 
             const handleSaveTask = async (taskData) => {
-                if (!appsScriptUrl || appsScriptUrl === "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE") { alert("Configuration Error: Please paste your Google Apps Script URL."); return; }
+                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) { alert("Configuration Error: Please paste your Google Apps Script URL."); return; }
                 const payload = { ...taskData };
                 if (!payload.id) { 
                     payload.status = newColumnStatus; 
@@ -224,19 +241,24 @@
                     payload.assignedTo = currentUser === 'Admin' ? '' : currentUser;
                 }
                 
-                setIsLoading(true);
-                fetch(appsScriptUrl, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' }) // mode: 'no-cors' for simple POST
-                    .then(() => {
-                        // Optimistically update UI while waiting for sheet to refresh
-                        if (payload.id) {
-                            setAllTasks(prev => prev.map(t => t.id === payload.id ? payload : t));
-                        } else {
-                            // Can't know new ID yet, so we just trigger a refetch
-                        }
-                        setTimeout(fetchTasks, 2000); // Refetch after a delay
-                    })
-                    .catch(err => setError(`Failed to save task: ${err.message}`))
-                    .finally(() => { setIsLoading(false); handleCloseModal(); });
+                try {
+                    const response = await fetch(appsScriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                    
+                    if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                    
+                    const result = await response.json();
+                    if (result.status !== 'success') throw new Error(result.message);
+                    
+                    await fetchTasks();
+                } catch (err) {
+                    setError(`Failed to save task: ${err.message}`);
+                } finally {
+                    handleCloseModal();
+                }
             };
 
             const handleDrop = (taskId, newStatus) => {
@@ -260,7 +282,7 @@
                         </div>
                     </header>
                     {error && <div className="bg-red-800 border border-red-600 text-white p-4 rounded-lg mb-4">{error}</div>}
-                    {isLoading ? (<div className="flex-grow flex items-center justify-center text-white"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div></div>) : (
+                    {isLoading ? (<div className="flex-grow flex items-center justify-center text-white text-lg"><Loader size={24} className="mr-2"/>Loading Projects...</div>) : (
                         <main>
                             {view === 'board' ? (<div className="flex flex-col md:flex-row gap-6"><KanbanColumn title="To Do" tasks={columns['To Do']} onAddTask={() => handleOpenModalForNew('To Do')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'To Do')} /><KanbanColumn title="In Progress" tasks={columns['In Progress']} onAddTask={() => handleOpenModalForNew('In Progress')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'In Progress')} /><KanbanColumn title="Completed" tasks={columns['Completed']} onAddTask={() => handleOpenModalForNew('Completed')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'Completed')} /></div>
                             ) : ( <TimelineView tasks={userTasks} onEditTask={handleOpenModalForEdit} /> )}
