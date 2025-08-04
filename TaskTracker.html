@@ -184,24 +184,26 @@
             const [currentUser, setCurrentUser] = useState(localStorage.getItem('project-tracker-user'));
             const [error, setError] = useState(null);
 
-            const fetchTasks = async () => {
-                // Use the Apps Script URL for reading data now
-                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) { setError("Configuration Error: Please paste your Google Apps Script URL."); setIsLoading(false); return; }
-                setIsLoading(true);
-                setStatusMessage('Loading Projects...');
-                try {
-                    const response = await fetch(appsScriptUrl);
-                    if (!response.ok) throw new Error('Network response was not ok. Check script deployment and permissions.');
-                    const tasks = await response.json();
-                    setAllTasks(Array.isArray(tasks) ? tasks : []);
-                    setError(null);
-                } catch (err) {
-                    setError(`Could not fetch tasks: ${err.message}`);
-                } finally {
-                    setIsLoading(false);
-                    setStatusMessage('');
-                }
-            };
+const fetchTasks = async () => {
+  if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) {
+    setError("Configuration Error: Please paste your Google Apps Script URL.");
+    setIsLoading(false);
+    return;
+  }
+  setIsLoading(true);
+  try {
+    // Fetch tasks via GET request to Apps Script
+    const response = await fetch(appsScriptUrl, { method: 'GET', mode: 'cors' });
+    if (!response.ok) throw new Error('Network response was not ok. Check sharing permissions.');
+    const tasks = await response.json();
+    setAllTasks(Array.isArray(tasks) ? tasks.filter(t => t.id) : []);
+    setError(null);
+  } catch (err) {
+    setError(`Could not fetch tasks: ${err.message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
             
             useEffect(() => { fetchTasks(); }, []);
 
