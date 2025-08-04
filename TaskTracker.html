@@ -65,7 +65,6 @@
             const handleSave = async () => {
                 setIsSaving(true);
                 await onSave({ ...(task || {}), title, description, priority, startDate, dueDate });
-                // No need to set isSaving to false, as the component will unmount.
             };
             
             const handleAddUpdate = async () => {
@@ -74,7 +73,6 @@
                 const update = { text: newUpdate, date: new Date().toISOString() };
                 await onSave({ ...task, updates: [...(task.updates || []), update] });
                 setNewUpdate('');
-                // We can keep this one as the modal stays open.
                 setIsSaving(false); 
             };
 
@@ -245,7 +243,8 @@
                     const response = await fetch(appsScriptUrl, {
                         method: 'POST',
                         body: JSON.stringify(payload),
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Use text/plain for simple requests
+                        mode: 'cors', // Explicitly set mode
                     });
                     
                     if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
