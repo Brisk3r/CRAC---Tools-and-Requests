@@ -11,6 +11,16 @@
         .timeline-scroll::-webkit-scrollbar { height: 8px; }
         .timeline-scroll::-webkit-scrollbar-track { background: #374151; }
         .timeline-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            cursor: ew-resize;
+            z-index: 10;
+        }
+        .resize-handle-left { left: -5px; }
+        .resize-handle-right { right: -5px; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,9 +33,22 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- Firebase Libraries (v9 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
     <script type="text/babel">
-        // --- CONFIGURATION: PASTE YOUR GOOGLE APPS SCRIPT DEPLOYMENT URL HERE ---
-        const appsScriptUrl = "https://script.google.com/macros/s/AKfycbzY5bZr79VQ_OzU2lBBxzT3ss574QmSxWJkLIm5_FrZSj8V_MQXXyNuTXnZxhPGHIQO/exec";
+        // --- CONFIGURATION: Your Firebase config object ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+          authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+          projectId: "opsf---comms-task-tracker",
+          storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
+          messagingSenderId: "489224390639",
+          appId: "1:489224390639:web:54b9f2772aaef86d32581a",
+          measurementId: "G-PE0JBKHX9W"
+        };
         // ---------------------------------------------------------
 
         // --- Icon Components ---
@@ -34,24 +57,22 @@
         const X = (props) => <Icon {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>;
         const MessageSquare = (props) => <Icon {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
         const ChevronsUp = (props) => <Icon {...props}><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></Icon>;
+        const ChevronDown = (props) => <Icon {...props}><path d="m6 9 6 6 6-6"/></Icon>;
+        const ChevronLeft = (props) => <Icon {...props}><path d="m15 18-6-6 6-6"/></Icon>;
+        const ChevronRight = (props) => <Icon {...props}><path d="m9 18 6-6-6-6"/></Icon>;
         const Equal = (props) => <Icon {...props}><line x1="5" x2="19" y1="9" y2="9"/><line x1="5" x2="19" y1="15" y2="15"/></Icon>;
+        const LayoutGrid = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="3" rx="2"/><rect width="7" height="7" x="3" y="3" rx="0"/><rect width="7" height="7" x="14" y="3" rx="0"/><rect width="7" height="7" x="14" y="14" rx="0"/><rect width="7" height="7" x="3" y="14" rx="0"/></Icon>;
+        const GanttChartSquare = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 8h7"/><path d="M8 12h6"/><path d="M11 16h5"/></Icon>;
         const Calendar = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></Icon>;
         const LogOut = (props) => <Icon {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
         const Loader = (props) => <Icon {...props} className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></Icon>;
+        const Trash2 = (props) => <Icon {...props}><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
 
         // --- Child Components ---
-        const priorityMap = {
-            High: { icon: <ChevronsUp size={16} className="text-red-400"/>, text: 'High', color: 'text-red-400' },
-            Medium: { icon: <Equal size={16} className="text-yellow-400"/>, text: 'Medium', color: 'text-yellow-400' },
-            Low: { icon: <Equal size={16} className="text-green-400"/>, text: 'Low', color: 'text-green-400' }
-        };
-        const statusMap = {
-            'To Do': { color: 'bg-red-500', borderColor: 'border-red-500' },
-            'In Progress': { color: 'bg-yellow-500', borderColor: 'border-yellow-500' },
-            'Completed': { color: 'bg-green-500', borderColor: 'border-green-500' }
-        };
+        const priorityMap = { High: { icon: <ChevronsUp size={16} className="text-red-400"/>, text: 'High', color: 'text-red-400' }, Medium: { icon: <Equal size={16} className="text-yellow-400"/>, text: 'Medium', color: 'text-yellow-400' }, Low: { icon: <ChevronDown size={16} className="text-green-400"/>, text: 'Low', color: 'text-green-400' } };
+        const statusMap = { 'To Do': { color: 'bg-red-500', borderColor: 'border-red-500' }, 'In Progress': { color: 'bg-yellow-500', borderColor: 'border-yellow-500' }, 'Completed': { color: 'bg-green-500', borderColor: 'border-green-500' } };
 
-        const TaskModal = ({ task, onClose, onSave }) => {
+        const TaskModal = ({ task, onClose, onSave, onDelete }) => {
             const { useState, useEffect } = React;
             const today = new Date().toISOString().split('T')[0];
             const [title, setTitle] = useState('');
@@ -62,91 +83,67 @@
             const [newUpdate, setNewUpdate] = useState('');
             const [isSaving, setIsSaving] = useState(false);
 
-            useEffect(() => {
-                if (task) {
-                    setTitle(task.title || '');
-                    setDescription(task.description || '');
-                    setPriority(task.priority || 'Medium');
-                    setStartDate(task.startDate || today);
-                    setDueDate(task.dueDate || today);
-                } else {
-                    setTitle('');
-                    setDescription('');
-                    setPriority('Medium');
-                    setStartDate(today);
-                    setDueDate(today);
-                }
-            }, [task, today]);
-
+            useEffect(() => { if (task) { setTitle(task.title || ''); setDescription(task.description || ''); setPriority(task.priority || 'Medium'); setStartDate(task.startDate || today); setDueDate(task.dueDate || today); } }, [task]);
+            
             const handleSave = async () => {
                 setIsSaving(true);
-                await onSave({ ...(task || {}), title, description, priority, startDate, dueDate });
+                await onSave({ ...(task || {}), title, description, priority, startDate, dueDate }, true);
             };
-
+            
             const handleAddUpdate = async () => {
                 if (!newUpdate.trim()) return;
                 setIsSaving(true);
                 const update = { text: newUpdate, date: new Date().toISOString() };
-                await onSave({ ...task, updates: [...(task.updates || []), update] });
+                await onSave({ ...task, updates: [...(task.updates || []), update] }, false);
                 setNewUpdate('');
                 setIsSaving(false); 
             };
 
+            const handleDelete = () => {
+                if (window.confirm("Are you sure you want to permanently delete this task?")) {
+                    onDelete(task.id);
+                }
+            };
+            
+            const renderUpdateText = (text) => {
+                const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+                return text.split(urlRegex).map((part, i) => {
+                    if (part.match(urlRegex)) {
+                        const href = part.startsWith('www.') ? `http://${part}` : part;
+                        return <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{part}</a>;
+                    }
+                    return part;
+                });
+            };
+
             return (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-2xl relative">
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={24} /></button>
-                        <h2 className="text-2xl font-bold mb-6">{task?.id ? 'Edit Task' : 'Create New Task'}</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">Title</label>
-                                <input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white" />
-                            </div>
-                            <div>
-                                <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">Description</label>
-                                <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label htmlFor="priority" className="block text-sm font-medium text-gray-300 mb-1">Priority</label>
-                                    <select id="priority" value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white">
-                                        <option>Low</option>
-                                        <option>Medium</option>
-                                        <option>High</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
-                                    <input id="startDate" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white" />
-                                </div>
-                                <div>
-                                    <label htmlFor="dueDate" className="block text-sm font-medium text-gray-300 mb-1">Due Date</label>
-                                    <input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white" />
+                    <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl relative flex flex-col h-[90vh] max-h-[700px]">
+                        <header className="p-8 pb-6 border-b border-gray-700">
+                            <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={24} /></button>
+                            <h2 className="text-2xl font-bold">{task?.id ? 'Edit Task' : 'Create New Task'}</h2>
+                        </header>
+                        
+                        <div className="p-8 overflow-y-auto flex-grow">
+                            <div className="space-y-4">
+                                <div><label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">Title</label><input id="title" type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /></div>
+                                <div><label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">Description</label><textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows="3" className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500"></textarea></div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div><label htmlFor="priority" className="block text-sm font-medium text-gray-300 mb-1">Priority</label><select id="priority" value={priority} onChange={e => setPriority(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500"><option>Low</option><option>Medium</option><option>High</option></select></div>
+                                    <div><label htmlFor="startDate" className="block text-sm font-medium text-gray-300 mb-1">Start Date</label><input id="startDate" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /></div>
+                                    <div><label htmlFor="dueDate" className="block text-sm font-medium text-gray-300 mb-1">Due Date</label><input id="dueDate" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /></div>
                                 </div>
                             </div>
+                            {task?.id && (<div className="mt-6 pt-4 border-t border-gray-700"><h3 className="text-lg font-semibold text-blue-400 mb-3">Updates</h3><div className="space-y-3">{task.updates?.sort((a,b) => new Date(b.date) - new Date(a.date)).map((upd, i) => (<div key={i} className="text-sm bg-gray-700/50 p-2 rounded-md"><p className="text-gray-300 whitespace-pre-wrap">{renderUpdateText(upd.text)}</p><p className="text-xs text-gray-500 text-right">{new Date(upd.date).toLocaleString()}</p></div>))}</div><div className="mt-4 flex gap-2"><input type="text" placeholder="Add a new update..." value={newUpdate} onChange={e => setNewUpdate(e.target.value)} className="flex-grow bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><button onClick={handleAddUpdate} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center w-24">{isSaving ? <Loader size={16}/> : 'Add'}</button></div></div>)}
                         </div>
-                        {task?.id && (
-                            <div className="mt-6 pt-4 border-t border-gray-700">
-                                <h3 className="text-lg font-semibold text-blue-400 mb-3">Updates</h3>
-                                <div className="space-y-3 max-h-40 overflow-y-auto">
-                                    {(task.updates || []).map((update, idx) => (
-                                        <div key={idx} className="bg-gray-700 p-2 rounded-md text-sm flex flex-col">
-                                            <span>{update.text}</span>
-                                            <span className="text-xs text-gray-400">{new Date(update.date).toLocaleString()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-2 mt-3">
-                                    <input type="text" className="flex-grow px-3 py-2 rounded-lg bg-gray-700 text-white" value={newUpdate} onChange={e => setNewUpdate(e.target.value)} placeholder="Add update..." />
-                                    <button onClick={handleAddUpdate} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-3 rounded-lg">{isSaving ? 'Saving...' : 'Add'}</button>
-                                </div>
+
+                        <footer className="p-8 pt-6 border-t border-gray-700">
+                            <div className="flex justify-between items-center">
+                                {task?.id && <button onClick={handleDelete} className="flex items-center gap-2 bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"><Trash2 size={16}/> Delete Task</button>}
+                                <div className="flex-grow"></div>
+                                <button onClick={handleSave} disabled={isSaving} className="bg-green-600 hover:bg-green-700 font-bold py-2 px-6 rounded-lg flex items-center justify-center w-40">{isSaving ? <Loader size={20}/> : (task?.id ? 'Save Changes' : 'Create Task')}</button>
                             </div>
-                        )}
-                        <div className="flex justify-end pt-6">
-                            <button onClick={handleSave} disabled={isSaving} className="bg-green-600 hover:bg-green-700 font-bold py-2 px-6 rounded-lg flex items-center gap-2">
-                                {isSaving && <Loader size={20}/>} {task?.id ? 'Save Changes' : 'Create Task'}
-                            </button>
-                        </div>
+                        </footer>
                     </div>
                 </div>
             );
@@ -162,20 +159,11 @@
             const dateColor = isOverdue ? 'text-red-400' : isDueSoon ? 'text-yellow-400' : 'text-gray-400';
 
             return (
-                <div draggable onDragStart={handleDragStart} onClick={() => onEdit(task)} className="bg-gray-800 p-3 rounded-lg shadow-md cursor-pointer hover:bg-gray-700/50 transition-colors border-l-4 mb-2" style={{ borderColor: statusMap[task.status]?.color }}>
-                    <div className="flex justify-between items-start">
-                        <p className="font-bold text-gray-200 mb-2 pr-2">{task.title}</p>
-                        {task.assignedTo && <span className="text-xs bg-gray-700 text-blue-300 font-bold px-2 py-1 rounded-lg">{task.assignedTo}</span>}
-                    </div>
+                <div draggable onDragStart={handleDragStart} onClick={() => onEdit(task)} className="bg-gray-800 p-3 rounded-lg shadow-md cursor-pointer hover:bg-gray-700/50 transition-colors border-l-4 border-gray-800 hover:border-blue-500">
+                    <div className="flex justify-between items-start"><p className="font-bold text-gray-200 mb-2 pr-2">{task.title}</p>{task.assignedTo && <span className="text-xs bg-gray-700 text-blue-300 font-semibold px-2 py-0.5 rounded-full shrink-0">{task.assignedTo}</span>}</div>
                     <div className="flex justify-between items-center text-xs">
-                        <div className={`flex items-center gap-1.5 font-semibold ${priority.color}`}>
-                            {priority.icon} {priority.text}
-                        </div>
-                        {task.dueDate && (
-                            <div className={`flex items-center gap-1.5 font-semibold ${dateColor}`}>
-                                <Calendar size={14}/> {new Date(task.dueDate).toLocaleDateString('en-AU', {day:'numeric', month:'short'})}
-                            </div>
-                        )}
+                        <div className={`flex items-center gap-1.5 font-semibold ${priority.color}`}>{priority.icon} {priority.text}</div>
+                        {task.dueDate && <div className={`flex items-center gap-1.5 font-semibold ${dateColor}`}><Calendar size={14}/> {new Date(task.dueDate).toLocaleDateString('en-AU', {day:'numeric', month:'short'})}</div>}
                         <div className="flex items-center gap-1.5 text-gray-400"><MessageSquare size={14}/> {task.updates?.length || 0}</div>
                     </div>
                 </div>
@@ -190,79 +178,80 @@
 
             return (
                 <div className={`bg-gray-800/50 rounded-xl flex-1 transition-all ${isDragOver ? 'bg-blue-900/50' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
-                    <div className={`flex items-center justify-between p-4 border-b-2 ${statusMap[title].borderColor}`}>
-                        <h2 className="text-lg font-bold text-white">{title}</h2>
-                        <span className="text-xs text-gray-300 font-semibold">{tasks.length} tasks</span>
-                    </div>
-                    <div className="p-4 space-y-3 kanban-column">
-                        {tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} />)}
-                        <button onClick={onAddTask} className="w-full flex items-center gap-2 mt-2 p-2 rounded-md bg-blue-700 hover:bg-blue-800 text-white font-bold">
-                            <Plus size={18}/> Add Task
-                        </button>
-                    </div>
+                    <div className={`flex items-center justify-between p-4 border-b-2 ${statusMap[title].borderColor}`}><h2 className="text-lg font-bold text-white">{title}</h2><span className="text-sm font-bold bg-gray-700 text-gray-300 rounded-full px-2 py-0.5">{tasks.length}</span></div>
+                    <div className="p-4 space-y-3 kanban-column">{tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} />)}<button onClick={onAddTask} className="w-full flex items-center justify-center gap-2 text-sm p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><Plus size={16}/> Add Task</button></div>
                 </div>
             );
         };
 
-        const TimelineView = ({ tasks, onEditTask }) => {
-            const { useState, useMemo } = React;
+        const TimelineView = ({ tasks, onEditTask, onSaveTask }) => {
+            const { useState, useMemo, useRef, useEffect } = React;
             const [startDate, setStartDate] = useState(new Date());
+            const [resizingTask, setResizingTask] = useState(null);
+            const dayRef = useRef(null);
+
             const timeDiff = (d1, d2) => (new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24);
-            const dates = useMemo(() => {
-                const start = new Date(startDate); start.setDate(start.getDate() - start.getDay());
-                return Array.from({ length: 28 }).map((_, i) => {
-                    const d = new Date(start); d.setDate(start.getDate() + i);
-                    return d;
-                });
-            }, [startDate]);
-            const changeWeek = (offset) => setStartDate(prev => {
-                const d = new Date(prev);
-                d.setDate(d.getDate() + (7 * offset));
-                return d;
-            });
+            const dates = useMemo(() => { const start = new Date(startDate); start.setDate(start.getDate() - start.getDay()); return Array.from({ length: 28 }).map((_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; }); }, [startDate]);
+            const changeWeek = (offset) => setStartDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + (7 * offset)); return d; });
+
+            const handleMouseDown = (e, task, handle) => {
+                e.stopPropagation();
+                setResizingTask({ id: task.id, handle, startX: e.clientX, originalTask: task });
+            };
+
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    if (!resizingTask || !dayRef.current) return;
+                    // Live visual update logic could go here if desired
+                };
+
+                const handleMouseUp = (e) => {
+                    if (!resizingTask || !dayRef.current) return;
+                    const dayWidth = dayRef.current.offsetWidth;
+                    const dx = e.clientX - resizingTask.startX;
+                    const dayDelta = Math.round(dx / dayWidth);
+                    
+                    const { originalTask, handle } = resizingTask;
+                    const finalTask = { ...originalTask };
+
+                    if (handle === 'start') {
+                        const newDate = new Date(originalTask.startDate);
+                        newDate.setDate(newDate.getDate() + dayDelta);
+                        finalTask.startDate = newDate.toISOString().split('T')[0];
+                    } else {
+                        const newDate = new Date(originalTask.dueDate);
+                        newDate.setDate(newDate.getDate() + dayDelta);
+                        finalTask.dueDate = newDate.toISOString().split('T')[0];
+                    }
+                    onSaveTask(finalTask, false);
+                    setResizingTask(null);
+                };
+
+                window.addEventListener('mousemove', handleMouseMove);
+                window.addEventListener('mouseup', handleMouseUp);
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [resizingTask, tasks]);
 
             return (
                 <div className="bg-gray-800/50 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold text-white">Project Timeline</h2>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => changeWeek(-1)} className="bg-gray-700 rounded-lg px-2 py-1">&lt; Prev</button>
-                            <button onClick={() => changeWeek(1)} className="bg-gray-700 rounded-lg px-2 py-1">Next &gt;</button>
-                        </div>
-                    </div>
-                    <div className="overflow-x-auto timeline-scroll">
-                        <div className="grid gap-2 min-w-[1200px]" style={{gridTemplateColumns: `150px repeat(${dates.length}, 1fr)`}}>
-                            <div className="sticky left-0 bg-gray-900 text-gray-400 font-bold py-2 px-2">Tasks</div>
-                            {dates.map((d, i) => (
-                                <div key={i} className="text-xs text-gray-400 px-2 py-2 text-center">{d.toLocaleDateString('en-AU', {day:'numeric', month:'short'})}</div>
-                            ))}
-                            {tasks.map((task, taskIndex) => {
-                                if (!task.startDate || !task.dueDate) return null;
-                                const taskStart = new Date(task.startDate); const taskEnd = new Date(task.dueDate);
-                                const gridColumnStart = Math.floor(timeDiff(taskStart, dates[0])) + 2;
-                                const duration = Math.ceil(timeDiff(taskEnd, taskStart)) + 1;
-                                if (gridColumnStart > dates.length || (gridColumnStart + duration) < 2) return null;
-                                return (
-                                    <React.Fragment key={task.id}>
-                                        <div className="sticky left-0 bg-gray-800/50 text-sm font-semibold text-gray-300 p-2 truncate flex items-center" style={{gridRow: taskIndex+2, gridColumn: "1 / span 1"}}>
-                                            <span className="cursor-pointer underline" onClick={() => onEditTask(task)}>{task.title}</span>
-                                        </div>
-                                        <div className="rounded-lg bg-blue-700 text-white font-bold flex items-center justify-center"
-                                             style={{
-                                                 gridRow: taskIndex+2,
-                                                 gridColumn: `${Math.max(2, gridColumnStart)} / span ${Math.max(1, Math.min(duration, dates.length-gridColumnStart+2))}`
-                                             }}>
-                                            {task.assignedTo}
-                                        </div>
-                                    </React.Fragment>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold text-white">Project Timeline</h2><div className="flex items-center gap-2"><button onClick={() => changeWeek(-1)} className="p-2 rounded-md hover:bg-gray-700"><ChevronLeft size={20} /></button><span className="font-semibold text-blue-400 w-48 text-center">{dates[0].toLocaleDateString('en-AU', {month:'long', year:'numeric'})}</span><button onClick={() => changeWeek(1)} className="p-2 rounded-md hover:bg-gray-700"><ChevronRight size={20} /></button></div></div>
+                    <div className="overflow-x-auto timeline-scroll"><div className="grid gap-2 min-w-[1200px]" style={{gridTemplateColumns: `150px repeat(${dates.length}, 1fr)`}}><div className="sticky left-0 bg-gray-800/50"></div>{dates.map((date, i) => <div key={i} ref={i === 0 ? dayRef : null} className="text-center border-r border-gray-700 pr-1"><p className="text-xs text-gray-400">{date.toLocaleDateString('en-AU', {weekday: 'short'})}</p><p className="font-bold text-lg">{date.getDate()}</p></div>)}
+                        {tasks.map((task, taskIndex) => {
+                            if (!task.startDate || !task.dueDate) return null;
+                            const taskStart = new Date(task.startDate); const taskEnd = new Date(task.dueDate);
+                            const gridColumnStart = Math.floor(timeDiff(taskStart, dates[0])) + 2;
+                            const duration = Math.ceil(timeDiff(taskEnd, taskStart)) + 1;
+                            if (gridColumnStart > dates.length || (gridColumnStart + duration) < 2) return null;
+                            return (<React.Fragment key={task.id}><div className="sticky left-0 bg-gray-800/50 text-sm font-semibold text-gray-300 p-2 truncate flex items-center" style={{gridRow: taskIndex + 2}}>{task.title}</div><div onClick={() => onEditTask(task)} className={`h-10 p-2 rounded-lg cursor-pointer flex items-center relative ${statusMap[task.status].borderColor} border-2`} style={{ gridColumn: `${gridColumnStart} / span ${duration}`, gridRow: taskIndex + 2, backgroundColor: statusMap[task.status].color + '4D' }}><div className="resize-handle resize-handle-left" onMouseDown={(e) => handleMouseDown(e, task, 'start')}></div><p className="text-sm font-bold text-white truncate">{task.title}</p><div className="resize-handle resize-handle-right" onMouseDown={(e) => handleMouseDown(e, task, 'end')}></div></div></React.Fragment>);
+                        })}
+                    </div></div>
                 </div>
             )
         };
-
+        
         const LoginScreen = ({ onLogin }) => {
             const [name, setName] = React.useState('');
             const handleSubmit = (e) => { e.preventDefault(); if (name.trim()) onLogin(name.trim()); };
@@ -271,10 +260,7 @@
                     <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-sm">
                         <h1 className="text-2xl font-bold text-white text-center mb-6">Project Tracker</h1>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
-                                <input id="name" type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-gray-700 text-white" />
-                            </div>
+                            <div><label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">Your Name</label><input id="name" type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" placeholder="e.g., Avi or Admin" /></div>
                             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-lg">View Projects</button>
                         </form>
                     </div>
@@ -285,6 +271,7 @@
         // --- Main App Component ---
         const App = () => {
             const { useState, useEffect, useMemo } = React;
+            const [db, setDb] = useState(null);
             const [allTasks, setAllTasks] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
             const [isModalOpen, setIsModalOpen] = useState(false);
@@ -294,39 +281,44 @@
             const [currentUser, setCurrentUser] = useState(localStorage.getItem('project-tracker-user'));
             const [error, setError] = useState(null);
 
-            // Fetch tasks from Apps Script endpoint
-            const fetchTasks = async () => {
-                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) {
-                    setError("Configuration Error: Please paste your Google Apps Script URL.");
+            useEffect(() => {
+                if (firebaseConfig.apiKey) {
+                    try {
+                        const app = firebase.initializeApp(firebaseConfig);
+                        const firestore = firebase.firestore();
+                        setDb(firestore);
+                    } catch (e) {
+                        if (!/already exists/.test(e.message)) {
+                            setError(`Firebase initialization error: ${e.message}`);
+                        }
+                    }
+                } else {
+                    setError("Firebase config is missing. Please paste it into the HTML file.");
                     setIsLoading(false);
-                    return;
                 }
+            }, []);
+
+            useEffect(() => {
+                if (!db) return;
                 setIsLoading(true);
-                try {
-                    const response = await fetch(appsScriptUrl, { method: 'GET', mode: 'cors' });
-                    if (!response.ok) throw new Error('Network response was not ok. Check sharing permissions.');
-                    const tasks = await response.json();
-                    setAllTasks(Array.isArray(tasks) ? tasks.filter(t => t.id) : []);
-                    setError(null);
-                } catch (err) {
-                    setError(`Could not fetch tasks: ${err.message}`);
-                } finally {
+                const unsubscribe = db.collection("tasks").onSnapshot(snapshot => {
+                    const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setAllTasks(tasksData);
                     setIsLoading(false);
-                }
-            };
-            
-            useEffect(() => { fetchTasks(); }, []);
+                    setError(null);
+                }, err => {
+                    setError(`Could not fetch tasks: ${err.message}`);
+                    setIsLoading(false);
+                });
+                return () => unsubscribe();
+            }, [db]);
 
             const userTasks = useMemo(() => {
                 if (currentUser === 'Admin') return allTasks;
                 return allTasks.filter(t => t.assignedTo === currentUser);
             }, [allTasks, currentUser]);
 
-            const columns = useMemo(() => ({
-                'To Do': userTasks.filter(t => t.status === 'To Do'),
-                'In Progress': userTasks.filter(t => t.status === 'In Progress'),
-                'Completed': userTasks.filter(t => t.status === 'Completed')
-            }), [userTasks]);
+            const columns = useMemo(() => ({ 'To Do': userTasks.filter(t => t.status === 'To Do'), 'In Progress': userTasks.filter(t => t.status === 'In Progress'), 'Completed': userTasks.filter(t => t.status === 'Completed'), }), [userTasks]);
 
             const handleLogin = (name) => { setCurrentUser(name); localStorage.setItem('project-tracker-user', name); };
             const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('project-tracker-user'); };
@@ -335,32 +327,43 @@
             const handleOpenModalForEdit = (task) => { setSelectedTask(task); setNewColumnStatus(null); setIsModalOpen(true); };
             const handleCloseModal = () => { setIsModalOpen(false); setSelectedTask(null); setNewColumnStatus(null); };
 
-            const handleSaveTask = async (taskData) => {
-                if (!appsScriptUrl || appsScriptUrl.includes("PASTE_YOUR")) {
-                    alert("Configuration Error: Please paste your Google Apps Script URL.");
-                    return;
-                }
+            const handleSaveTask = async (taskData, shouldClose = true) => {
+                if (!db) { setError("Database not connected."); return; }
+                
                 const payload = { ...taskData };
-                if (!payload.id) {
-                    payload.status = newColumnStatus;
+                if (!payload.id) { 
+                    payload.status = newColumnStatus; 
                     payload.updates = [];
                     payload.assignedTo = currentUser === 'Admin' ? '' : currentUser;
+                    payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                } else {
+                    payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
                 }
+                
                 try {
-                    const response = await fetch(appsScriptUrl, {
-                        method: 'POST',
-                        body: JSON.stringify(payload),
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        mode: 'cors',
-                    });
-                    if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                    const result = await response.json();
-                    if (result.status !== 'success') throw new Error(result.message);
-                    await fetchTasks();
+                    if (payload.id) {
+                        await db.collection("tasks").doc(payload.id).set(payload, { merge: true });
+                    } else {
+                        await db.collection("tasks").add(payload);
+                    }
                 } catch (err) {
                     setError(`Failed to save task: ${err.message}`);
                 } finally {
-                    handleCloseModal();
+                    if (shouldClose) {
+                        handleCloseModal();
+                    }
+                }
+            };
+
+            const handleDeleteTask = async (taskId) => {
+                if (!db) { setError("Database not connected."); return; }
+                handleCloseModal(); // Close modal immediately for better UX
+                setAllTasks(prevTasks => prevTasks.filter(t => t.id !== taskId)); // Optimistic UI update
+                try {
+                    await db.collection("tasks").doc(taskId).delete();
+                } catch (err) {
+                    setError(`Failed to delete task: ${err.message}`);
+                    // Note: a more robust solution would revert the optimistic update on failure
                 }
             };
 
@@ -369,47 +372,31 @@
                 if (taskToUpdate) handleSaveTask({ ...taskToUpdate, status: newStatus });
             };
 
+            const currentSelectedTask = allTasks.find(t => t.id === selectedTask?.id) || selectedTask;
+
             if (!currentUser) { return <LoginScreen onLogin={handleLogin} />; }
 
             return (
                 <div className="p-4 md:p-8">
-                    <header className="flex items-center justify-between mb-8">
+                    <header className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
                         <div className="flex items-center gap-4">
                             <h1 className="text-3xl font-bold text-white">Project Tracker</h1>
-                            <span className="bg-gray-700 text-blue-300 font-bold px-3 py-1 rounded-lg">
-                                {currentUser === 'Admin' ? 'Admin View - All Tasks' : `${currentUser}'s Tasks`}
-                            </span>
+                            <span className="bg-gray-700 text-blue-300 font-bold px-3 py-1 rounded-lg">{currentUser === 'Admin' ? 'Admin View - All Tasks' : `${currentUser}'s Tasks`}</span>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center p-1 bg-gray-800 rounded-lg">
-                                <button onClick={() => setView('board')} className={`p-2 rounded-md transition-colors ${view === 'board' ? 'bg-blue-700 text-white' : 'text-gray-400'}`}>Board</button>
-                                <button onClick={() => setView('timeline')} className={`p-2 rounded-md transition-colors ${view === 'timeline' ? 'bg-blue-700 text-white' : 'text-gray-400'}`}>Timeline</button>
-                            </div>
-                            <button onClick={() => handleOpenModalForNew('To Do')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-                                <Plus size={18}/> New Task
-                            </button>
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <div className="flex items-center p-1 bg-gray-800 rounded-lg"><button onClick={() => setView('board')} className={`p-2 rounded-md transition-colors ${view === 'board' ? 'bg-blue-600' : 'hover:bg-gray-700'}`} title="Board View"><LayoutGrid size={20}/></button><button onClick={() => setView('timeline')} className={`p-2 rounded-md transition-colors ${view === 'timeline' ? 'bg-blue-600' : 'hover:bg-gray-700'}`} title="Timeline View"><GanttChartSquare size={20}/></button></div>
+                            <button onClick={() => handleOpenModalForNew('To Do')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><Plus size={20} /> New Task</button>
                             <button onClick={handleLogout} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Logout"><LogOut size={20}/></button>
                         </div>
                     </header>
                     {error && <div className="bg-red-800 border border-red-600 text-white p-4 rounded-lg mb-4">{error}</div>}
-                    {isLoading ? (
-                        <div className="flex-grow flex items-center justify-center text-white text-lg">
-                            <Loader size={24} className="mr-2"/>Loading Projects...
-                        </div>
-                    ) : (
+                    {isLoading ? (<div className="flex-grow flex items-center justify-center text-white text-lg"><Loader size={24} className="mr-2"/>Loading Projects...</div>) : (
                         <main>
-                            {view === 'board' ? (
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    <KanbanColumn title="To Do" tasks={columns['To Do']} onAddTask={() => handleOpenModalForNew('To Do')} onEditTask={handleOpenModalForEdit} onDrop={taskId => handleDrop(taskId, 'To Do')} />
-                                    <KanbanColumn title="In Progress" tasks={columns['In Progress']} onAddTask={() => handleOpenModalForNew('In Progress')} onEditTask={handleOpenModalForEdit} onDrop={taskId => handleDrop(taskId, 'In Progress')} />
-                                    <KanbanColumn title="Completed" tasks={columns['Completed']} onAddTask={() => handleOpenModalForNew('Completed')} onEditTask={handleOpenModalForEdit} onDrop={taskId => handleDrop(taskId, 'Completed')} />
-                                </div>
-                            ) : (
-                                <TimelineView tasks={userTasks} onEditTask={handleOpenModalForEdit} />
-                            )}
+                            {view === 'board' ? (<div className="flex flex-col md:flex-row gap-6"><KanbanColumn title="To Do" tasks={columns['To Do']} onAddTask={() => handleOpenModalForNew('To Do')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'To Do')} /><KanbanColumn title="In Progress" tasks={columns['In Progress']} onAddTask={() => handleOpenModalForNew('In Progress')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'In Progress')} /><KanbanColumn title="Completed" tasks={columns['Completed']} onAddTask={() => handleOpenModalForNew('Completed')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'Completed')} /></div>
+                            ) : ( <TimelineView tasks={userTasks} onEditTask={handleOpenModalForEdit} onSaveTask={handleSaveTask} /> )}
                         </main>
                     )}
-                    {isModalOpen && <TaskModal task={selectedTask} onClose={handleCloseModal} onSave={handleSaveTask} />}
+                    {isModalOpen && <TaskModal task={currentSelectedTask} onClose={handleCloseModal} onSave={handleSaveTask} onDelete={handleDeleteTask} />}
                 </div>
             );
         }
