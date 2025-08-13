@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yamba Pool - Feedback Responder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 border-b border-gray-200 pb-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Customer Feedback Assistant</h1>
+                    <p class="text-gray-500 mt-1">For Yamba Community Pool</p>
+                </div>
+                 <img src="https://i.imgur.com/3ySg2OD.png" alt="Clarence Valley Council Logo" class="h-12 mt-4 sm:mt-0" onerror="this.onerror=null;this.src='https://placehold.co/200x50/003366/FFFFFF?text=CVC+Logo';">
+            </div>
+
+            <div class="space-y-6">
+                <!-- Step 1: Customer Feedback Input -->
+                <div>
+                    <label for="customerFeedback" class="block text-lg font-semibold mb-2 text-gray-700">1. Paste Customer Feedback</label>
+                    <textarea id="customerFeedback" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="e.g., 'Loved the heated pool today! When do swimming lessons start?'"></textarea>
+                </div>
+
+                <!-- Step 2: Feedback Type -->
+                <div>
+                    <h3 class="block text-lg font-semibold mb-2 text-gray-700">2. Select Feedback Type</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="selectOption(this, 'type')" class="flex-grow px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Positive">👍 Positive</button>
+                        <button onclick="selectOption(this, 'type')" class="flex-grow px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Negative">👎 Negative</button>
+                        <button onclick="selectOption(this, 'type')" class="flex-grow px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Question">❓ Question</button>
+                        <button onclick="selectOption(this, 'type')" class="flex-grow px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Suggestion">💡 Suggestion</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Feedback Topic -->
+                <div>
+                    <h3 class="block text-lg font-semibold mb-2 text-gray-700">3. Select Primary Topic</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                         <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="General Inquiry">General</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Opening Hours">Hours</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Learn to Swim">Learn to Swim</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Aqua Fitness">Aqua Fitness</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Pricing/Passes">Pricing</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Facility/Cleanliness">Facility</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Staff">Staff</button>
+                        <button onclick="selectOption(this, 'topic')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500" data-value="Accessibility">Accessibility</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Generate Response -->
+                <div>
+                    <button id="generateBtn" onclick="generateResponse()" class="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition disabled:bg-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                        Generate Response
+                    </button>
+                </div>
+            </div>
+
+            <!-- Response Output -->
+            <div id="responseContainer" class="mt-8 pt-6 border-t border-gray-200" style="display: none;">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Generated Response</h2>
+                <div id="loader" class="flex justify-center items-center h-24" style="display: none;">
+                    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+                </div>
+                <div id="responseOutput" class="bg-gray-50 p-4 rounded-lg min-h-[150px] whitespace-pre-wrap"></div>
+                <button id="copyBtn" onclick="copyToClipboard()" class="mt-4 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition flex items-center" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Copy to Clipboard
+                </button>
+                 <div id="copySuccess" class="mt-2 text-green-600 font-medium" style="display: none;">Copied!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = '';
+        let selectedTopic = '';
+
+        function selectOption(element, group) {
+            // Deselect others in the same group
+            const buttons = document.querySelectorAll(`button[onclick="selectOption(this, '${group}')"]`);
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+
+            // Select the clicked one
+            element.classList.add('bg-blue-600', 'text-white');
+            element.classList.remove('bg-gray-200', 'text-gray-700');
+
+            if (group === 'type') {
+                selectedType = element.dataset.value;
+            } else if (group === 'topic') {
+                selectedTopic = element.dataset.value;
+            }
+        }
+
+        async function generateResponse() {
+            const customerFeedback = document.getElementById('customerFeedback').value;
+            const generateBtn = document.getElementById('generateBtn');
+            const responseContainer = document.getElementById('responseContainer');
+            const loader = document.getElementById('loader');
+            const responseOutput = document.getElementById('responseOutput');
+            const copyBtn = document.getElementById('copyBtn');
+            const copySuccess = document.getElementById('copySuccess');
+
+            if (!customerFeedback || !selectedType || !selectedTopic) {
+                alert('Please fill in all fields before generating a response.');
+                return;
+            }
+
+            // Show loading state
+            responseContainer.style.display = 'block';
+            loader.style.display = 'flex';
+            responseOutput.style.display = 'none';
+            copyBtn.style.display = 'none';
+            copySuccess.style.display = 'none';
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = 'Generating...';
+
+            // --- AI Prompt Engineering ---
+            const context = `
+                You are Avi Parker, the Customer Service and Marketing Supervisor for Clarence Valley Council's aquatic centres.
+                Your goal is to provide helpful, friendly, and on-brand responses to customer feedback regarding the Yamba Community Pool.
+                
+                Key Information about Yamba Community Pool (YCP):
+                - Re-opened: August 11th, 2025.
+                - Management: "Proudly managed by Clarence Valley Council."
+                - Key Feature: It's a HEATED pool (25m main pool and a toddler pool). This is a major selling point, especially in cooler months.
+                - Current Hours (Off-Peak): Monday-Friday 6:00 AM - 1:00 PM; Saturday-Sunday 10:00 AM - 2:00 PM.
+                - Core Programs: Learn to Swim (LTS), Aqua-robics, Lap Swimming.
+                - Upcoming Programs: "Warm Water Wellness" for seniors/those with arthritis.
+                - Positioning: A welcoming, safe, friendly, community-focused haven for aquatic learning, fitness, and fun. It complements the larger Clarence Regional Aquatic Centre (CRAC) in Grafton.
+                - Key Messaging Pillars: Community & Connection; Health & Wellbeing; Safety & Trust; Learning & Skills; Value & Accessibility.
+                - Your Persona: Professional, welcoming, helpful, and community-oriented. Always sign off as "Avi" or with a friendly closing.
+            `;
+
+            const prompt = `
+                ${context}
+
+                A customer has provided the following feedback. Please draft a response.
+
+                Customer Feedback: "${customerFeedback}"
+                Feedback Type: ${selectedType}
+                Primary Topic: ${selectedTopic}
+
+                Instructions for your response:
+                1.  Acknowledge and thank the customer for their feedback.
+                2.  If it's a question, answer it clearly using the provided context.
+                3.  If it's positive, show appreciation and reinforce the positive aspect.
+                4.  If it's negative, be empathetic, acknowledge the concern, and state that you will look into it or pass the feedback on to the relevant team. Do not make promises you can't keep.
+                5.  If it's a suggestion, thank them for the idea and mention that you value community input.
+                6.  Keep the tone friendly and professional.
+                7.  Where relevant, naturally weave in key features like the pool being HEATED.
+                8.  Provide a suitable, friendly closing.
+            `;
+
+            // --- Gemini API Call ---
+            const apiKey = ""; // API key will be automatically handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            try {
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }]
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                let generatedText = "Sorry, I couldn't generate a response right now. Please try again.";
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    generatedText = result.candidates[0].content.parts[0].text;
+                }
+                
+                responseOutput.innerText = generatedText;
+
+            } catch (error) {
+                console.error("Error generating response:", error);
+                responseOutput.innerText = "There was an error connecting to the AI service. Please check the console for details and try again.";
+            } finally {
+                // Hide loader and show response
+                loader.style.display = 'none';
+                responseOutput.style.display = 'block';
+                copyBtn.style.display = 'flex';
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>Generate Response';
+            }
+        }
+
+        function copyToClipboard() {
+            const responseText = document.getElementById('responseOutput').innerText;
+            const copySuccess = document.getElementById('copySuccess');
+            
+            // Using a temporary textarea to preserve formatting
+            const textArea = document.createElement("textarea");
+            textArea.value = responseText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copySuccess.style.display = 'block';
+                setTimeout(() => {
+                    copySuccess.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+            document.body.removeChild(textArea);
+        }
+    </script>
+
+</body>
+</html>
