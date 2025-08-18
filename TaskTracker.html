@@ -18,6 +18,15 @@
             width: 10px;
             cursor: ew-resize;
             z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .resize-handle::after {
+            content: '••';
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            transform: rotate(90deg);
         }
         .resize-handle-left { left: -5px; }
         .resize-handle-right { right: -5px; }
@@ -67,9 +76,10 @@
         const LogOut = (props) => <Icon {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></Icon>;
         const Loader = (props) => <Icon {...props} className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></Icon>;
         const Trash2 = (props) => <Icon {...props}><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
+        const ArrowUpDown = (props) => <Icon {...props}><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></Icon>;
 
         // --- Child Components ---
-        const priorityMap = { High: { icon: <ChevronsUp size={16} className="text-red-400"/>, text: 'High', color: 'text-red-400' }, Medium: { icon: <Equal size={16} className="text-yellow-400"/>, text: 'Medium', color: 'text-yellow-400' }, Low: { icon: <ChevronDown size={16} className="text-green-400"/>, text: 'Low', color: 'text-green-400' } };
+        const priorityMap = { High: { icon: <ChevronsUp size={16} className="text-red-400"/>, text: 'High', color: 'text-red-400', value: 3 }, Medium: { icon: <Equal size={16} className="text-yellow-400"/>, text: 'Medium', color: 'text-yellow-400', value: 2 }, Low: { icon: <ChevronDown size={16} className="text-green-400"/>, text: 'Low', color: 'text-green-400', value: 1 } };
         const statusMap = { 'To Do': { color: 'bg-red-500', borderColor: 'border-red-500' }, 'In Progress': { color: 'bg-yellow-500', borderColor: 'border-yellow-500' }, 'Completed': { color: 'bg-green-500', borderColor: 'border-green-500' } };
 
         const TaskModal = ({ task, onClose, onSave, onDelete }) => {
@@ -159,7 +169,7 @@
             const dateColor = isOverdue ? 'text-red-400' : isDueSoon ? 'text-yellow-400' : 'text-gray-400';
 
             return (
-                <div draggable onDragStart={handleDragStart} onClick={() => onEdit(task)} className="bg-gray-800 p-3 rounded-lg shadow-md cursor-pointer hover:bg-gray-700/50 transition-colors border-l-4 border-gray-800 hover:border-blue-500">
+                <div draggable onDragStart={handleDragStart} onClick={() => onEdit(task)} className="bg-gray-800 p-3 rounded-lg shadow-md cursor-pointer hover:bg-gray-700/50 transition-colors border-l-4 border-gray-800 hover:border-blue-500 select-none">
                     <div className="flex justify-between items-start"><p className="font-bold text-gray-200 mb-2 pr-2">{task.title}</p>{task.assignedTo && <span className="text-xs bg-gray-700 text-blue-300 font-semibold px-2 py-0.5 rounded-full shrink-0">{task.assignedTo}</span>}</div>
                     <div className="flex justify-between items-center text-xs">
                         <div className={`flex items-center gap-1.5 font-semibold ${priority.color}`}>{priority.icon} {priority.text}</div>
@@ -172,14 +182,37 @@
 
         const KanbanColumn = ({ title, tasks, onAddTask, onEditTask, onDrop }) => {
             const [isDragOver, setIsDragOver] = React.useState(false);
+            const [sortOrder, setSortOrder] = React.useState('default');
+
+            const sortedTasks = React.useMemo(() => {
+                const tasksCopy = [...tasks];
+                if (sortOrder === 'priority') {
+                    return tasksCopy.sort((a, b) => (priorityMap[b.priority]?.value || 0) - (priorityMap[a.priority]?.value || 0));
+                }
+                if (sortOrder === 'dueDate') {
+                    return tasksCopy.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                }
+                return tasksCopy;
+            }, [tasks, sortOrder]);
+
             const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
             const handleDragLeave = () => setIsDragOver(false);
             const handleDrop = (e) => { e.preventDefault(); onDrop(e.dataTransfer.getData('taskId')); setIsDragOver(false); };
 
             return (
                 <div className={`bg-gray-800/50 rounded-xl flex-1 transition-all ${isDragOver ? 'bg-blue-900/50' : ''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
-                    <div className={`flex items-center justify-between p-4 border-b-2 ${statusMap[title].borderColor}`}><h2 className="text-lg font-bold text-white">{title}</h2><span className="text-sm font-bold bg-gray-700 text-gray-300 rounded-full px-2 py-0.5">{tasks.length}</span></div>
-                    <div className="p-4 space-y-3 kanban-column">{tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} />)}<button onClick={onAddTask} className="w-full flex items-center justify-center gap-2 text-sm p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><Plus size={16}/> Add Task</button></div>
+                    <div className={`flex items-center justify-between p-4 border-b-2 ${statusMap[title].borderColor}`}>
+                        <h2 className="text-lg font-bold text-white">{title}</h2>
+                        <div className="flex items-center gap-2">
+                             <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="bg-gray-700 text-xs rounded-md p-1 border border-gray-600 focus:ring-2 focus:ring-blue-500">
+                                <option value="default">Sort by...</option>
+                                <option value="priority">Priority</option>
+                                <option value="dueDate">Due Date</option>
+                            </select>
+                            <span className="text-sm font-bold bg-gray-700 text-gray-300 rounded-full px-2 py-0.5">{tasks.length}</span>
+                        </div>
+                    </div>
+                    <div className="p-4 space-y-3 kanban-column">{sortedTasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} />)}<button onClick={onAddTask} className="w-full flex items-center justify-center gap-2 text-sm p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"><Plus size={16}/> Add Task</button></div>
                 </div>
             );
         };
@@ -196,6 +229,7 @@
 
             const handleMouseDown = (e, task, handle) => {
                 e.stopPropagation();
+                e.preventDefault();
                 setResizingTask({ id: task.id, handle, startX: e.clientX, originalTask: task });
             };
 
@@ -238,14 +272,14 @@
             return (
                 <div className="bg-gray-800/50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold text-white">Tasks Timeline</h2><div className="flex items-center gap-2"><button onClick={() => changeWeek(-1)} className="p-2 rounded-md hover:bg-gray-700"><ChevronLeft size={20} /></button><span className="font-semibold text-blue-400 w-48 text-center">{dates[0].toLocaleDateString('en-AU', {month:'long', year:'numeric'})}</span><button onClick={() => changeWeek(1)} className="p-2 rounded-md hover:bg-gray-700"><ChevronRight size={20} /></button></div></div>
-                    <div className="overflow-x-auto timeline-scroll"><div className="grid gap-2 min-w-[1200px]" style={{gridTemplateColumns: `150px repeat(${dates.length}, 1fr)`}}><div className="sticky left-0 bg-gray-800/50"></div>{dates.map((date, i) => <div key={i} ref={i === 0 ? dayRef : null} className="text-center border-r border-gray-700 pr-1"><p className="text-xs text-gray-400">{date.toLocaleDateString('en-AU', {weekday: 'short'})}</p><p className="font-bold text-lg">{date.getDate()}</p></div>)}
+                    <div className="overflow-x-auto timeline-scroll pb-4"><div className="grid gap-2 min-w-[1200px]" style={{gridTemplateColumns: `150px repeat(${dates.length}, 1fr)`}}><div className="sticky left-0 bg-gray-800/50"></div>{dates.map((date, i) => <div key={i} ref={i === 0 ? dayRef : null} className="text-center border-r border-gray-700 pr-1"><p className="text-xs text-gray-400">{date.toLocaleDateString('en-AU', {weekday: 'short'})}</p><p className="font-bold text-lg">{date.getDate()}</p></div>)}
                         {tasks.map((task, taskIndex) => {
                             if (!task.startDate || !task.dueDate) return null;
                             const taskStart = new Date(task.startDate); const taskEnd = new Date(task.dueDate);
                             const gridColumnStart = Math.floor(timeDiff(taskStart, dates[0])) + 2;
                             const duration = Math.ceil(timeDiff(taskEnd, taskStart)) + 1;
                             if (gridColumnStart > dates.length || (gridColumnStart + duration) < 2) return null;
-                            return (<React.Fragment key={task.id}><div className="sticky left-0 bg-gray-800/50 text-sm font-semibold text-gray-300 p-2 truncate flex items-center" style={{gridRow: taskIndex + 2}}>{task.title}</div><div onClick={() => onEditTask(task)} className={`h-10 p-2 rounded-lg cursor-pointer flex items-center relative ${statusMap[task.status].borderColor} border-2`} style={{ gridColumn: `${gridColumnStart} / span ${duration}`, gridRow: taskIndex + 2, backgroundColor: statusMap[task.status].color + '4D' }}><div className="resize-handle resize-handle-left" onMouseDown={(e) => handleMouseDown(e, task, 'start')}></div><p className="text-sm font-bold text-white truncate">{task.title}</p><div className="resize-handle resize-handle-right" onMouseDown={(e) => handleMouseDown(e, task, 'end')}></div></div></React.Fragment>);
+                            return (<React.Fragment key={task.id}><div className="sticky left-0 bg-gray-800/50 text-sm font-semibold text-gray-300 p-2 truncate flex items-center" style={{gridRow: taskIndex + 2}}>{task.title}</div><div onClick={() => onEditTask(task)} className={`h-10 px-2 rounded-lg cursor-pointer flex items-center justify-between gap-4 relative ${statusMap[task.status].borderColor} border-2`} style={{ gridColumn: `${gridColumnStart} / span ${duration}`, gridRow: taskIndex + 2, backgroundColor: statusMap[task.status].color + '4D' }}><div className="resize-handle resize-handle-left" onMouseDown={(e) => handleMouseDown(e, task, 'start')}></div><p className="text-sm font-bold text-white truncate flex-grow">{task.title}</p>{task.assignedTo && <span className="text-xs bg-gray-900/50 text-blue-300 font-semibold px-2 py-0.5 rounded-full shrink-0">{task.assignedTo}</span>}<div className="resize-handle resize-handle-right" onMouseDown={(e) => handleMouseDown(e, task, 'end')}></div></div></React.Fragment>);
                         })}
                     </div></div>
                 </div>
@@ -280,6 +314,7 @@
             const [view, setView] = useState('board');
             const [currentUser, setCurrentUser] = useState(localStorage.getItem('project-tracker-user'));
             const [error, setError] = useState(null);
+            const [userFilter, setUserFilter] = useState('all');
 
             useEffect(() => {
                 if (firebaseConfig.apiKey) {
@@ -313,10 +348,18 @@
                 return () => unsubscribe();
             }, [db]);
 
+            const uniqueUsers = useMemo(() => ['all', ...new Set(allTasks.map(t => t.assignedTo).filter(Boolean))], [allTasks]);
+
             const userTasks = useMemo(() => {
-                if (currentUser === 'Admin') return allTasks;
-                return allTasks.filter(t => t.assignedTo === currentUser);
-            }, [allTasks, currentUser]);
+                let tasks = allTasks;
+                if (currentUser !== 'Admin') {
+                    tasks = tasks.filter(t => t.assignedTo === currentUser);
+                }
+                if (userFilter !== 'all') {
+                    tasks = tasks.filter(t => t.assignedTo === userFilter);
+                }
+                return tasks;
+            }, [allTasks, currentUser, userFilter]);
 
             const columns = useMemo(() => ({ 'To Do': userTasks.filter(t => t.status === 'To Do'), 'In Progress': userTasks.filter(t => t.status === 'In Progress'), 'Completed': userTasks.filter(t => t.status === 'Completed'), }), [userTasks]);
 
@@ -357,13 +400,14 @@
 
             const handleDeleteTask = async (taskId) => {
                 if (!db) { setError("Database not connected."); return; }
-                handleCloseModal(); // Close modal immediately for better UX
-                setAllTasks(prevTasks => prevTasks.filter(t => t.id !== taskId)); // Optimistic UI update
+                handleCloseModal();
+                setAllTasks(prevTasks => prevTasks.filter(t => t.id !== taskId));
                 try {
                     await db.collection("tasks").doc(taskId).delete();
                 } catch (err) {
                     setError(`Failed to delete task: ${err.message}`);
-                    // Note: a more robust solution would revert the optimistic update on failure
+                    // Revert UI change on failure
+                    // A more robust solution would be needed for production apps
                 }
             };
 
@@ -380,10 +424,16 @@
                 <div className="p-4 md:p-8">
                     <header className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
                         <div className="flex items-center gap-4">
-                            <h1 className="text-3xl font-bold text-white">Project Tracker</h1>
-                            <span className="bg-gray-700 text-blue-300 font-bold px-3 py-1 rounded-lg">{currentUser === 'Admin' ? 'Admin View - All Tasks' : `${currentUser}'s Tasks`}</span>
+                            <h1 className="text-3xl font-bold text-white">Task Boards</h1>
+                            <span className="bg-gray-700 text-blue-300 font-bold px-3 py-1 rounded-lg">{currentUser === 'Admin' ? 'Admin View' : `${currentUser}'s Tasks`}</span>
                         </div>
                         <div className="flex items-center gap-2 md:gap-4">
+                            {currentUser === 'Admin' && (
+                                <select value={userFilter} onChange={e => setUserFilter(e.target.value)} className="bg-gray-700 text-sm rounded-md p-2 border border-gray-600 focus:ring-2 focus:ring-blue-500">
+                                    <option value="all">Filter by User...</option>
+                                    {uniqueUsers.slice(1).map(user => <option key={user} value={user}>{user}</option>)}
+                                </select>
+                            )}
                             <div className="flex items-center p-1 bg-gray-800 rounded-lg"><button onClick={() => setView('board')} className={`p-2 rounded-md transition-colors ${view === 'board' ? 'bg-blue-600' : 'hover:bg-gray-700'}`} title="Board View"><LayoutGrid size={20}/></button><button onClick={() => setView('timeline')} className={`p-2 rounded-md transition-colors ${view === 'timeline' ? 'bg-blue-600' : 'hover:bg-gray-700'}`} title="Timeline View"><GanttChartSquare size={20}/></button></div>
                             <button onClick={() => handleOpenModalForNew('To Do')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><Plus size={20} /> New Task</button>
                             <button onClick={handleLogout} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Logout"><LogOut size={20}/></button>
@@ -392,7 +442,7 @@
                     {error && <div className="bg-red-800 border border-red-600 text-white p-4 rounded-lg mb-4">{error}</div>}
                     {isLoading ? (<div className="flex-grow flex items-center justify-center text-white text-lg"><Loader size={24} className="mr-2"/>Loading Projects...</div>) : (
                         <main>
-                            {view === 'board' ? (<div className="flex flex-col md:flex-row gap-6"><KanbanColumn title="To Do" tasks={columns['To Do']} onAddTask={() => handleOpenModalForNew('To Do')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'To Do')} /><KanbanColumn title="In Progress" tasks={columns['In Progress']} onAddTask={() => handleOpenModalForNew('In Progress')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'In Progress')} /><KanbanColumn title="Completed" tasks={columns['Completed']} onAddTask={() => handleOpenModalForNew('Completed')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'Completed')} /></div>
+                            {view === 'board' ? (<div className="flex flex-col lg:flex-row gap-6"><KanbanColumn title="To Do" tasks={columns['To Do']} onAddTask={() => handleOpenModalForNew('To Do')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'To Do')} /><KanbanColumn title="In Progress" tasks={columns['In Progress']} onAddTask={() => handleOpenModalForNew('In Progress')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'In Progress')} /><KanbanColumn title="Completed" tasks={columns['Completed']} onAddTask={() => handleOpenModalForNew('Completed')} onEditTask={handleOpenModalForEdit} onDrop={(taskId) => handleDrop(taskId, 'Completed')} /></div>
                             ) : ( <TimelineView tasks={userTasks} onEditTask={handleOpenModalForEdit} onSaveTask={handleSaveTask} /> )}
                         </main>
                     )}
