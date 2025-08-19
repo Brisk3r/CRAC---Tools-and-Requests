@@ -105,14 +105,14 @@
             <!-- Tabs Navigation -->
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button @click="activeTab = 'Operations'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'marketing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'marketing' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                        Marketing & Socials
-                    </button>
-                    <button @click="activeTab = 'Marketing'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'operations', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'operations' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    <button @click="activeTab = 'Operations'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'Operations', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'marketing' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Operations
                     </button>
-                     <button @click="activeTab = 'Test'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'finance', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'finance' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                        Finance
+                    <button @click="activeTab = 'Marketing'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'Marketing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'operations' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        Marketing
+                    </button>
+                     <button @click="activeTab = 'Test'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'Test', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'finance' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        Test
                     </button>
                 </nav>
             </div>
