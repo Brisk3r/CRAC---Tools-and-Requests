@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCP Resources - Team Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Password logic is defined BEFORE Alpine runs -->
+    <script>
+        function passwordProtect() {
+            return {
+                // --- CONFIGURATION ---
+                // !!! CHANGE THIS to your desired password !!!
+                correctPassword: 'yambapool',
+
+                // --- STATE ---
+                isAuthenticated: false,
+                passwordInput: '',
+                errorMessage: '',
+
+                // --- METHODS ---
+                checkPassword() {
+                    if (this.passwordInput === this.correctPassword) {
+                        this.isAuthenticated = true;
+                        this.errorMessage = '';
+                        // Store authentication status in session storage to remember login
+                        sessionStorage.setItem('ycpResourcesAuthenticated', 'true');
+                    } else {
+                        this.errorMessage = 'Incorrect password. Please try again.';
+                        this.passwordInput = '';
+                    }
+                },
+
+                init() {
+                    // Check if user was already authenticated in this session
+                    if (sessionStorage.getItem('ycpResourcesAuthenticated') === 'true') {
+                        this.isAuthenticated = true;
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- The defer attribute ensures AlpineJS runs AFTER the page is fully parsed. -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        [x-cloak] { 
+            display: none !important; 
+        }
+        .link-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .link-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.07);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- This main div now controls the Alpine.js component -->
+    <div x-data="passwordProtect()" x-init="init()">
+        <!-- Password Protection Overlay -->
+        <div x-show="!isAuthenticated" x-cloak class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
+                <p class="text-gray-600 mb-6">Please enter the password to view this page.</p>
+                <input type="password" 
+                       x-model="passwordInput" 
+                       @keydown.enter="checkPassword()"
+                       placeholder="Enter password..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500">
+                <p x-show="errorMessage" x-text="errorMessage" class="text-red-500 text-sm mt-2"></p>
+                <button @click="checkPassword()" class="w-full bg-cyan-600 text-white font-bold py-2 px-4 rounded-md hover:bg-cyan-700 mt-4">
+                    Unlock
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Page Content (hidden until authenticated) -->
+        <div x-show="isAuthenticated" x-cloak>
+            <!-- Header and Navigation -->
+            <header class="bg-white shadow-sm sticky top-0 z-40">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold text-cyan-700">Clarence Regional Aquatic Centre Team Hub</h1>
+                        </div>
+                        <nav class="hidden md:flex items-center space-x-8">
+                            <a href="index.html" class="font-medium text-gray-500 hover:text-gray-900 text-sm">Home</a>
+                            
+                            <!-- Useful Links Dropdown -->
+                            <div x-data="{ open: false }" class="relative">
+                                <button @click="open = !open" @click.away="open = false" class="font-semibold text-cyan-600 border-b-2 border-cyan-600 px-1 py-2 text-sm inline-flex items-center">
+                                    <span>Useful Links</span>
+                                    <svg class="w-4 h-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </button>
+                                <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200" x-cloak>
+                                    <a href="crac-resources.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">CRAC Resources</a>
+                                    <a href="ycp-resources.html" class="block px-4 py-2 text-sm text-gray-700 bg-gray-100 font-semibold">YCP Resources</a>
+                                </div>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="container mx-auto p-4 sm:p-6 lg:px-8">
+
+                <!-- Page Title -->
+                <div class="mb-12">
+                    <h2 class="text-4xl font-bold text-gray-900">YCP Resources</h2>
+                    <p class="mt-2 text-lg text-gray-600">A central directory for important links, documents, and reports.</p>
+                </div>
+
+                <!-- Link Directory Section -->
+                <section>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Link Directory</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Category: HR & Payroll -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h4 class="text-lg font-bold text-cyan-700 mb-4">HR & Payroll</h4>
+                            <ul class="space-y-3">
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Timesheet Portal</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Leave Request Form</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Council Staff Policies</a></li>
+                            </ul>
+                        </div>
+                        <!-- Category: Operations -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h4 class="text-lg font-bold text-cyan-700 mb-4">Operations</h4>
+                            <ul class="space-y-3">
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Opening & Closing Checklist</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Incident Report Form</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Maintenance Request</a></li>
+                            </ul>
+                        </div>
+                        <!-- Category: Marketing & Comms -->
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h4 class="text-lg font-bold text-cyan-700 mb-4">Marketing & Comms</h4>
+                            <ul class="space-y-3">
+                                <li><a href="index.html" class="text-gray-600 hover:text-cyan-600 hover:underline">Comms Hub & Tools</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Brand Style Guide</a></li>
+                                <li><a href="#" class="text-gray-600 hover:text-cyan-600 hover:underline">Logo & Asset Library</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reports Section -->
+                <section class="mt-12" x-data="{ activeTab: 'marketing' }">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6">Reports Dashboard</h3>
+                    
+                    <!-- Tabs Navigation -->
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button @click="activeTab = 'marketing'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'marketing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'marketing' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Marketing & Socials
+                            </button>
+                            <button @click="activeTab = 'operations'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'operations', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'operations' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Operations
+                            </button>
+                             <button @click="activeTab = 'finance'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'finance', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'finance' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Finance
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="mt-6">
+                        <!-- Marketing Report (Placeholder) -->
+                        <div x-show="activeTab === 'marketing'" x-cloak>
+                             <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+                                <h4 class="text-lg font-semibold text-gray-700">Marketing Report</h4>
+                                <p class="text-gray-500 mt-2">This report is not yet available. Please check back later.</p>
+                            </div>
+                        </div>
+                        <!-- Operations Report (Placeholder) -->
+                        <div x-show="activeTab === 'operations'" x-cloak>
+                             <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+                                <h4 class="text-lg font-semibold text-gray-700">Operations Report</h4>
+                                <p class="text-gray-500 mt-2">This report is not yet available. Please check back later.</p>
+                            </div>
+                        </div>
+                         <!-- Finance Report (Placeholder) -->
+                        <div x-show="activeTab === 'finance'" x-cloak>
+                             <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+                                <h4 class="text-lg font-semibold text-gray-700">Finance Report</h4>
+                                <p class="text-gray-500 mt-2">This report is not yet available. Please check back later.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- Footer -->
+            <footer class="mt-12 py-6 border-t border-gray-200">
+                <div class="container mx-auto text-center text-gray-500 text-sm">
+                    <p>&copy; 2025 Yamba Community Pool</p>
+                    <p>This internal site is managed by Avi Parker.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+</body>
+</html>
