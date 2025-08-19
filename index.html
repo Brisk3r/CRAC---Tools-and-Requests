@@ -200,30 +200,8 @@
         <div class="container mx-auto text-center text-gray-500 text-sm">
             <p>&copy; 2025 Clarence Regional Aquatic Centre</p>
             <p>This internal site is managed by <a href="mailto:avi.parker@clarence.nsw.gov.au">Avi Parker</a>.</p>
+            <div Version id="random-number-output"></div>
         </div>
-        <script>
-window.onload = function() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-
-    const dateFormatted = `${year}${month}${day}`;
-
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let randomString = '';
-    for (let i = 0; i < 6; i++) {
-        randomString += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-
-    const outputElement = document.getElementById('random-number-output');
-    if (outputElement) {
-        outputElement.textContent = `${dateFormatted}-${randomString}`;
-    }
-};
-</script>
-
-<div id="random-number-output"></div>
     </footer>
 
     <script>
@@ -288,6 +266,26 @@ window.onload = function() {
             });
         });
     </script>
+    <script>
+        window.onload = function() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
 
+            const dateFormatted = `${year}${month}${day}`;
+
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let randomString = '';
+            for (let i = 0; i < 6; i++) {
+                randomString += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+
+            const outputElement = document.getElementById('random-number-output');
+            if (outputElement) {
+                outputElement.textContent = `${dateFormatted}-${randomString}`;
+            }
+        };
+    </script>
 </body>
 </html>
