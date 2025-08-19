@@ -55,7 +55,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="dot-color" class="form-label">Dot Color</label>
-                        <input type="color" id="dot-color" class="form-input h-10" value="#0d68cc">
+                        <input type="color" id="dot-color" class="form-input h-10" value="#0e7490">
                     </div>
                     <div>
                         <label for="background-color" class="form-label">Background Color</label>
@@ -69,7 +69,7 @@
                     <select id="dot-style" class="form-input">
                         <option value="square">Square</option>
                         <option value="dots">Dots</option>
-                        <option value="rounded">Rounded</option>
+                        <option value="rounded" selected>Rounded</option>
                         <option value="extra-rounded">Extra Rounded</option>
                         <option value="classy">Classy</option>
                         <option value="classy-rounded">Classy Rounded</option>
@@ -81,7 +81,7 @@
                     <select id="corner-square-style" class="form-input">
                         <option value="square">Square</option>
                         <option value="dot">Dot</option>
-                        <option value="extra-rounded">Extra Rounded</option>
+                        <option value="extra-rounded" selected>Extra Rounded</option>
                     </select>
                 </div>
 
@@ -101,16 +101,16 @@
                 <!-- Download Button -->
                 <div class="pt-4">
                     <button id="download-btn" class="w-full bg-cyan-600 text-white font-bold py-3 px-4 rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                        Download PNG
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        Download PNG (1080x1080)
                     </button>
                 </div>
             </div>
         </aside>
 
         <!-- QR Code Preview -->
-        <main class="w-full lg:w-2/3 p-8 flex items-center justify-center">
-            <div id="canvas"></div>
+        <main class="w-full lg:w-2/3 p-8 flex items-center justify-center bg-gray-200">
+            <div id="canvas" class="bg-white rounded-lg shadow-lg p-4"></div>
         </main>
     </div>
 
@@ -130,8 +130,8 @@
 
             // --- QR CODE INITIALIZATION ---
             const qrCode = new QRCodeStyling({
-                width: 1080,
-                height: 1080,
+                width: 300,
+                height: 300,
                 data: urlInput.value,
                 image: '',
                 dotsOptions: {
@@ -200,7 +200,47 @@
 
             // Listener for the download button
             downloadBtn.addEventListener('click', () => {
-                qrCode.download({ name: "crac-qrcode", extension: "png" });
+                // 1. Sanitize filename from URL input
+                let filename = urlInput.value
+                    .replace(/^https?:\/\//, '') // Remove http/https
+                    .replace(/^www\./, '')       // Remove www.
+                    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace invalid characters with an underscore
+                    .substring(0, 50) || 'qrcode'; // Truncate and provide a fallback name
+
+                // 2. Get the QR code data as a blob
+                qrCode.getRawData('png').then(blob => {
+                    if (!blob) {
+                        console.error("Could not generate QR code data.");
+                        return;
+                    }
+
+                    // 3. Create an in-memory canvas for resizing
+                    const canvas = document.createElement('canvas');
+                    const downloadSize = 1080;
+                    canvas.width = downloadSize;
+                    canvas.height = downloadSize;
+                    const ctx = canvas.getContext('2d');
+
+                    // 4. Create an image from the blob
+                    const img = new Image();
+                    img.onload = () => {
+                        // 5. Draw the QR code image onto the larger canvas
+                        ctx.drawImage(img, 0, 0, downloadSize, downloadSize);
+
+                        // 6. Trigger the download from the new canvas
+                        const link = document.createElement('a');
+                        link.download = `${filename}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+
+                        // 7. Clean up the object URL to free memory
+                        URL.revokeObjectURL(img.src);
+                    };
+                    img.onerror = () => {
+                        console.error("Failed to load QR code image from blob.");
+                    };
+                    img.src = URL.createObjectURL(blob);
+                });
             });
         });
     </script>
