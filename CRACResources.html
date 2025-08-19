@@ -99,19 +99,19 @@
         </section>
 
         <!-- Reports Section -->
-        <section class="mt-12" x-data="{ activeTab: 'marketing' }">
+        <section class="mt-12" x-data="{ activeTab: 'Operations' }">
             <h3 class="text-2xl font-semibold text-gray-800 mb-6">Reports Dashboard</h3>
             
             <!-- Tabs Navigation -->
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button @click="activeTab = 'marketing'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'marketing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'marketing' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    <button @click="activeTab = 'Operations'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'marketing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'marketing' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Marketing & Socials
                     </button>
-                    <button @click="activeTab = 'operations'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'operations', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'operations' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    <button @click="activeTab = 'Marketing'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'operations', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'operations' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Operations
                     </button>
-                     <button @click="activeTab = 'finance'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'finance', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'finance' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                     <button @click="activeTab = 'Test'" :class="{ 'border-cyan-500 text-cyan-600': activeTab === 'finance', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'finance' }" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                         Finance
                     </button>
                 </nav>
@@ -120,20 +120,20 @@
             <!-- Tab Content -->
             <div class="mt-6">
                 <!-- Marketing Report -->
-                <div x-show="activeTab === 'marketing'" x-cloak>
+                <div x-show="activeTab === 'Operations'" x-cloak>
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 aspect-w-16 aspect-h-9">
-                        <iframe width="1280" height="720" src="https://lookerstudio.google.com/embed/reporting/ff0573dd-7dd2-450b-8795-2860f78aec65/page/vd1PF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+                        <iframe width="100%" height="720" src="https://lookerstudio.google.com/embed/reporting/ff0573dd-7dd2-450b-8795-2860f78aec65/page/vd1PF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
                     </div>
                 </div>
                 <!-- Operations Report (Placeholder) -->
-                <div x-show="activeTab === 'operations'" x-cloak>
+                <div x-show="activeTab === 'Marketing'" x-cloak>
                      <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
                         <h4 class="text-lg font-semibold text-gray-700">Operations Report</h4>
                         <p class="text-gray-500 mt-2">This report is not yet available. Please check back later.</p>
                     </div>
                 </div>
                  <!-- Finance Report (Placeholder) -->
-                <div x-show="activeTab === 'finance'" x-cloak>
+                <div x-show="activeTab === 'Test'" x-cloak>
                      <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
                         <h4 class="text-lg font-semibold text-gray-700">Finance Report</h4>
                         <p class="text-gray-500 mt-2">This report is not yet available. Please check back later.</p>
