@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRAC Roster Availability</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for better UI/UX */
+        #availability-grid label {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        #availability-grid input[type="radio"]:checked + label {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        /* Styling for different availability options */
+        .bg-available { background-color: #d1fae5; color: #065f46; } /* Green */
+        .bg-am { background-color: #fef3c7; color: #92400e; } /* Yellow */
+        .bg-pm { background-color: #fee2e2; color: #991b1b; } /* Red */
+        .bg-unavailable { background-color: #e5e7eb; color: #4b5563; } /* Gray */
+
+        /* Simple animation for view transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .view {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        /* Style for disabled buttons */
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Configuration Error Banner -->
+    <div id="config-error-banner" class="hidden bg-red-600 text-white text-center p-3 font-semibold">
+        <strong>Configuration Error:</strong> Please add your Firebase project configuration to the script to enable saving and loading data.
+    </div>
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- App Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">CRAC Lifeguard Roster</h1>
+            <p class="text-lg text-gray-600 mt-2">Staff Availability & Roster Projection</p>
+        </header>
+
+        <!-- View Toggle Buttons -->
+        <div class="flex justify-center mb-8 space-x-4">
+            <button id="user-view-btn" class="py-2 px-6 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Staff View</button>
+            <button id="admin-view-btn" class="py-2 px-6 bg-gray-600 text-white rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Admin View</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- User Availability View -->
+            <div id="user-view" class="view">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-semibold mb-4 text-center">My Fortnightly Availability</h2>
+                    <div class="mb-4">
+                        <label for="user-name" class="block text-sm font-medium text-gray-700">Your Name:</label>
+                        <input type="text" id="user-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="e.g., Avi Parker">
+                    </div>
+                    <div id="availability-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Availability grid will be generated here by JavaScript -->
+                    </div>
+                    <div class="text-center mt-6">
+                        <button id="submit-availability" class="py-3 px-8 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition-transform transform hover:scale-105">Submit Availability</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Roster Projection View -->
+            <div id="admin-view" class="view hidden">
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-semibold mb-4 text-center">Projected Roster</h2>
+                     <div class="flex justify-center mb-4">
+                        <button id="generate-roster-btn" class="py-2 px-6 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700">Generate/Refresh Roster</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Staff</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roster-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Roster will be generated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+    </div>
+
+    <script type="module">
+        // Firebase is used here as a simple, real-time database.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // --- CONFIGURATION ---
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+            authDomain: "osf---availability-roster.firebaseapp.com",
+            projectId: "osf---availability-roster",
+            storageBucket: "osf---availability-roster.appspot.com",
+            messagingSenderId: "1069751236100",
+            appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
+            measurementId: "G-JT3PMQ0W6T"
+        };
+        
+        // --- DOM ELEMENT REFERENCES ---
+        const userViewBtn = document.getElementById('user-view-btn');
+        const adminViewBtn = document.getElementById('admin-view-btn');
+        const userView = document.getElementById('user-view');
+        const adminView = document.getElementById('admin-view');
+        const availabilityGrid = document.getElementById('availability-grid');
+        const submitBtn = document.getElementById('submit-availability');
+        const rosterBody = document.getElementById('roster-body');
+        const generateRosterBtn = document.getElementById('generate-roster-btn');
+        const userNameInput = document.getElementById('user-name');
+        const configErrorBanner = document.getElementById('config-error-banner');
+
+        // --- FIREBASE INITIALIZATION ---
+        let db;
+        
+        if (firebaseConfig.apiKey === "YOUR_API_KEY" || !firebaseConfig.projectId) {
+            console.error("Firebase configuration is missing.");
+            configErrorBanner.classList.remove('hidden');
+            submitBtn.disabled = true;
+            generateRosterBtn.disabled = true;
+            rosterBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500 font-semibold">Database not configured.</td></tr>';
+        } else {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                console.log("Firebase initialized successfully.");
+            } catch (e) {
+                console.error("Firebase initialization failed:", e);
+                configErrorBanner.textContent = "Firebase initialization failed. Check the console for details.";
+                configErrorBanner.classList.remove('hidden');
+            }
+        }
+
+        // --- VIEW TOGGLING LOGIC ---
+        userViewBtn.addEventListener('click', () => {
+            userView.classList.remove('hidden');
+            adminView.classList.add('hidden');
+            userViewBtn.classList.replace('bg-gray-600', 'bg-blue-600');
+            adminViewBtn.classList.replace('bg-blue-600', 'bg-gray-600');
+        });
+
+        adminViewBtn.addEventListener('click', () => {
+            adminView.classList.remove('hidden');
+            userView.classList.add('hidden');
+            adminViewBtn.classList.replace('bg-gray-600', 'bg-blue-600');
+            userViewBtn.classList.replace('bg-blue-600', 'bg-gray-600');
+        });
+
+        // --- USER AVAILABILITY VIEW LOGIC ---
+        function createAvailabilityGrid() {
+            const today = new Date();
+            availabilityGrid.innerHTML = '';
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                const dayString = date.toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const dateId = date.toISOString().split('T')[0];
+
+                const dayCard = `
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h4 class="font-semibold text-lg mb-3">${dayString}</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <input type="radio" name="avail-${dateId}" id="avail-${dateId}-all" value="all" class="sr-only" checked>
+                            <label for="avail-${dateId}-all" class="flex-1 text-center py-2 px-3 rounded-md border bg-available">All Day</label>
+
+                            <input type="radio" name="avail-${dateId}" id="avail-${dateId}-am" value="am" class="sr-only">
+                            <label for="avail-${dateId}-am" class="flex-1 text-center py-2 px-3 rounded-md border bg-am">AM Only</label>
+                            
+                            <input type="radio" name="avail-${dateId}" id="avail-${dateId}-pm" value="pm" class="sr-only">
+                            <label for="avail-${dateId}-pm" class="flex-1 text-center py-2 px-3 rounded-md border bg-pm">PM Only</label>
+
+                            <input type="radio" name="avail-${dateId}" id="avail-${dateId}-none" value="none" class="sr-only">
+                            <label for="avail-${dateId}-none" class="flex-1 text-center py-2 px-3 rounded-md border bg-unavailable">Unavailable</label>
+                        </div>
+                    </div>
+                `;
+                availabilityGrid.innerHTML += dayCard;
+            }
+        }
+
+        async function handleSubmitAvailability() {
+            if (!db) {
+                alert("Database not configured. Cannot save availability.");
+                return;
+            }
+            const userName = userNameInput.value.trim();
+            if (!userName) {
+                alert("Please enter your name.");
+                return;
+            }
+
+            const availabilityData = {
+                name: userName,
+                submittedAt: new Date(),
+                availability: {}
+            };
+
+            const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                const dateId = date.toISOString().split('T')[0];
+                const selectedOption = document.querySelector(`input[name="avail-${dateId}"]:checked`);
+                if (selectedOption) {
+                    availabilityData.availability[dateId] = selectedOption.value;
+                }
+            }
+
+            try {
+                const docRef = doc(db, "availability", userName);
+                await setDoc(docRef, availabilityData);
+                alert("Your availability has been submitted successfully!");
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("There was an error submitting your availability. Please try again.");
+            }
+        }
+
+        submitBtn.addEventListener('click', handleSubmitAvailability);
+        
+        // --- ADMIN ROSTER VIEW LOGIC ---
+
+        // Define the shift requirements for lifeguards based on new hours.
+        // You can easily change the number of lifeguards required here.
+        const shiftRequirements = {
+            // Weekday (Mon, Tue, Wed, Thu, Fri) requirements
+            weekday: {
+                "Opening Shift (5:30am - 1:00pm)": { "Lifeguard": 2 },
+                "Closing Shift (1:00pm - 7:00pm)": { "Lifeguard": 2 }
+            },
+            // Saturday requirements
+            saturday: {
+                "Opening Shift (7:00am - 1:00pm)": { "Lifeguard": 3 },
+                "Closing Shift (1:00pm - 7:00pm)": { "Lifeguard": 3 }
+            },
+            // Sunday requirements
+            sunday: {
+                "Opening Shift (8:00am - 1:00pm)": { "Lifeguard": 3 },
+                "Closing Shift (1:00pm - 6:00pm)": { "Lifeguard": 3 }
+            }
+        };
+
+        async function fetchAllAvailability() {
+            if (!db) return [];
+            try {
+                const querySnapshot = await getDocs(collection(db, "availability"));
+                const allAvailability = [];
+                querySnapshot.forEach((doc) => {
+                    allAvailability.push(doc.data());
+                });
+                return allAvailability;
+            } catch (error) {
+                console.error("Error fetching availability:", error);
+                rosterBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500 font-semibold">Could not fetch data. Check connection or configuration.</td></tr>';
+                return [];
+            }
+        }
+
+        async function generateRoster() {
+            if (!db) return;
+            rosterBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Generating roster... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+            const allAvailability = await fetchAllAvailability();
+            
+            if (allAvailability.length === 0) {
+                 rosterBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">No availability data submitted yet.</td></tr>';
+                 return;
+            }
+
+            rosterBody.innerHTML = '';
+
+            const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+                const dateId = date.toISOString().split('T')[0];
+                const dayString = date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+
+                // Select the correct shift schedule based on the day of the week
+                let dailyShifts;
+                if (dayOfWeek === 0) { // Sunday
+                    dailyShifts = shiftRequirements.sunday;
+                } else if (dayOfWeek === 6) { // Saturday
+                    dailyShifts = shiftRequirements.saturday;
+                } else { // Weekday (Mon-Fri)
+                    dailyShifts = shiftRequirements.weekday;
+                }
+
+                for (const shiftName in dailyShifts) {
+                    const shiftType = shiftName.includes('Opening') ? 'am' : 'pm';
+
+                    const availableStaff = allAvailability.filter(staff => {
+                        const avail = staff.availability[dateId];
+                        return avail === 'all' || avail === shiftType;
+                    }).map(staff => staff.name);
+                    
+                    let assignedStaffHtml;
+                    if (availableStaff.length > 0) {
+                        assignedStaffHtml = availableStaff.map(name => `<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">${name}</span>`).join('');
+                    } else {
+                        assignedStaffHtml = `<span class="text-red-500 font-semibold">No staff available</span>`;
+                    }
+                    
+                    const requiredText = Object.entries(dailyShifts[shiftName]).map(([role, count]) => `${count} ${role}`).join(', ');
+
+                    const row = `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap font-medium">${dayString}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${shiftName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${requiredText}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${assignedStaffHtml}</td>
+                        </tr>
+                    `;
+                    rosterBody.innerHTML += row;
+                }
+            }
+        }
+        
+        generateRosterBtn.addEventListener('click', generateRoster);
+
+        // --- INITIALIZATION ---
+        createAvailabilityGrid();
+        if (db) {
+            generateRoster(); 
+        }
+
+    </script>
+</body>
+</html>
