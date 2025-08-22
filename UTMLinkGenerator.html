@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTM Campaign Link & QR Code Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QR Code Generation Library -->
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+    <style>
+        /* A little extra style to ensure the QR code background is white for saving */
+        #qrcode {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: opacity 0.3s ease-in-out;
+        }
+        #qrcode img {
+            display: block;
+            margin: auto;
+        }
+        /* Simple spinner for loading state */
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans">
+    <div class="container mx-auto max-w-3xl my-8 md:my-12 p-6 md:p-8 bg-white rounded-xl shadow-lg">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">UTM Link & QR Code Generator</h1>
+            <p class="text-slate-500 mt-2">Create, shorten, and save links for your marketing campaigns.</p>
+        </header>
+        
+        <form id="utmForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Form fields remain the same -->
+            <div class="md:col-span-2">
+                <label for="baseUrl" class="block text-sm font-medium text-slate-700 mb-1">Website URL <span class="text-red-500">*</span></label>
+                <input type="url" id="baseUrl" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="https://example.com/your-page" required>
+            </div>
+            <div>
+                <label for="utmSource" class="block text-sm font-medium text-slate-700 mb-1">Campaign Source <span class="text-red-500">*</span></label>
+                <input type="text" id="utmSource" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., facebook, newsletter" required>
+            </div>
+            <div>
+                <label for="utmMedium" class="block text-sm font-medium text-slate-700 mb-1">Campaign Medium <span class="text-red-500">*</span></label>
+                <input type="text" id="utmMedium" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., social, qr_code" required>
+            </div>
+            <div class="md:col-span-2">
+                <label for="utmCampaign" class="block text-sm font-medium text-slate-700 mb-1">Campaign Name <span class="text-red-500">*</span></label>
+                <input type="text" id="utmCampaign" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., summer_promo_2025" required>
+            </div>
+            <div>
+                <label for="utmTerm" class="block text-sm font-medium text-slate-700 mb-1">Campaign Term</label>
+                <input type="text" id="utmTerm" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Optional: Paid keywords">
+            </div>
+            <div>
+                <label for="utmContent" class="block text-sm font-medium text-slate-700 mb-1">Campaign Content</label>
+                <input type="text" id="utmContent" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Optional: Differentiate ads">
+            </div>
+        </form>
+
+        <!-- Output Section -->
+        <div id="output-section" class="mt-8 pt-6 border-t border-slate-200 hidden">
+            <div class="flex justify-between items-center">
+                 <h2 class="text-xl font-semibold text-slate-800">Your Generated Link</h2>
+                 <button id="saveLinkButton" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Save Link</button>
+            </div>
+           
+            <div class="relative mt-2">
+                 <textarea id="result-url" rows="4" class="block w-full pr-10 p-3 font-mono text-sm text-slate-700 bg-slate-50 border border-slate-300 rounded-md resize-none" readonly></textarea>
+                 <button id="copyLongUrlButton" class="absolute top-2 right-2 p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-md" title="Copy to clipboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                 </button>
+            </div>
+            
+            <div class="mt-4">
+                <button id="shortenButton" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Shorten Link</button>
+            </div>
+
+            <div id="short-url-container" class="mt-4 hidden">
+                <h3 class="text-lg font-semibold text-slate-800">Shortened Link</h3>
+                <div class="relative mt-2">
+                    <input type="text" id="short-url-result" class="block w-full pr-10 p-3 font-mono text-sm text-slate-700 bg-slate-50 border border-slate-300 rounded-md" readonly>
+                    <button id="copyShortUrlButton" class="absolute top-2 right-2 p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-md" title="Copy to clipboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="copy-feedback" class="text-sm text-green-600 h-4 mt-1"></div>
+
+            <div class="text-center mt-6">
+                <div id="qrcode"></div>
+                <small class="text-slate-500 mt-2 block">Right-click the QR code to save it.</small>
+            </div>
+        </div>
+
+        <!-- Saved Links Section -->
+        <div id="saved-links-section" class="mt-8 pt-6 border-t border-slate-200">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Saved Links</h2>
+            <div id="saved-links-container" class="space-y-3">
+                <!-- Saved links will be injected here by JavaScript -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Element Selection ---
+        const form = document.getElementById('utmForm');
+        const outputSection = document.getElementById('output-section');
+        const resultUrl = document.getElementById('result-url');
+        const shortenButton = document.getElementById('shortenButton');
+        const saveLinkButton = document.getElementById('saveLinkButton');
+        const shortUrlContainer = document.getElementById('short-url-container');
+        const shortUrlResult = document.getElementById('short-url-result');
+        const qrcodeContainer = document.getElementById('qrcode');
+        const copyLongUrlButton = document.getElementById('copyLongUrlButton');
+        const copyShortUrlButton = document.getElementById('copyShortUrlButton');
+        const copyFeedback = document.getElementById('copy-feedback');
+        const savedLinksContainer = document.getElementById('saved-links-container');
+        const storageKey = 'utmBuilderSavedLinks';
+
+        // --- Initialize QR Code Generator ---
+        let qrcode = new QRCode(qrcodeContainer, {
+            width: 200, height: 200, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+        });
+
+        // --- Core Logic ---
+        function generateUrl() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            if (!baseUrl || !document.getElementById('utmSource').value.trim() || !document.getElementById('utmMedium').value.trim() || !document.getElementById('utmCampaign').value.trim()) {
+                outputSection.classList.add('hidden');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            const fields = ['utmSource', 'utmMedium', 'utmCampaign', 'utmTerm', 'utmContent'];
+            fields.forEach(id => {
+                const input = document.getElementById(id);
+                const paramName = id.replace('utm', 'utm_').toLowerCase();
+                if (input.value.trim()) {
+                    params.append(paramName, input.value.trim());
+                }
+            });
+
+            const finalUrl = baseUrl.includes('?') ? `${baseUrl}&${params.toString()}` : `${baseUrl}?${params.toString()}`;
+            resultUrl.value = finalUrl;
+            
+            outputSection.classList.remove('hidden');
+            shortUrlContainer.classList.add('hidden');
+            shortUrlResult.value = '';
+            updateQrCode(finalUrl);
+        }
+
+        async function shortenUrl() {
+            const longUrl = resultUrl.value;
+            if (!longUrl) return;
+
+            shortenButton.disabled = true;
+            shortenButton.innerHTML = 'Shortening... <div class="spinner"></div>';
+            
+            try {
+                const apiUrl = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const shortUrl = await response.text();
+                
+                shortUrlResult.value = shortUrl;
+                shortUrlContainer.classList.remove('hidden');
+                updateQrCode(shortUrl);
+
+            } catch (error) {
+                console.error("Error shortening URL:", error);
+                shortUrlResult.value = "Error: Could not shorten URL.";
+                shortUrlContainer.classList.remove('hidden');
+            } finally {
+                shortenButton.disabled = false;
+                shortenButton.innerHTML = 'Shorten Link';
+            }
+        }
+
+        function updateQrCode(url) {
+            qrcodeContainer.style.opacity = '0.5';
+            setTimeout(() => {
+                qrcode.clear();
+                qrcode.makeCode(url);
+                qrcodeContainer.style.opacity = '1';
+            }, 300);
+        }
+
+        function copyToClipboard(element, message) {
+            element.select();
+            try {
+                document.execCommand('copy');
+                copyFeedback.textContent = message;
+                setTimeout(() => { copyFeedback.textContent = ''; }, 2000);
+            } catch (err) {
+                copyFeedback.textContent = 'Failed to copy!';
+            }
+        }
+
+        // --- Local Storage Functions ---
+        function getSavedLinks() {
+            return JSON.parse(localStorage.getItem(storageKey)) || [];
+        }
+
+        function saveLinks(links) {
+            localStorage.setItem(storageKey, JSON.stringify(links));
+        }
+
+        function saveCurrentLink() {
+            const links = getSavedLinks();
+            const newLink = {
+                id: Date.now(), // Unique ID for each link
+                baseUrl: document.getElementById('baseUrl').value.trim(),
+                utmSource: document.getElementById('utmSource').value.trim(),
+                utmMedium: document.getElementById('utmMedium').value.trim(),
+                utmCampaign: document.getElementById('utmCampaign').value.trim(),
+                utmTerm: document.getElementById('utmTerm').value.trim(),
+                utmContent: document.getElementById('utmContent').value.trim(),
+                longUrl: resultUrl.value,
+                shortUrl: shortUrlResult.value
+            };
+
+            // Avoid saving duplicates
+            if (links.some(link => link.longUrl === newLink.longUrl)) {
+                copyFeedback.textContent = 'This link is already saved!';
+                setTimeout(() => { copyFeedback.textContent = ''; }, 2000);
+                return;
+            }
+
+            links.unshift(newLink); // Add to the beginning of the array
+            saveLinks(links);
+            renderSavedLinks();
+        }
+
+        function recallLink(id) {
+            const links = getSavedLinks();
+            const linkToRecall = links.find(link => link.id === id);
+            if (linkToRecall) {
+                document.getElementById('baseUrl').value = linkToRecall.baseUrl;
+                document.getElementById('utmSource').value = linkToRecall.utmSource;
+                document.getElementById('utmMedium').value = linkToRecall.utmMedium;
+                document.getElementById('utmCampaign').value = linkToRecall.utmCampaign;
+                document.getElementById('utmTerm').value = linkToRecall.utmTerm;
+                document.getElementById('utmContent').value = linkToRecall.utmContent;
+                
+                // Trigger generation and update UI
+                generateUrl();
+
+                // If a short URL was saved, display it too
+                if(linkToRecall.shortUrl) {
+                    shortUrlResult.value = linkToRecall.shortUrl;
+                    shortUrlContainer.classList.remove('hidden');
+                    updateQrCode(linkToRecall.shortUrl);
+                }
+                
+                // Scroll to top to see the populated form
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function deleteLink(id) {
+            let links = getSavedLinks();
+            links = links.filter(link => link.id !== id);
+            saveLinks(links);
+            renderSavedLinks();
+        }
+
+        function renderSavedLinks() {
+            const links = getSavedLinks();
+            savedLinksContainer.innerHTML = ''; // Clear current list
+
+            if (links.length === 0) {
+                savedLinksContainer.innerHTML = `<p class="text-slate-500">You haven't saved any links yet.</p>`;
+                return;
+            }
+
+            links.forEach(link => {
+                const linkEl = document.createElement('div');
+                linkEl.className = 'p-4 bg-slate-50 border border-slate-200 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3';
+                linkEl.innerHTML = `
+                    <div class="flex-grow overflow-hidden">
+                        <p class="text-sm font-semibold text-slate-800 truncate" title="${link.utmCampaign}">${link.utmCampaign}</p>
+                        <p class="text-xs text-indigo-600 font-mono truncate" title="${link.shortUrl || link.longUrl}">${link.shortUrl || link.longUrl}</p>
+                    </div>
+                    <div class="flex-shrink-0 flex items-center gap-2">
+                        <button class="recall-btn px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md" data-id="${link.id}">Recall</button>
+                        <button class="delete-btn px-3 py-1 text-sm font-medium text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-md" data-id="${link.id}">Delete</button>
+                    </div>
+                `;
+                savedLinksContainer.appendChild(linkEl);
+            });
+        }
+        
+        // --- Event Delegation for Saved Links ---
+        savedLinksContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('recall-btn')) {
+                const id = Number(e.target.dataset.id);
+                recallLink(id);
+            }
+            if (e.target.classList.contains('delete-btn')) {
+                const id = Number(e.target.dataset.id);
+                deleteLink(id);
+            }
+        });
+
+        // --- Initial Page Load ---
+        document.addEventListener('DOMContentLoaded', renderSavedLinks);
+        form.addEventListener('input', generateUrl);
+        shortenButton.addEventListener('click', shortenUrl);
+        saveLinkButton.addEventListener('click', saveCurrentLink);
+        copyLongUrlButton.addEventListener('click', () => copyToClipboard(resultUrl, 'Copied long URL!'));
+        copyShortUrlButton.addEventListener('click', () => copyToClipboard(shortUrlResult, 'Copied short URL!'));
+    </script>
+</body>
+</html>
