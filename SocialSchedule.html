@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Scheduler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-900">
+    <div id="root"></div>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+
+    <!-- Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase Libraries (v9 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <script type="text/babel">
+        // --- CONFIGURATION: Your Firebase config object ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+          authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+          projectId: "opsf---comms-task-tracker",
+          storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
+          messagingSenderId: "489224390639",
+          appId: "1:489224390639:web:54b9f2772aaef86d32581a",
+          measurementId: "G-PE0JBKHX9W"
+        };
+        // ---------------------------------------------------------
+
+        // --- Icon Components (replaces lucide-react) ---
+        const Icon = ({ children, ...props }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>;
+        const ChevronLeft = (props) => <Icon {...props}><path d="m15 18-6-6 6-6"/></Icon>;
+        const ChevronRight = (props) => <Icon {...props}><path d="m9 18 6-6-6-6"/></Icon>;
+        const Plus = (props) => <Icon {...props}><path d="M5 12h14"/><path d="M12 5v14"/></Icon>;
+        const X = (props) => <Icon {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>;
+        const Facebook = (props) => <Icon {...props}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></Icon>;
+        const Instagram = (props) => <Icon {...props}><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></Icon>;
+        const Store = (props) => <Icon {...props}><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7H2l8.65-5.34a2 2 0 0 1 2.7 0L22 7z"/></Icon>;
+        const Clock = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></Icon>;
+        const Edit = (props) => <Icon {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Icon>;
+        const Trash2 = (props) => <Icon {...props}><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
+        const Filter = (props) => <Icon {...props}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></Icon>;
+        const Calendar = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></Icon>;
+        const List = (props) => <Icon {...props}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></Icon>;
+        const Columns = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="12" x2="12" y1="3" y2="21"/></Icon>;
+        const BarChart2 = (props) => <Icon {...props}><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></Icon>;
+        const SettingsIcon = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const Tag = (props) => <Icon {...props}><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.432 0l6.568-6.568a2.426 2.426 0 0 0 0-3.432l-8.704-8.704z"/><line x1="7" x2="7.01" y1="7" y2="7"/></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></Icon>;
+        const Info = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></Icon>;
+        const ThumbsUp = (props) => <Icon {...props}><path d="M7 10v12"/><path d="M10 5.5-8-8-8 12.5V22h12.8a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h3"/></Icon>;
+        const MessageSquare = (props) => <Icon {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+        const Share2 = (props) => <Icon {...props}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></Icon>;
+        const Eye = (props) => <Icon {...props}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const MousePointerClick = (props) => <Icon {...props}><path d="m9 9 5 12 1.8-5.2L21 14l-3.6-8.2-5.2 1.8L9 9z"/><path d="m7.2 2.2 4.6 4.6M13 13h6"/><path d="m22 6-3-3"/></Icon>;
+
+        // --- All Child Components must be defined before the main App component ---
+
+        const platformIcons = { Facebook: <Facebook size={18} className="text-blue-500" />, Instagram: <Instagram size={18} className="text-pink-500" />, 'Google My Business': <Store size={18} className="text-green-500" /> };
+        const statusInfo = { scheduled: { icon: <Clock size={14} className="text-yellow-400" />, text: "Scheduled" }, published: { icon: <CheckCircle size={14} className="text-green-400" />, text: "Published" } };
+
+        const Header = ({ currentDate, changeDate, view, setView, onNewPost, onOpenReporting, onOpenSettings, filters, setFilters }) => { const dateUnit = view === 'week' ? 'week' : 'month'; const dateTitle = view === 'week' ? `Week of ${currentDate.toLocaleDateString()}` : currentDate.toLocaleString('default', { month: 'long', year: 'numeric' }); return (<header className="flex flex-col md:flex-row items-center justify-between mb-6 pb-4 border-b border-gray-700 gap-4"><div className="flex items-center space-x-4 shrink-0"><h1 className="text-3xl font-bold">Social Scheduler</h1></div><div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto"><div className="flex items-center rounded-md bg-gray-800"><button onClick={() => changeDate(-1, dateUnit)} className="p-2 hover:bg-gray-700 rounded-l-md"><ChevronLeft size={20} /></button><span className="font-semibold text-blue-400 px-3 text-center w-32 md:w-48">{dateTitle}</span><button onClick={() => changeDate(1, dateUnit)} className="p-2 hover:bg-gray-700 rounded-r-md"><ChevronRight size={20} /></button></div><div className="flex items-center p-1 bg-gray-800 rounded-lg"><ViewButton icon={<Calendar />} label="Month" active={view === 'month'} onClick={() => setView('month')}/><ViewButton icon={<Columns />} label="Week" active={view === 'week'} onClick={() => setView('week')}/><ViewButton icon={<List />} label="List" active={view === 'list'} onClick={() => setView('list')}/></div><FilterDropdown type="platform" value={filters.platform} onChange={setFilters} options={{all: 'All Platforms', Facebook:'Facebook', Instagram: 'Instagram', 'Google My Business': 'Google My Business'}} /><FilterDropdown type="status" value={filters.status} onChange={setFilters} options={{all: 'All Statuses', scheduled: 'Scheduled', published: 'Published'}} /><button onClick={onOpenReporting} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Reporting"><BarChart2 size={20}/></button><button onClick={onOpenSettings} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Settings"><SettingsIcon size={20}/></button><button onClick={onNewPost} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><Plus size={20} /> <span className="hidden md:inline">New Post</span></button></div></header>);};
+        const ViewButton = ({ icon, label, active, onClick }) => <button onClick={onClick} title={label} className={`flex items-center justify-center px-3 py-1.5 rounded-md transition-colors text-sm ${active ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>{React.cloneElement(icon, { size: 18 })}<span className="hidden lg:inline ml-2">{label}</span></button>;
+        const FilterDropdown = ({ type, value, onChange, options }) => <div className="relative"><Filter size={14} className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-500"/><select value={value} onChange={(e) => onChange(prev => ({...prev, [type]: e.target.value}))} className="appearance-none bg-gray-700 border border-gray-600 rounded-md py-1.5 pl-8 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500">{Object.entries(options).map(([val, label]) => <option key={val} value={val}>{label}</option>)}</select></div>;
+        
+        const PostModal = ({ post, date, settings, onClose, onSave }) => {
+            const { useState, useEffect } = React;
+            const defaultPerformance = { likes: 0, comments: 0, shares: 0, reach: 0, clicks: 0, views: 0 };
+            const [formData, setFormData] = useState({ content: '', platform: 'Facebook', scheduledAt: '', status: 'scheduled', pillarId: '', performance: defaultPerformance });
+            
+            useEffect(() => { const d = post ? new Date(post.scheduledAt) : (date ? new Date(date) : new Date()); if (!post && date) d.setHours(9, 0, 0, 0); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); setFormData({ content: post?.content || '', platform: post?.platform || 'Facebook', status: post?.status || 'scheduled', pillarId: post?.pillarId || '', scheduledAt: d.toISOString().slice(0, 16), performance: { ...defaultPerformance, ...post?.performance } }); }, [post, date]);
+
+            const handleChange = (e) => { const { id, value } = e.target; setFormData(prev => ({ ...prev, [id]: value })); };
+            const handleTemplateChange = (e) => { const templateId = e.target.value; if (!templateId) return; const template = settings.templates.find(t => t.id === templateId); if (template) setFormData(prev => ({...prev, content: template.content})); };
+            const handlePerfChange = (e) => { const { id, value } = e.target; setFormData(prev => ({ ...prev, performance: { ...prev.performance, [id]: value }})); };
+            const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
+
+            return (<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div className="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-2xl relative"><button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={24} /></button><h2 className="text-2xl font-bold mb-6">{post ? 'Edit Post' : 'Create New Post'}</h2><form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><PillarSelect settings={settings} value={formData.pillarId} onChange={handleChange} /><TemplateSelect settings={settings} onChange={handleTemplateChange} /></div>
+                <div><label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-1">Content</label><textarea id="content" value={formData.content} onChange={handleChange} rows="5" className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" placeholder="What's on your mind?"></textarea></div>
+                <div className="grid md:grid-cols-3 gap-4"><div><label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">Platform</label><select id="platform" value={formData.platform} onChange={handleChange} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500"><option>Facebook</option><option>Instagram</option><option>Google My Business</option></select></div><div><label htmlFor="scheduledAt" className="block text-sm font-medium text-gray-300 mb-1">Schedule Date & Time</label><input type="datetime-local" id="scheduledAt" value={formData.scheduledAt} onChange={handleChange} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /></div><div><label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-1">Status</label><select id="status" value={formData.status} onChange={handleChange} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500"><option value="scheduled">Scheduled</option><option value="published">Published</option></select></div></div>
+                {formData.status === 'published' && (<div className="pt-2"><h3 className="text-lg font-semibold text-blue-400 mb-2 border-t border-gray-700 pt-4">Performance</h3>
+                    { (formData.platform === 'Facebook' || formData.platform === 'Instagram') && <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><PerfInput label="Likes" id="likes" value={formData.performance.likes} onChange={handlePerfChange} icon={<ThumbsUp size={14}/>}/><PerfInput label="Comments" id="comments" value={formData.performance.comments} onChange={handlePerfChange} icon={<MessageSquare size={14}/>}/><PerfInput label="Shares" id="shares" value={formData.performance.shares} onChange={handlePerfChange} icon={<Share2 size={14}/>}/><PerfInput label="Reach" id="reach" value={formData.performance.reach} onChange={handlePerfChange} icon={<Eye size={14}/>}/></div> }
+                    { formData.platform === 'Google My Business' && <div className="grid grid-cols-2 gap-3"><PerfInput label="Views" id="views" value={formData.performance.views} onChange={handlePerfChange} icon={<Eye size={14}/>}/><PerfInput label="Clicks" id="clicks" value={formData.performance.clicks} onChange={handlePerfChange} icon={<MousePointerClick size={14}/>}/></div> }
+                </div>)}
+                <div className="flex justify-end pt-4"><button type="submit" className="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-6 rounded-lg">{post ? 'Save Changes' : 'Schedule Post'}</button></div></form></div></div>);
+        };
+        const PillarSelect = ({ settings, value, onChange }) => (<div><label htmlFor="pillarId" className="block text-sm font-medium text-gray-300 mb-1">Content Pillar</label><select id="pillarId" value={value} onChange={onChange} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500"><option value="">No Pillar</option>{settings?.pillars?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>);
+        const TemplateSelect = ({ settings, onChange }) => (<div><label htmlFor="template" className="block text-sm font-medium text-gray-300 mb-1">Use Template</label><select id="template" onChange={onChange} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" defaultValue=""><option value="">Select a template...</option>{settings?.templates?.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>);
+        const PerfInput = ({ label, id, value, onChange, icon }) => (<div><label htmlFor={id} className="block text-xs font-medium text-gray-400 mb-1 flex items-center gap-1">{icon} {label}</label><input type="number" min="0" id={id} value={value} onChange={onChange} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500"/></div>);
+
+        const ReportingModal = ({ posts, onClose }) => {
+            const { useState, useMemo } = React;
+            const [dateRange, setDateRange] = useState('thisMonth');
+            const filteredPosts = useMemo(() => { const now = new Date(); const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(now.getDate() - 30); if (dateRange === 'all') return posts; return posts.filter(post => { if (!post.scheduledAt) return false; const scheduledDate = new Date(post.scheduledAt); if (dateRange === 'thisMonth') return scheduledDate >= firstDayOfMonth; if (dateRange === 'last30') return scheduledDate >= thirtyDaysAgo; return false; }); }, [posts, dateRange]);
+            const platformStats = useMemo(() => {
+                const stats = { Facebook: {posts:[]}, Instagram: {posts:[]}, 'Google My Business': {posts:[]} };
+                for (const post of filteredPosts) { if (stats[post.platform]) stats[post.platform].posts.push(post); }
+                ['Facebook', 'Instagram'].forEach(platform => { let tL = 0, tC = 0, tS = 0, tR = 0; stats[platform].posts.forEach(p => { tL += p.performance?.likes || 0; tC += p.performance?.comments || 0; tS += p.performance?.shares || 0; tR += p.performance?.reach || 0; }); const getEng = p => (p.performance?.likes || 0) + (p.performance?.comments || 0) + (p.performance?.shares || 0); stats[platform].totals = { totalLikes: tL, totalComments: tC, totalShares: tS, totalReach: tR }; stats[platform].topPosts = [...stats[platform].posts].sort((a,b) => getEng(b) - getEng(a)).slice(0, 3); });
+                let tV = 0, tC = 0; stats['Google My Business'].posts.forEach(p => { tV += p.performance?.views || 0; tC += p.performance?.clicks || 0; }); stats['Google My Business'].totals = { totalViews: tV, totalClicks: tC }; stats['Google My Business'].topPosts = [...stats['Google My Business'].posts].sort((a,b) => (b.performance?.clicks || 0) - (a.performance?.clicks || 0)).slice(0, 3);
+                return stats;
+            }, [filteredPosts]);
+
+            return (<div className="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 flex flex-col p-4 md:p-8"><header className="flex items-center justify-between pb-4 border-b border-gray-700 mb-6"><h2 className="text-3xl font-bold">Performance Dashboard</h2><div className="flex items-center gap-4"><select value={dateRange} onChange={e => setDateRange(e.target.value)} className="bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:ring-2 focus:ring-blue-500"><option value="thisMonth">This Month</option><option value="last30">Last 30 Days</option><option value="all">All Time</option></select><button onClick={onClose} className="text-gray-400 hover:text-white"><X size={30} /></button></div></header><main className="flex-grow overflow-y-auto grid grid-cols-1 lg:grid-cols-3 gap-6"><PlatformReport platform="Facebook" stats={platformStats.Facebook} /><PlatformReport platform="Instagram" stats={platformStats.Instagram} /><PlatformReport platform="Google My Business" stats={platformStats['Google My Business']} /></main></div>);
+        };
+        const PlatformReport = ({ platform, stats }) => (
+            <div className="bg-gray-800 rounded-lg p-6 space-y-4">
+                <div className="flex items-center gap-3"><div className="w-8 h-8 flex items-center justify-center">{platformIcons[platform]}</div><h3 className="text-xl font-semibold text-blue-400">{platform}</h3></div>
+                <div className="space-y-2"><StatCard icon={<FileText/>} label="Total Posts" value={stats.posts.length}/>{ (platform === 'Facebook' || platform === 'Instagram') && <React.Fragment><StatCard icon={<ThumbsUp/>} label="Total Likes" value={stats.totals.totalLikes?.toLocaleString()}/><StatCard icon={<MessageSquare/>} label="Total Comments" value={stats.totals.totalComments?.toLocaleString()}/><StatCard icon={<Share2/>} label="Total Shares" value={stats.totals.totalShares?.toLocaleString()}/><StatCard icon={<Eye/>} label="Total Reach" value={stats.totals.totalReach?.toLocaleString()}/></React.Fragment>}{ platform === 'Google My Business' && <React.Fragment><StatCard icon={<Eye/>} label="Total Views" value={stats.totals.totalViews?.toLocaleString()}/><StatCard icon={<MousePointerClick/>} label="Total Clicks" value={stats.totals.totalClicks?.toLocaleString()}/></React.Fragment>}</div>
+                <div><h4 className="font-semibold mt-6 mb-2 text-gray-300">Top Posts</h4><div className="space-y-2">{stats.topPosts.length > 0 ? stats.topPosts.map(p => <TopPostItem key={p.id} post={p} />) : <p className="text-gray-500 text-center py-4 text-sm">No posts with performance data.</p>}</div></div>
+            </div>
+        );
+        const StatCard = ({ icon, label, value }) => (<div className="bg-gray-700/50 p-3 rounded-lg flex items-center justify-between text-sm"><div className="flex items-center gap-3"><div className="text-blue-400">{icon}</div><p className="text-gray-300">{label}</p></div><p className="font-bold">{value}</p></div>);
+        const TopPostItem = ({ post }) => { const isGMB = post.platform === 'Google My Business'; const engagement = isGMB ? post.performance?.clicks || 0 : (post.performance?.likes || 0) + (post.performance?.comments || 0) + (post.performance?.shares || 0); return (<div className="bg-gray-700 p-2 rounded-lg text-xs"><div className="flex justify-between items-start"><p className="text-gray-300 line-clamp-2 pr-2">{post.content}</p><div className="text-right shrink-0"><p className="font-bold text-base">{engagement.toLocaleString()}</p><p className="text-xs text-gray-400">{isGMB ? 'Clicks' : 'Engagement'}</p></div></div></div>);};
+
+        const MonthlyView = (props) => { const { currentDate, postsByDate } = props; const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1); const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); const startDate = new Date(start); startDate.setDate(start.getDate() - start.getDay()); const endDate = new Date(end); endDate.setDate(end.getDate() + (6 - end.getDay())); const days = []; let d = new Date(startDate); while (d <= endDate) { days.push(new Date(d)); d.setDate(d.getDate() + 1); } return (<React.Fragment><div className="grid grid-cols-7 gap-2 text-center text-sm font-bold text-gray-400 mb-2">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day}>{day}</div>)}</div><div className="grid grid-cols-7 grid-rows-5 gap-2 flex-grow">{days.map(day => <CalendarDay key={day.toISOString()} day={day} isCurrentMonth={day.getMonth() === currentDate.getMonth()} posts={postsByDate[day.toDateString()] || []} {...props} />)}</div></React.Fragment>);};
+        const WeeklyView = (props) => { const { currentDate, postsByDate } = props; const startOfWeek = new Date(currentDate); startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); const days = Array.from({ length: 7 }).map((_, i) => { const d = new Date(startOfWeek); d.setDate(d.getDate() + i); return d; }); return (<div className="flex-grow grid grid-cols-7 gap-2">{days.map(day => <div key={day.toISOString()} className="bg-gray-800 rounded-lg p-2 flex flex-col"><div className="text-center font-bold mb-2 border-b border-gray-700 pb-2"><span className="text-gray-400 text-sm">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span><h3 className="text-lg">{day.getDate()}</h3></div><CalendarDay day={day} isCurrentMonth={true} posts={postsByDate[day.toDateString()] || []} {...props} isWeeklyView={true} /></div>)}</div>);};
+        const ListView = ({ posts, settings, ...rest }) => { const sorted = [...posts].sort((a, b) => (a.scheduledAt || 0) - (b.scheduledAt || 0)); const grouped = sorted.reduce((acc, post) => { const key = post.scheduledAt ? post.scheduledAt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Unscheduled'; if (!acc[key]) acc[key] = []; acc[key].push(post); return acc; }, {}); return (<div className="flex-grow overflow-y-auto p-1">{Object.keys(grouped).length === 0 ? <div className="text-center text-gray-500 py-16">No posts to show.</div> : Object.entries(grouped).map(([date, postsInDay]) => <div key={date} className="mb-6"><h3 className="text-lg font-bold text-blue-400 mb-3 sticky top-0 bg-gray-900 py-2">{date}</h3><div className="space-y-3">{postsInDay.map(post => <ListPostItem key={post.id} post={post} settings={settings} {...rest} />)}</div></div>)}</div>);};
+        const CalendarDay = React.memo(({ day, isCurrentMonth, posts, onDrop, onNewPost, isWeeklyView, settings, ...rest }) => { const { useState } = React; const isToday = new Date().toDateString() === day.toDateString(); const [isDragOver, setIsDragOver] = useState(false); const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); }; const handleDragLeave = () => setIsDragOver(false); const handleDrop = (e) => { e.preventDefault(); onDrop(e.dataTransfer.getData('postId'), day); setIsDragOver(false); }; return (<div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`flex flex-col transition-colors ${isWeeklyView ? 'flex-grow' : `bg-gray-800 rounded-lg p-2 min-h-[160px] ${isCurrentMonth ? 'bg-gray-800' : 'bg-gray-800/50'}`} ${isDragOver ? 'bg-blue-900/50 ring-2 ring-blue-500' : ''}`}>{!isWeeklyView && <div className="flex justify-between items-center mb-2"><time className={`font-semibold text-sm ${isCurrentMonth ? 'text-gray-300' : 'text-gray-500'} ${isToday ? 'text-blue-400' : ''}`}>{day.getDate()}</time><button onClick={() => onNewPost(day)} className="text-gray-500 hover:text-blue-400"><Plus size={16} /></button></div>}<div className="flex-grow overflow-y-auto space-y-1 pr-1 -mr-1">{posts.map(post => <CalendarPostItem key={post.id} post={post} settings={settings} {...rest} />)}</div>{isWeeklyView && <button onClick={() => onNewPost(day)} className="mt-2 w-full text-center text-sm p-1 rounded-md text-gray-400 hover:bg-gray-700 hover:text-white">Add</button>}</div>);});
+        const CalendarPostItem = ({ post, settings, ...rest }) => { const pillar = settings?.pillars?.find(p => p.id === post.pillarId); return (<div draggable onDragStart={(e) => e.dataTransfer.setData('postId', post.id)} className="bg-gray-700 rounded-md p-2 text-xs relative group cursor-grab active:cursor-grabbing"><PostItemHeader pillar={pillar} post={post} {...rest} /><p className="text-gray-300 break-words line-clamp-2 my-1">{post.content}</p><PostItemFooter post={post} {...rest} /></div>); };
+        const ListPostItem = ({ post, settings, onEditPost, onDeletePost, onToggleStatus }) => { const pillar = settings?.pillars?.find(p => p.id === post.pillarId); return (<div className="bg-gray-800 rounded-lg p-3 flex items-start justify-between"><div className="flex items-start space-x-4"><div className="text-center shrink-0 w-20"><div className="font-bold text-lg">{post.scheduledAt?.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div><div className="flex justify-center mt-1">{platformIcons[post.platform]}</div></div><div>{pillar && <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 rounded-full" style={{backgroundColor: pillar.color}}></div><span className="text-xs font-bold" style={{color: pillar.color}}>{pillar.name}</span></div>}<p className="text-gray-200">{post.content}</p><button onClick={() => onToggleStatus(post)} className="flex items-center gap-1.5 mt-2 text-gray-400 hover:text-white">{statusInfo[post.status]?.icon}<span>{statusInfo[post.status]?.text}</span></button></div></div><div className="flex items-center space-x-2"><button onClick={() => onEditPost(post)} className="p-2 text-gray-400 hover:text-blue-400 rounded-full hover:bg-gray-700"><Edit size={16}/></button><button onClick={() => onDeletePost(post.id)} className="p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-700"><Trash2 size={16}/></button></div></div>);};
+        const PostItemHeader = ({ pillar, post, onEditPost, onDeletePost }) => (<div className="flex items-start justify-between"><div className="flex items-center gap-1.5">{pillar && <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" title={pillar.name} style={{ backgroundColor: pillar.color }}></div>}{platformIcons[post.platform]}<span className="font-bold text-gray-200">{post.platform}</span></div><div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => onEditPost(post)} className="text-gray-400 hover:text-blue-400"><Edit size={14} /></button><button onClick={() => onDeletePost(post.id)} className="text-gray-400 hover:text-red-400"><Trash2 size={14} /></button></div></div>);
+        const PostItemFooter = ({ post, onToggleStatus }) => (<button onClick={() => onToggleStatus(post)} className="flex items-center gap-1 mt-1 text-gray-400 hover:text-white">{statusInfo[post.status]?.icon}<span>{statusInfo[post.status]?.text}</span></button>);
+
+        const SettingsModal = ({ currentSettings, onSave, onClose }) => { const { useState } = React; const [activeTab, setActiveTab] = useState('branding'); const [settings, setSettings] = useState(JSON.parse(JSON.stringify(currentSettings))); const handleSave = () => { onSave(settings); onClose(); }; return (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"><div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col"><header className="flex items-center justify-between p-4 border-b border-gray-700"><div className="flex items-center gap-3"><SettingsIcon className="text-blue-400" /><h2 className="text-2xl font-bold">Application Settings</h2></div><button onClick={onClose} className="text-gray-500 hover:text-white"><X size={24} /></button></header><div className="flex flex-grow overflow-hidden"><nav className="w-1/4 bg-gray-800/50 p-4 border-r border-gray-700"><SettingsTabButton id="branding" label="Branding & Location" icon={<Info />} activeTab={activeTab} setActiveTab={setActiveTab} /><SettingsTabButton id="pillars" label="Content Pillars" icon={<Tag />} activeTab={activeTab} setActiveTab={setActiveTab} /><SettingsTabButton id="templates" label="Post Templates" icon={<FileText />} activeTab={activeTab} setActiveTab={setActiveTab} /></nav><main className="w-3/4 flex-grow p-6 overflow-y-auto">{activeTab === 'branding' ? <BrandingSettings settings={settings} setSettings={setSettings} /> : activeTab === 'pillars' ? <PillarsSettings settings={settings} setSettings={setSettings} /> : <TemplatesSettings settings={settings} setSettings={setSettings} />}</main></div><footer className="p-4 border-t border-gray-700 flex justify-end gap-4"><button onClick={onClose} className="py-2 px-4 rounded-lg bg-gray-600 hover:bg-gray-500 font-semibold">Cancel</button><button onClick={handleSave} className="py-2 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 font-bold">Save & Close</button></footer></div></div>); };
+        const SettingsTabButton = ({ id, label, icon, activeTab, setActiveTab }) => <button onClick={() => setActiveTab(id)} className={`flex items-center gap-3 w-full text-left p-3 rounded-md mb-2 transition-colors ${activeTab === id ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>{icon} {label}</button>;
+        const BrandingSettings = ({ settings, setSettings }) => { const handleChange = (e) => { const { name, value } = e.target; setSettings(prev => ({ ...prev, branding: { ...prev.branding, [name]: value } })); }; return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Branding & Location</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><SettingsInput label="Centre Name" name="centreName" value={settings.branding.centreName} onChange={handleChange} /><SettingsInput label="Primary Social Handle" name="socialHandle" value={settings.branding.socialHandle} onChange={handleChange} /></div><SettingsTextarea label="Brand Voice" name="brandVoice" value={settings.branding.brandVoice} onChange={handleChange} help="Describe your brand's personality for the AI." /><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><SettingsInput label="Street Address" name="address" value={settings.branding.address} onChange={handleChange} /><SettingsInput label="City, State & Postcode" name="city" value={settings.branding.city} onChange={handleChange} /></div><SettingsTextarea label="Important Location Note" name="locationNote" value={settings.branding.locationNote} onChange={handleChange} help="Crucial context for AI." /></div>); };
+        const PillarsSettings = ({ settings, setSettings }) => { const { useState } = React; const [name, setName] = useState(''); const [color, setColor] = useState('#3b82f6'); const add = () => { if (!name) return; setSettings(p => ({ ...p, pillars: [...(p.pillars || []), { id: crypto.randomUUID(), name, color }] })); setName(''); setColor('#3b82f6'); }; const del = (id) => setSettings(p => ({ ...p, pillars: p.pillars.filter(i => i.id !== id) })); return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Content Pillars</h3><div className="bg-gray-700 rounded-lg p-4 flex items-center gap-4"><input type="text" placeholder="New Pillar Name" value={name} onChange={e => setName(e.target.value)} className="flex-grow bg-gray-600 border-gray-500 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><input type="color" value={color} onChange={e => setColor(e.target.value)} className="bg-gray-600 rounded-md h-10 w-10 p-0 border-none cursor-pointer" /><button onClick={add} className="py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">Add</button></div><div className="space-y-2">{settings.pillars?.map(p => (<div key={p.id} className="bg-gray-700 rounded-lg p-3 flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full" style={{ backgroundColor: p.color }}></div><span className="font-semibold">{p.name}</span></div><button onClick={() => del(p.id)} className="text-gray-400 hover:text-red-400"><Trash2 size={18}/></button></div>))}</div></div>); };
+        const TemplatesSettings = ({ settings, setSettings }) => { const { useState } = React; const [name, setName] = useState(''); const [content, setContent] = useState(''); const add = () => { if (!name || !content) return; setSettings(p => ({ ...p, templates: [...(p.templates || []), { id: crypto.randomUUID(), name, content }] })); setName(''); setContent(''); }; const del = (id) => setSettings(p => ({ ...p, templates: p.templates.filter(i => i.id !== id) })); return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Post Templates</h3><div className="bg-gray-700 rounded-lg p-4 space-y-3"><input type="text" placeholder="Template Name" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-600 border-gray-500 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><textarea placeholder="Template content..." value={content} onChange={e => setContent(e.target.value)} rows="3" className="w-full bg-gray-600 border-gray-500 rounded-md p-2 focus:ring-2 focus:ring-blue-500"></textarea><div className="text-right"><button onClick={add} className="py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">Add Template</button></div></div><div className="space-y-2">{settings.templates?.map(t => (<div key={t.id} className="bg-gray-700 rounded-lg p-3"><div className="flex items-center justify-between mb-2"><p className="font-bold">{t.name}</p><button onClick={() => del(t.id)} className="text-gray-400 hover:text-red-400"><Trash2 size={18}/></button></div><p className="text-sm text-gray-300 whitespace-pre-wrap">{t.content}</p></div>))}</div></div>); };
+        const SettingsInput = ({ label, name, value, onChange }) => (<div><label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-1">{label}</label><input type="text" id={name} name={name} value={value || ''} onChange={onChange} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-2 focus:ring-blue-500" /></div>);
+        const SettingsTextarea = ({ label, name, value, onChange, help }) => (<div><label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-1">{label}</label><textarea id={name} name={name} value={value || ''} onChange={onChange} rows="3" className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-2 focus:ring-blue-500"></textarea>{help && <p className="text-xs text-gray-400 mt-1">{help}</p>}</div>);
+        const Footer = ({ userId }) => (<footer className="text-center text-xs text-gray-500 mt-6 pt-4 border-t border-gray-700"><p>Clarence Regional Aquatic Centre Scheduler</p>{userId && <p className="mt-1 font-mono text-gray-600 truncate">Session ID: {userId}</p>}</footer>);
+        
+        // --- Main App Component ---
+        const App = () => {
+            const { useState, useEffect, useMemo } = React;
+
+            const [db, setDb] = useState(null);
+            const [userId, setUserId] = useState(null);
+            const [isAuthReady, setIsAuthReady] = useState(false);
+            const [posts, setPosts] = useState([]);
+            const [settings, setSettings] = useState(null);
+            const [currentDate, setCurrentDate] = useState(new Date());
+            const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+            const [isReportingOpen, setIsReportingOpen] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [selectedPost, setSelectedPost] = useState(null);
+            const [selectedDate, setSelectedDate] = useState(null);
+            const [isLoading, setIsLoading] = useState(true);
+            const [view, setView] = useState('month');
+            const [filters, setFilters] = useState({ platform: 'all', status: 'all' });
+            
+            const defaultSettings = { branding: { centreName: 'Clarence Regional Aquatic Centre', socialHandle: '@CRACGrafton', brandVoice: 'Friendly, professional, community-focused.', address: 'Corner of Oliver and Turf St', city: 'Grafton NSW 2460', locationNote: 'Crucial to mention we are NOT in South Grafton.' }, pillars: [], templates: [] };
+
+            useEffect(() => {
+                if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
+                    try {
+                        if (!firebase.apps.length) {
+                            const app = firebase.initializeApp(firebaseConfig);
+                        }
+                        const auth = firebase.auth();
+                        const firestore = firebase.firestore();
+                        setDb(firestore);
+
+                        auth.onAuthStateChanged(async (user) => {
+                            if (user) {
+                                setUserId(user.uid);
+                            } else {
+                                try {
+                                    await auth.signInAnonymously();
+                                } catch (error) {
+                                    console.error("Auth failed:", error);
+                                }
+                            }
+                            setIsAuthReady(true);
+                        });
+                    } catch (e) {
+                         console.error("Firebase initialization error:", e);
+                         setIsLoading(false);
+                    }
+                } else {
+                    console.error("Firebase config is not available or incomplete.");
+                    setIsLoading(false);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (isAuthReady && db) {
+                    let postsLoaded = false, settingsLoaded = false;
+                    const checkLoading = () => {
+                        if (postsLoaded && settingsLoaded) setIsLoading(false);
+                    };
+
+                    const postsCollection = db.collection('social_posts');
+                    const settingsDocRef = db.collection('scheduler_settings').doc('app_settings');
+
+                    const unsubPosts = postsCollection.onSnapshot((snapshot) => {
+                        setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), scheduledAt: doc.data().scheduledAt?.toDate() })));
+                        postsLoaded = true;
+                        checkLoading();
+                    }, console.error);
+
+                    const unsubSettings = settingsDocRef.onSnapshot((docSnap) => {
+                        if (docSnap.exists) {
+                            setSettings(docSnap.data());
+                        } else {
+                            settingsDocRef.set(defaultSettings).then(() => setSettings(defaultSettings));
+                        }
+                        settingsLoaded = true;
+                        checkLoading();
+                    }, console.error);
+
+                    return () => { unsubPosts(); unsubSettings(); };
+                }
+            }, [isAuthReady, db]);
+
+            const filteredPosts = useMemo(() => posts.filter(post => (filters.platform === 'all' || post.platform === filters.platform) && (filters.status === 'all' || post.status === filters.status)), [posts, filters]);
+            const postsByDate = useMemo(() => filteredPosts.reduce((acc, post) => { if (post.scheduledAt) { const key = post.scheduledAt.toDateString(); if (!acc[key]) acc[key] = []; acc[key].push(post); } return acc; }, {}), [filteredPosts]);
+
+            const changeDate = (offset, unit) => setCurrentDate(prev => { const d = new Date(prev); if (unit === 'month') d.setMonth(prev.getMonth() + offset); if (unit === 'week') d.setDate(prev.getDate() + (offset * 7)); return d; });
+            const handleOpenModalForNew = (date) => { setSelectedDate(date); setSelectedPost(null); setIsPostModalOpen(true); };
+            const handleOpenModalForEdit = (post) => { setSelectedPost(post); setSelectedDate(null); setIsPostModalOpen(true); };
+            const handleClosePostModal = () => { setIsPostModalOpen(false); setSelectedPost(null); setSelectedDate(null); };
+
+            const handleSaveSettings = async (newSettings) => { if (!db) return; const settingsDocRef = db.collection('scheduler_settings').doc('app_settings'); try { await settingsDocRef.set(newSettings, { merge: true }); } catch (error) { console.error("Error saving settings: ", error); } };
+            
+            const handleSavePost = async (postData) => {
+                if (!db) return;
+                const postsRef = db.collection('social_posts');
+                const data = { ...postData, scheduledAt: new Date(postData.scheduledAt), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if (data.performance) { for (const key in data.performance) { data.performance[key] = Number(data.performance[key]) || 0; } }
+                try {
+                    if (selectedPost) await postsRef.doc(selectedPost.id).update(data);
+                    else await postsRef.add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    handleClosePostModal();
+                } catch (error) { console.error("Error saving post:", error); }
+            };
+            const handleDeletePost = async (postId) => { if (!db || !window.confirm("Are you sure?")) return; try { await db.collection('social_posts').doc(postId).delete(); } catch (error) { console.error("Error deleting post:", error); } };
+            const handleToggleStatus = async (post) => { if (!db) return; const newStatus = post.status === 'scheduled' ? 'published' : 'scheduled'; try { await db.collection('social_posts').doc(post.id).update({ status: newStatus }); } catch (error) { console.error("Error updating status:", error); } };
+            const handleDropPost = async (postId, newDate) => { if (!db) return; const post = posts.find(p => p.id === postId); if (post?.scheduledAt) { newDate.setHours(post.scheduledAt.getHours(), post.scheduledAt.getMinutes()); try { await db.collection('social_posts').doc(post.id).update({ scheduledAt: newDate }); } catch (error) { console.error("Error updating post date:", error); } } };
+
+            const renderView = () => { const props = { postsByDate, settings, onNewPost: handleOpenModalForNew, onEditPost: handleOpenModalForEdit, onDeletePost: handleDeletePost, onToggleStatus: handleToggleStatus, onDrop: handleDropPost }; switch (view) { case 'week': return <WeeklyView currentDate={currentDate} {...props} />; case 'list': return <ListView posts={filteredPosts} {...props} />; default: return <MonthlyView currentDate={currentDate} {...props} />; } };
+
+            return (
+                <div className="bg-gray-900 text-white min-h-screen font-sans flex flex-col p-4 md:p-6 lg:p-8">
+                    <Header currentDate={currentDate} changeDate={changeDate} view={view} setView={setView} onNewPost={() => handleOpenModalForNew(new Date())} onOpenReporting={() => setIsReportingOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} filters={filters} setFilters={setFilters} />
+                    {isLoading ? <div className="flex-grow flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div></div> : <div className="flex-grow flex flex-col">{renderView()}</div>}
+                    {isPostModalOpen && <PostModal post={selectedPost} date={selectedDate} settings={settings} onClose={handleClosePostModal} onSave={handleSavePost} />}
+                    {isReportingOpen && <ReportingModal posts={posts} onClose={() => setIsReportingOpen(false)} />}
+                    {isSettingsOpen && settings && <SettingsModal currentSettings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
+                    <Footer userId={userId} />
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
