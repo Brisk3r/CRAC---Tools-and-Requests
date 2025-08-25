@@ -15,14 +15,11 @@
 <body class="bg-gray-900">
     <div id="root"></div>
 
-    <!-- React Libraries -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
 
-    <!-- Babel to transpile JSX in the browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Firebase Libraries (v9 compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -74,7 +71,7 @@
         const platformIcons = { Facebook: <Facebook size={18} className="text-blue-500" />, Instagram: <Instagram size={18} className="text-pink-500" />, 'Google My Business': <Store size={18} className="text-green-500" /> };
         const statusInfo = { scheduled: { icon: <Clock size={14} className="text-yellow-400" />, text: "Scheduled" }, published: { icon: <CheckCircle size={14} className="text-green-400" />, text: "Published" } };
 
-        const Header = ({ currentDate, changeDate, view, setView, onNewPost, onOpenReporting, onOpenSettings, filters, setFilters, currentUser, onLogout }) => { const dateUnit = view === 'week' ? 'week' : 'month'; const dateTitle = view === 'week' ? `Week of ${currentDate.toLocaleDateString()}` : currentDate.toLocaleString('default', { month: 'long', year: 'numeric' }); return (<header className="flex flex-col md:flex-row items-center justify-between mb-6 pb-4 border-b border-gray-700 gap-4"><div className="flex items-center space-x-4 shrink-0"><h1 className="text-3xl font-bold">Social Scheduler</h1><span className="bg-gray-700 text-blue-300 font-bold px-3 py-1 rounded-lg">{currentUser}'s Board</span></div><div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto"><div className="flex items-center rounded-md bg-gray-800"><button onClick={() => changeDate(-1, dateUnit)} className="p-2 hover:bg-gray-700 rounded-l-md"><ChevronLeft size={20} /></button><span className="font-semibold text-blue-400 px-3 text-center w-32 md:w-48">{dateTitle}</span><button onClick={() => changeDate(1, dateUnit)} className="p-2 hover:bg-gray-700 rounded-r-md"><ChevronRight size={20} /></button></div><div className="flex items-center p-1 bg-gray-800 rounded-lg"><ViewButton icon={<Calendar />} label="Month" active={view === 'month'} onClick={() => setView('month')}/><ViewButton icon={<Columns />} label="Week" active={view === 'week'} onClick={() => setView('week')}/><ViewButton icon={<List />} label="List" active={view === 'list'} onClick={() => setView('list')}/></div><FilterDropdown type="platform" value={filters.platform} onChange={setFilters} options={{all: 'All Platforms', Facebook:'Facebook', Instagram: 'Instagram', 'Google My Business': 'Google My Business'}} /><FilterDropdown type="status" value={filters.status} onChange={setFilters} options={{all: 'All Statuses', scheduled: 'Scheduled', published: 'Published'}} /><button onClick={onOpenReporting} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Reporting"><BarChart2 size={20}/></button><button onClick={onOpenSettings} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Settings"><SettingsIcon size={20}/></button><button onClick={onNewPost} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><Plus size={20} /> <span className="hidden md:inline">New Post</span></button><button onClick={onLogout} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Logout"><LogOut size={20}/></button></div></header>);};
+        const Header = ({ currentBoard, currentDate, changeDate, view, setView, onNewPost, onOpenReporting, onOpenSettings, filters, setFilters, onSwitchBoard }) => { const dateUnit = view === 'week' ? 'week' : 'month'; const dateTitle = view === 'week' ? `Week of ${currentDate.toLocaleDateString()}` : currentDate.toLocaleString('default', { month: 'long', year: 'numeric' }); return (<header className="flex flex-col md:flex-row items-center justify-between mb-6 pb-4 border-b border-gray-700 gap-4"><div className="flex items-center space-x-4 shrink-0"><h1 className="text-3xl font-bold">Social Scheduler</h1><span className="bg-gray-700 text-blue-300 font-bold px-3 py-1 rounded-lg">{currentBoard.name}</span></div><div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto"><div className="flex items-center rounded-md bg-gray-800"><button onClick={() => changeDate(-1, dateUnit)} className="p-2 hover:bg-gray-700 rounded-l-md"><ChevronLeft size={20} /></button><span className="font-semibold text-blue-400 px-3 text-center w-32 md:w-48">{dateTitle}</span><button onClick={() => changeDate(1, dateUnit)} className="p-2 hover:bg-gray-700 rounded-r-md"><ChevronRight size={20} /></button></div><div className="flex items-center p-1 bg-gray-800 rounded-lg"><ViewButton icon={<Calendar />} label="Month" active={view === 'month'} onClick={() => setView('month')}/><ViewButton icon={<Columns />} label="Week" active={view === 'week'} onClick={() => setView('week')}/><ViewButton icon={<List />} label="List" active={view === 'list'} onClick={() => setView('list')}/></div><FilterDropdown type="platform" value={filters.platform} onChange={setFilters} options={{all: 'All Platforms', Facebook:'Facebook', Instagram: 'Instagram', 'Google My Business': 'Google My Business'}} /><FilterDropdown type="status" value={filters.status} onChange={setFilters} options={{all: 'All Statuses', scheduled: 'Scheduled', published: 'Published'}} /><button onClick={onOpenReporting} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Reporting"><BarChart2 size={20}/></button><button onClick={onOpenSettings} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Settings"><SettingsIcon size={20}/></button><button onClick={onNewPost} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><Plus size={20} /> <span className="hidden md:inline">New Post</span></button><button onClick={onSwitchBoard} className="p-2 rounded-full bg-gray-700 hover:bg-gray-600" title="Switch Board"><LogOut size={20}/></button></div></header>);};
         const ViewButton = ({ icon, label, active, onClick }) => <button onClick={onClick} title={label} className={`flex items-center justify-center px-3 py-1.5 rounded-md transition-colors text-sm ${active ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>{React.cloneElement(icon, { size: 18 })}<span className="hidden lg:inline ml-2">{label}</span></button>;
         const FilterDropdown = ({ type, value, onChange, options }) => <div className="relative"><Filter size={14} className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-500"/><select value={value} onChange={(e) => onChange(prev => ({...prev, [type]: e.target.value}))} className="appearance-none bg-gray-700 border border-gray-600 rounded-md py-1.5 pl-8 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500">{Object.entries(options).map(([val, label]) => <option key={val} value={val}>{label}</option>)}</select></div>;
         
@@ -139,12 +136,11 @@
 
         const SettingsModal = ({ currentSettings, onSave, onClose }) => { const { useState } = React; const [activeTab, setActiveTab] = useState('branding'); const [settings, setSettings] = useState(JSON.parse(JSON.stringify(currentSettings))); const handleSave = () => { onSave(settings); onClose(); }; return (<div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"><div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col"><header className="flex items-center justify-between p-4 border-b border-gray-700"><div className="flex items-center gap-3"><SettingsIcon className="text-blue-400" /><h2 className="text-2xl font-bold">Application Settings</h2></div><button onClick={onClose} className="text-gray-500 hover:text-white"><X size={24} /></button></header><div className="flex flex-grow overflow-hidden"><nav className="w-1/4 bg-gray-800/50 p-4 border-r border-gray-700"><SettingsTabButton id="branding" label="Branding & Location" icon={<Info />} activeTab={activeTab} setActiveTab={setActiveTab} /><SettingsTabButton id="pillars" label="Content Pillars" icon={<Tag />} activeTab={activeTab} setActiveTab={setActiveTab} /><SettingsTabButton id="templates" label="Post Templates" icon={<FileText />} activeTab={activeTab} setActiveTab={setActiveTab} /></nav><main className="w-3/4 flex-grow p-6 overflow-y-auto">{activeTab === 'branding' ? <BrandingSettings settings={settings} setSettings={setSettings} /> : activeTab === 'pillars' ? <PillarsSettings settings={settings} setSettings={setSettings} /> : <TemplatesSettings settings={settings} setSettings={setSettings} />}</main></div><footer className="p-4 border-t border-gray-700 flex justify-end gap-4"><button onClick={onClose} className="py-2 px-4 rounded-lg bg-gray-600 hover:bg-gray-500 font-semibold">Cancel</button><button onClick={handleSave} className="py-2 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 font-bold">Save & Close</button></footer></div></div>); };
         const SettingsTabButton = ({ id, label, icon, activeTab, setActiveTab }) => <button onClick={() => setActiveTab(id)} className={`flex items-center gap-3 w-full text-left p-3 rounded-md mb-2 transition-colors ${activeTab === id ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>{icon} {label}</button>;
-        const BrandingSettings = ({ settings, setSettings }) => { const handleChange = (e) => { const { name, value } = e.target; setSettings(prev => ({ ...prev, branding: { ...prev.branding, [name]: value } })); }; return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Branding & Location</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><SettingsInput label="Centre Name" name="centreName" value={settings.branding.centreName} onChange={handleChange} /><SettingsInput label="Primary Social Handle" name="socialHandle" value={settings.branding.socialHandle} onChange={handleChange} /></div><SettingsTextarea label="Brand Voice" name="brandVoice" value={settings.branding.brandVoice} onChange={handleChange} help="Describe your brand's personality for the AI." /><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><SettingsInput label="Street Address" name="address" value={settings.branding.address} onChange={handleChange} /><SettingsInput label="City, State & Postcode" name="city" value={settings.branding.city} onChange={handleChange} /></div><SettingsTextarea label="Important Location Note" name="locationNote" value={settings.branding.locationNote} onChange={handleChange} help="Crucial context for AI." /></div>); };
+        const BrandingSettings = ({ settings, setSettings }) => { const handleChange = (e) => { const { name, value } = e.target; setSettings(prev => ({ ...prev, branding: { ...prev.branding, [name]: value } })); }; return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Branding & Location</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><SettingsInput label="Centre Name" name="centreName" value={settings.branding.centreName} onChange={handleChange} /><SettingsInput label="Primary Social Handle" name="socialHandle" value={settings.branding.socialHandle} onChange={handleChange} /></div><SettingsTextarea label="Brand Voice" name="brandVoice" value={settings.branding.brandVoice} onChange={handleChange} help="Describe your brand's personality." /><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><SettingsInput label="Street Address" name="address" value={settings.branding.address} onChange={handleChange} /><SettingsInput label="City, State & Postcode" name="city" value={settings.branding.city} onChange={handleChange} /></div><SettingsTextarea label="Important Location Note" name="locationNote" value={settings.branding.locationNote} onChange={handleChange} help="..." /></div>); };
         const PillarsSettings = ({ settings, setSettings }) => { const { useState } = React; const [name, setName] = useState(''); const [color, setColor] = useState('#3b82f6'); const add = () => { if (!name) return; setSettings(p => ({ ...p, pillars: [...(p.pillars || []), { id: crypto.randomUUID(), name, color }] })); setName(''); setColor('#3b82f6'); }; const del = (id) => setSettings(p => ({ ...p, pillars: p.pillars.filter(i => i.id !== id) })); return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Content Pillars</h3><div className="bg-gray-700 rounded-lg p-4 flex items-center gap-4"><input type="text" placeholder="New Pillar Name" value={name} onChange={e => setName(e.target.value)} className="flex-grow bg-gray-600 border-gray-500 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><input type="color" value={color} onChange={e => setColor(e.target.value)} className="bg-gray-600 rounded-md h-10 w-10 p-0 border-none cursor-pointer" /><button onClick={add} className="py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">Add</button></div><div className="space-y-2">{settings.pillars?.map(p => (<div key={p.id} className="bg-gray-700 rounded-lg p-3 flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full" style={{ backgroundColor: p.color }}></div><span className="font-semibold">{p.name}</span></div><button onClick={() => del(p.id)} className="text-gray-400 hover:text-red-400"><Trash2 size={18}/></button></div>))}</div></div>); };
         const TemplatesSettings = ({ settings, setSettings }) => { const { useState } = React; const [name, setName] = useState(''); const [content, setContent] = useState(''); const add = () => { if (!name || !content) return; setSettings(p => ({ ...p, templates: [...(p.templates || []), { id: crypto.randomUUID(), name, content }] })); setName(''); setContent(''); }; const del = (id) => setSettings(p => ({ ...p, templates: p.templates.filter(i => i.id !== id) })); return (<div className="space-y-6"><h3 className="text-xl font-semibold text-blue-400">Post Templates</h3><div className="bg-gray-700 rounded-lg p-4 space-y-3"><input type="text" placeholder="Template Name" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-600 border-gray-500 rounded-md p-2 focus:ring-2 focus:ring-blue-500" /><textarea placeholder="Template content..." value={content} onChange={e => setContent(e.target.value)} rows="3" className="w-full bg-gray-600 border-gray-500 rounded-md p-2 focus:ring-2 focus:ring-blue-500"></textarea><div className="text-right"><button onClick={add} className="py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold">Add Template</button></div></div><div className="space-y-2">{settings.templates?.map(t => (<div key={t.id} className="bg-gray-700 rounded-lg p-3"><div className="flex items-center justify-between mb-2"><p className="font-bold">{t.name}</p><button onClick={() => del(t.id)} className="text-gray-400 hover:text-red-400"><Trash2 size={18}/></button></div><p className="text-sm text-gray-300 whitespace-pre-wrap">{t.content}</p></div>))}</div></div>); };
         const SettingsInput = ({ label, name, value, onChange }) => (<div><label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-1">{label}</label><input type="text" id={name} name={name} value={value || ''} onChange={onChange} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-2 focus:ring-blue-500" /></div>);
         const SettingsTextarea = ({ label, name, value, onChange, help }) => (<div><label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-1">{label}</label><textarea id={name} name={name} value={value || ''} onChange={onChange} rows="3" className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-2 focus:ring-blue-500"></textarea>{help && <p className="text-xs text-gray-400 mt-1">{help}</p>}</div>);
-        const Footer = ({ userId }) => (<footer className="text-center text-xs text-gray-500 mt-6 pt-4 border-t border-gray-700"><p>Clarence Regional Aquatic Centre Content Scheduler v0.8</p>{userId && <p className="mt-1 font-mono text-gray-600 truncate">Session ID: {userId}</p>}</footer>);
         
         // --- Main App Component ---
         const App = () => {
@@ -161,9 +157,10 @@
             const [isLoading, setIsLoading] = useState(true);
             const [view, setView] = useState('month');
             const [filters, setFilters] = useState({ platform: 'all', status: 'all' });
-            const [currentUser, setCurrentUser] = useState(localStorage.getItem('scheduler-user'));
+            const [currentBoard, setCurrentBoard] = useState(null);
+            const [allBoards, setAllBoards] = useState([]);
 
-            const defaultSettings = { branding: { centreName: 'Clarence Regional Aquatic Centre', socialHandle: '@CRACGrafton', brandVoice: 'Friendly, professional, community-focused.', address: 'Corner of Oliver and Turf St', city: 'Grafton NSW 2460', locationNote: 'Crucial to mention we are NOT in South Grafton.' }, pillars: [], templates: [] };
+            const defaultSettings = { branding: { centreName: 'New Board', socialHandle: '@handle' }, pillars: [], templates: [] };
 
             useEffect(() => {
                 if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
@@ -184,13 +181,30 @@
 
             useEffect(() => {
                 if (db) {
+                    const savedBoardId = localStorage.getItem('scheduler-boardId');
+                    if (savedBoardId) {
+                        db.collection('boards').doc(savedBoardId).get().then(doc => {
+                            if(doc.exists) setCurrentBoard({ id: doc.id, ...doc.data() });
+                        });
+                    }
+                    
+                    const unsubBoards = db.collection('boards').onSnapshot(snapshot => {
+                        setAllBoards(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    });
+                    
+                    return () => unsubBoards();
+                }
+            }, [db]);
+
+            useEffect(() => {
+                if (db && currentBoard) {
                     let postsLoaded = false, settingsLoaded = false;
                     const checkLoading = () => {
                         if (postsLoaded && settingsLoaded) setIsLoading(false);
                     };
 
-                    const postsCollection = db.collection('social_posts');
-                    const settingsDocRef = db.collection('scheduler_settings').doc('app_settings');
+                    const postsCollection = db.collection('boards').doc(currentBoard.id).collection('posts');
+                    const settingsDocRef = db.collection('boards').doc(currentBoard.id).collection('settings').doc('app_settings');
 
                     const unsubPosts = postsCollection.onSnapshot((snapshot) => {
                         setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), scheduledAt: doc.data().scheduledAt?.toDate() })));
@@ -209,26 +223,34 @@
                     }, console.error);
 
                     return () => { unsubPosts(); unsubSettings(); };
+                } else {
+                    setIsLoading(false);
                 }
-            }, [db]);
+            }, [db, currentBoard]);
             
-            const userPosts = useMemo(() => posts.filter(p => p.author === currentUser), [posts, currentUser]);
-            const filteredPosts = useMemo(() => userPosts.filter(post => (filters.platform === 'all' || post.platform === filters.platform) && (filters.status === 'all' || post.status === filters.status)), [userPosts, filters]);
+            const filteredPosts = useMemo(() => posts.filter(post => (filters.platform === 'all' || post.platform === filters.platform) && (filters.status === 'all' || post.status === filters.status)), [posts, filters]);
             const postsByDate = useMemo(() => filteredPosts.reduce((acc, post) => { if (post.scheduledAt) { const key = post.scheduledAt.toDateString(); if (!acc[key]) acc[key] = []; acc[key].push(post); } return acc; }, {}), [filteredPosts]);
 
-            const handleLogin = (name) => { setCurrentUser(name); localStorage.setItem('scheduler-user', name); };
-            const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('scheduler-user'); };
+            const handleSelectBoard = (board) => { setCurrentBoard(board); localStorage.setItem('scheduler-boardId', board.id); };
+            const handleSwitchBoard = () => { setCurrentBoard(null); localStorage.removeItem('scheduler-boardId'); };
+            const handleCreateBoard = async (name) => {
+                if (!db || !name) return;
+                const newBoard = { name, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+                const newBoardRef = await db.collection('boards').add(newBoard);
+                handleSelectBoard({ id: newBoardRef.id, ...newBoard });
+            };
+
             const changeDate = (offset, unit) => setCurrentDate(prev => { const d = new Date(prev); if (unit === 'month') d.setMonth(prev.getMonth() + offset); if (unit === 'week') d.setDate(prev.getDate() + (offset * 7)); return d; });
             const handleOpenModalForNew = (date) => { setSelectedDate(date); setSelectedPost(null); setIsPostModalOpen(true); };
             const handleOpenModalForEdit = (post) => { setSelectedPost(post); setSelectedDate(null); setIsPostModalOpen(true); };
             const handleClosePostModal = () => { setIsPostModalOpen(false); setSelectedPost(null); setSelectedDate(null); };
 
-            const handleSaveSettings = async (newSettings) => { if (!db) return; const settingsDocRef = db.collection('scheduler_settings').doc('app_settings'); try { await settingsDocRef.set(newSettings, { merge: true }); } catch (error) { console.error("Error saving settings: ", error); } };
+            const handleSaveSettings = async (newSettings) => { if (!db) return; const settingsDocRef = db.collection('boards').doc(currentBoard.id).collection('settings').doc('app_settings'); try { await settingsDocRef.set(newSettings, { merge: true }); } catch (error) { console.error("Error saving settings: ", error); } };
             
             const handleSavePost = async (postData) => {
                 if (!db) return;
-                const postsRef = db.collection('social_posts');
-                const data = { ...postData, author: currentUser, scheduledAt: new Date(postData.scheduledAt), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                const postsRef = db.collection('boards').doc(currentBoard.id).collection('posts');
+                const data = { ...postData, scheduledAt: new Date(postData.scheduledAt), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
                 if (data.performance) { for (const key in data.performance) { data.performance[key] = Number(data.performance[key]) || 0; } }
                 try {
                     if (selectedPost) await postsRef.doc(selectedPost.id).update(data);
@@ -236,35 +258,68 @@
                     handleClosePostModal();
                 } catch (error) { console.error("Error saving post:", error); }
             };
-            const handleDeletePost = async (postId) => { if (!db || !window.confirm("Are you sure?")) return; try { await db.collection('social_posts').doc(postId).delete(); } catch (error) { console.error("Error deleting post:", error); } };
-            const handleToggleStatus = async (post) => { if (!db) return; const newStatus = post.status === 'scheduled' ? 'published' : 'scheduled'; try { await db.collection('social_posts').doc(post.id).update({ status: newStatus }); } catch (error) { console.error("Error updating status:", error); } };
-            const handleDropPost = async (postId, newDate) => { if (!db) return; const post = posts.find(p => p.id === postId); if (post?.scheduledAt) { newDate.setHours(post.scheduledAt.getHours(), post.scheduledAt.getMinutes()); try { await db.collection('social_posts').doc(post.id).update({ scheduledAt: newDate }); } catch (error) { console.error("Error updating post date:", error); } } };
+            const handleDeletePost = async (postId) => { if (!db || !window.confirm("Are you sure?")) return; try { await db.collection('boards').doc(currentBoard.id).collection('posts').doc(postId).delete(); } catch (error) { console.error("Error deleting post:", error); } };
+            const handleToggleStatus = async (post) => { if (!db) return; const newStatus = post.status === 'scheduled' ? 'published' : 'scheduled'; try { await db.collection('boards').doc(currentBoard.id).collection('posts').doc(post.id).update({ status: newStatus }); } catch (error) { console.error("Error updating status:", error); } };
+            const handleDropPost = async (postId, newDate) => { if (!db) return; const post = posts.find(p => p.id === postId); if (post?.scheduledAt) { newDate.setHours(post.scheduledAt.getHours(), post.scheduledAt.getMinutes()); try { await db.collection('boards').doc(currentBoard.id).collection('posts').doc(post.id).update({ scheduledAt: newDate }); } catch (error) { console.error("Error updating post date:", error); } } };
 
             const renderView = () => { const props = { postsByDate: postsByDate, settings, onNewPost: handleOpenModalForNew, onEditPost: handleOpenModalForEdit, onDeletePost: handleDeletePost, onToggleStatus: handleToggleStatus, onDrop: handleDropPost }; switch (view) { case 'week': return <WeeklyView currentDate={currentDate} {...props} />; case 'list': return <ListView posts={filteredPosts} {...props} />; default: return <MonthlyView currentDate={currentDate} {...props} />; } };
 
-            if (!currentUser) { return <LoginScreen onLogin={handleLogin} />; }
+            if (!currentBoard) { return <BoardSelector boards={allBoards} onSelectBoard={handleSelectBoard} onCreateBoard={handleCreateBoard} />; }
 
             return (
                 <div className="bg-gray-900 text-white min-h-screen font-sans flex flex-col p-4 md:p-6 lg:p-8">
-                    <Header currentUser={currentUser} onLogout={handleLogout} currentDate={currentDate} changeDate={changeDate} view={view} setView={setView} onNewPost={() => handleOpenModalForNew(new Date())} onOpenReporting={() => setIsReportingOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} filters={filters} setFilters={setFilters} />
+                    <Header currentBoard={currentBoard} onSwitchBoard={handleSwitchBoard} currentDate={currentDate} changeDate={changeDate} view={view} setView={setView} onNewPost={() => handleOpenModalForNew(new Date())} onOpenReporting={() => setIsReportingOpen(true)} onOpenSettings={() => setIsSettingsOpen(true)} filters={filters} setFilters={setFilters} />
                     {isLoading ? <div className="flex-grow flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div></div> : <div className="flex-grow flex flex-col">{renderView()}</div>}
                     {isPostModalOpen && <PostModal post={selectedPost} date={selectedDate} settings={settings} onClose={handleClosePostModal} onSave={handleSavePost} />}
-                    {isReportingOpen && <ReportingModal posts={userPosts} onClose={() => setIsReportingOpen(false)} />}
+                    {isReportingOpen && <ReportingModal posts={posts} onClose={() => setIsReportingOpen(false)} />}
                     {isSettingsOpen && settings && <SettingsModal currentSettings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
                 </div>
             );
         }
         
-        const LoginScreen = ({ onLogin }) => {
-            const [name, setName] = React.useState('');
-            const handleSubmit = (e) => { e.preventDefault(); if (name.trim()) onLogin(name.trim()); };
+        const BoardSelector = ({ boards, onSelectBoard, onCreateBoard }) => {
+            const [boardName, setBoardName] = React.useState('');
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const name = boardName.trim();
+                if (!name) return;
+
+                // Check if a board with the same name already exists (case-insensitive)
+                const existingBoard = boards.find(board => board.name.toLowerCase() === name.toLowerCase());
+
+                if (existingBoard) {
+                    onSelectBoard(existingBoard); // If it exists, select it
+                } else {
+                    onCreateBoard(name); // Otherwise, create a new one
+                }
+            };
+
             return (
-                <div className="min-h-screen flex items-center justify-center">
-                    <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-sm">
-                        <h1 className="text-2xl font-bold text-white text-center mb-6">Social Scheduler</h1>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div><label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">Your Name</label><input id="name" type="text" value={name} onChange={e => setName(e.target.value)} className="w-full bg-gray-700 border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500" placeholder="e.g., Avi" /></div>
-                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-bold py-2 px-4 rounded-lg">Log In</button>
+                <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+                    <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md">
+                        <h1 className="text-3xl font-bold text-center mb-4">Social Scheduler</h1>
+                        <p className="text-center text-gray-400 mb-8">
+                            Enter your board name to begin.
+                            <br/>
+                            A new board will be created if one isn't found.
+                        </p>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div>
+                                <label htmlFor="boardName" className="sr-only">Board Name</label>
+                                <input
+                                    id="boardName"
+                                    type="text"
+                                    value={boardName}
+                                    onChange={e => setBoardName(e.target.value)}
+                                    className="w-full bg-gray-700 border-gray-600 rounded-lg p-4 text-lg text-center focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    placeholder="e.g., CRAC"
+                                    autoFocus
+                                />
+                            </div>
+                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 px-4 rounded-lg text-lg transition-colors">
+                                Open Board
+                            </button>
                         </form>
                     </div>
                 </div>
