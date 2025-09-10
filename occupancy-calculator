@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aquatic Centre Occupancy & Safety Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .header {
+            background-color: #0c4a6e;
+            color: #ffffff;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            padding: 1.5rem 2rem;
+        }
+        .table-header {
+            background-color: #e2e8f0;
+            color: #475569;
+            font-weight: 600;
+        }
+        .table-row:nth-child(odd) {
+            background-color: #f8fafc;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="container mx-auto">
+        <div class="card">
+            <header class="header text-center mb-8">
+                <h1 class="text-3xl font-bold mb-2">NSW Aquatic Centre Compliance Guide</h1>
+                <p class="text-sm">A quick reference for occupancy limits and safety guidelines.</p>
+            </header>
+
+            <main class="space-y-8">
+                <!-- Bather Load Calculator Section -->
+                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Maximum Bather Load Calculator 🏊‍♀️</h2>
+                    <p class="mb-4 text-gray-700">Calculate the maximum instantaneous bather load based on water surface area and depth, as per NSW Health guidelines.</p>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="wadingArea" class="block text-sm font-medium text-gray-700">Wading Area (< 1.0m deep) m²</label>
+                                <input type="number" id="wadingArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            </div>
+                            <div>
+                                <label for="shallowArea" class="block text-sm font-medium text-gray-700">Shallow Area (1.0m – 1.5m deep) m²</label>
+                                <input type="number" id="shallowArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="deepArea" class="block text-sm font-medium text-gray-700">Deep Area (> 1.5m deep) m²</label>
+                                <input type="number" id="deepArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            </div>
+                            <div>
+                                <label for="spaArea" class="block text-sm font-medium text-gray-700">Spa Area m²</label>
+                                <input type="number" id="spaArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            </div>
+                        </div>
+                        <button onclick="calculateBatherLoad()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-colors">Calculate Bather Load</button>
+                    </div>
+                    <div id="batherResult" class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md hidden"></div>
+                </section>
+
+                <!-- Occupant Load Calculator Section -->
+                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Land-Based Occupant Load Calculator 🚶‍♂️</h2>
+                    <p class="mb-4 text-gray-700">Calculate the occupant load for land-based areas using the NCC's spectator stand factor.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="deckArea" class="block text-sm font-medium text-gray-700">Pool Deck Area (m²)</label>
+                            <input type="number" id="deckArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                        </div>
+                        <button onclick="calculateOccupantLoad()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-colors">Calculate Occupant Load</button>
+                    </div>
+                    <div id="occupantResult" class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md hidden"></div>
+                </section>
+
+                <!-- Community Room Occupancy Calculator Section -->
+                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Community Room Occupancy Calculator 🗣️</h2>
+                    <p class="mb-4 text-gray-700">Calculate the maximum occupant load for a community room based on the National Construction Code (NCC) standard for a general assembly area.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="roomArea" class="block text-sm font-medium text-gray-700">Community Room Area (m²)</label>
+                            <input type="number" id="roomArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                        </div>
+                        <button onclick="calculateCommunityRoomOccupancy()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-colors">Calculate Room Occupancy</button>
+                    </div>
+                    <div id="communityRoomResult" class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md hidden"></div>
+                </section>
+
+                <!-- Watch Around Water Policies Section -->
+                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
+                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Watch Around Water Policies 🧑‍🤝‍👩‍👧‍👦</h2>
+                    <p class="mb-4 text-gray-700">Quick reference for parent/guardian supervision requirements as per the "Watch Around Water" program.</p>
+                    <div class="overflow-x-auto rounded-lg shadow">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Child's Age</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Supervision Condition</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Supervision Ratio</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">0-5 years and non-swimmers</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Must be within arm's reach of a parent/guardian at all times.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1 adult (16+) to a maximum of 2 children (0-4 years).</td>
+                                </tr>
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">6-10 years</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Must be actively supervised by a parent/guardian with a clear line of sight.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1 adult (16+) to a maximum of 4 children (5-9 years).</td>
+                                </tr>
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">11-15 years</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Parent/guardian must be present in the centre and keep an eye on their child.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">No specific ratio.</td>
+                                </tr>
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">16+ years</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">May enter the aquatic facility unsupervised.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Not applicable.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, message) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.innerHTML = message;
+            resultElement.style.display = 'block';
+            resultElement.classList.add('animate-fade-in');
+            setTimeout(() => resultElement.classList.remove('animate-fade-in'), 500);
+        }
+
+        function calculateBatherLoad() {
+            const wadingArea = parseFloat(document.getElementById('wadingArea').value) || 0;
+            const shallowArea = parseFloat(document.getElementById('shallowArea').value) || 0;
+            const deepArea = parseFloat(document.getElementById('deepArea').value) || 0;
+            const spaArea = parseFloat(document.getElementById('spaArea').value) || 0;
+
+            const wadingBathers = Math.floor(wadingArea / 2.2);
+            const shallowBathers = Math.floor(shallowArea / 2.7);
+            const deepBathers = Math.floor(deepArea / 4.0);
+            const spaBathers = Math.floor(spaArea / 2.0);
+
+            const totalBathers = wadingBathers + shallowBathers + deepBathers + spaBathers;
+            
+            showResult('batherResult', 
+                `<strong>Bather Load Breakdown:</strong><br>
+                Wading Area: ${wadingBathers} bathers<br>
+                Shallow Area: ${shallowBathers} bathers<br>
+                Deep Area: ${deepBathers} bathers<br>
+                Spa Area: ${spaBathers} bathers<br>
+                <br>
+                <strong>Total Maximum Bather Load: ${totalBathers}</strong>`
+            );
+        }
+
+        function calculateOccupantLoad() {
+            const deckArea = parseFloat(document.getElementById('deckArea').value) || 0;
+            const occupantLoad = Math.floor(deckArea / 0.5);
+
+            showResult('occupantResult', `<strong>Total Land-Based Occupant Load: ${occupantLoad}</strong>`);
+        }
+
+        function calculateCommunityRoomOccupancy() {
+            const roomArea = parseFloat(document.getElementById('roomArea').value) || 0;
+            // Using a standard NCC ratio for assembly areas: 1 person per 0.75m²
+            const roomOccupancy = Math.floor(roomArea / 0.75);
+            
+            showResult('communityRoomResult', `<strong>Total Community Room Occupancy: ${roomOccupancy}</strong>`);
+        }
+    </script>
+</body>
+</html>
