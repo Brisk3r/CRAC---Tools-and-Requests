@@ -26,15 +26,15 @@
 
     <script type="text/babel">
         // --- CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
-  authDomain: "osf---availability-roster.firebaseapp.com",
-  projectId: "osf---availability-roster",
-  storageBucket: "osf---availability-roster.firebasestorage.app",
-  messagingSenderId: "1069751236100",
-  appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
-  measurementId: "G-JT3PMQ0W6T"
-};
+        const firebaseConfig = {
+          apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+          authDomain: "osf---availability-roster.firebaseapp.com",
+          projectId: "osf---availability-roster",
+          storageBucket: "osf---availability-roster.firebasestorage.app",
+          messagingSenderId: "1069751236100",
+          appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
+          measurementId: "G-JT3PMQ0W6T"
+        };
         const ADMIN_PASSWORD = 'CRAC*25*'; // <-- CHANGE THIS
         
         const ZONES = ['50m Olympic Pool', '50m Olympic Pool - Lane 1', '50m Olympic Pool - Lane 2', '50m Olympic Pool - Lane 3', '50m Olympic Pool - Lane 4', '50m Olympic Pool - Lane 5', '50m Olympic Pool - Lane 6', '50m Olympic Pool - Lane 7', '50m Olympic Pool - Lane 8', 'Program Pool', 'Hydrotherapy Pool', 'Splash Pad', 'Club Room'];
@@ -101,12 +101,18 @@ const firebaseConfig = {
                 const unsubscribe = db.collection('calendar_events')
                     .orderBy('startDateTime', 'desc')
                     .onSnapshot(snapshot => {
-                        const fetchedEvents = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data(),
-                            startDateTime: doc.data().startDateTime.toDate(),
-                            endDateTime: doc.data().endDateTime.toDate(),
-                        }));
+                        const fetchedEvents = snapshot.docs.map(doc => {
+                            const data = doc.data();
+                            // Ensure zone is always an array
+                            const zones = Array.isArray(data.zone) ? data.zone : (data.zone ? [data.zone] : []);
+                            return {
+                                id: doc.id,
+                                ...data,
+                                zone: zones,
+                                startDateTime: data.startDateTime.toDate(),
+                                endDateTime: data.endDateTime.toDate(),
+                            }
+                        });
                         setEvents(fetchedEvents);
                         setIsLoading(false);
                     }, err => {
@@ -182,7 +188,7 @@ const firebaseConfig = {
                              <span className={`px-3 py-1 text-xs font-bold rounded-full text-white ${EVENT_TYPES[event.type] || 'bg-gray-500'}`}>{event.type}</span>
                              <span className="font-semibold text-lg">{event.title}</span>
                         </div>
-                        <p className="text-sm text-gray-400 mb-1"><strong>Zone:</strong> {event.zone}</p>
+                        <p className="text-sm text-gray-400 mb-1"><strong>Zone(s):</strong> {Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}</p>
                         <p className="text-sm text-gray-400"><strong>Time:</strong> {formatDate(event.startDateTime)} to {formatDate(event.endDateTime)}</p>
                         {event.description && <p className="text-sm text-gray-300 mt-2 whitespace-pre-wrap">{event.description}</p>}
                     </div>
@@ -200,10 +206,15 @@ const firebaseConfig = {
                 return (new Date(date - tzoffset)).toISOString().slice(0, 16);
             }
 
+            const getInitialZones = () => {
+                if (!event || !event.zone) return [];
+                return Array.isArray(event.zone) ? event.zone : [event.zone];
+            };
+
             const [formData, setFormData] = useState({
                 id: event?.id || null,
                 title: event?.title || '',
-                zone: event?.zone || ZONES[0],
+                zone: getInitialZones(),
                 startDateTime: toLocalISOString(event ? event.startDateTime : new Date()),
                 endDateTime: toLocalISOString(event ? event.endDateTime : new Date(Date.now() + 60*60*1000)),
                 type: event?.type || Object.keys(EVENT_TYPES)[0],
@@ -211,6 +222,19 @@ const firebaseConfig = {
             });
             
             const handleChange = (e) => { const { id, value } = e.target; setFormData(prev => ({...prev, [id]: value})); };
+            
+            const handleZoneChange = (e) => {
+                const { value, checked } = e.target;
+                setFormData(prev => {
+                    const currentZones = prev.zone || [];
+                    if (checked) {
+                        return { ...prev, zone: [...currentZones, value] };
+                    } else {
+                        return { ...prev, zone: currentZones.filter(z => z !== value) };
+                    }
+                });
+            };
+
             const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
 
             return (
@@ -219,10 +243,26 @@ const firebaseConfig = {
                         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
                         <h2 className="text-2xl font-bold mb-6">{event ? 'Edit Event' : 'Create New Event'}</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label htmlFor="title" className="block text-sm font-medium mb-1">Event Title</label><input type="text" id="title" value={formData.title} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
-                                <div><label htmlFor="zone" className="block text-sm font-medium mb-1">Zone</label><select id="zone" value={formData.zone} onChange={handleChange} className="w-full bg-gray-600 rounded p-2 border-gray-500">{ZONES.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
+                            <div><label htmlFor="title" className="block text-sm font-medium mb-1">Event Title</label><input type="text" id="title" value={formData.title} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
+                           
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Zone(s)</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-gray-600 p-3 rounded-md max-h-48 overflow-y-auto">
+                                    {ZONES.map(zone => (
+                                        <label key={zone} className="flex items-center space-x-2 text-sm cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                value={zone}
+                                                checked={formData.zone.includes(zone)}
+                                                onChange={handleZoneChange}
+                                                className="rounded text-blue-500 focus:ring-blue-500"
+                                            />
+                                            <span>{zone}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label htmlFor="startDateTime" className="block text-sm font-medium mb-1">Start Time</label><input type="datetime-local" id="startDateTime" value={formData.startDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
                                 <div><label htmlFor="endDateTime" className="block text-sm font-medium mb-1">End Time</label><input type="datetime-local" id="endDateTime" value={formData.endDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
