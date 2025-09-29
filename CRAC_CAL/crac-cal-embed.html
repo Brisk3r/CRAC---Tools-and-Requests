@@ -22,17 +22,17 @@
 
     <script type="text/babel">
         // --- CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
-  authDomain: "osf---availability-roster.firebaseapp.com",
-  projectId: "osf---availability-roster",
-  storageBucket: "osf---availability-roster.firebasestorage.app",
-  messagingSenderId: "1069751236100",
-  appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
-  measurementId: "G-JT3PMQ0W6T"
-};
-        const ZONES = [ 'All Zones', 'Entire Main Pool', 'Main Pool - Lanes 1-4', 'Main Pool - Lanes 5-8', 'Program Pool', 'Hydrotherapy Pool', 'Splash Pad', 'Club Room'];
-        const EVENT_TYPES = { 'Class': 'bg-blue-500', 'Booking': 'bg-green-500', 'Closure': 'bg-red-500', 'Event': 'bg-purple-500', 'Maintenance': 'bg-yellow-500' };
+        const firebaseConfig = {
+          apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+          authDomain: "osf---availability-roster.firebaseapp.com",
+          projectId: "osf---availability-roster",
+          storageBucket: "osf---availability-roster.firebasestorage.app",
+          messagingSenderId: "1069751236100",
+          appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
+          measurementId: "G-JT3PMQ0W6T"
+        };
+        const ZONES = ['All Zones', '50m Olympic Pool', '50m Olympic Pool - Lane 1', '50m Olympic Pool - Lane 2', '50m Olympic Pool - Lane 3', '50m Olympic Pool - Lane 4', '50m Olympic Pool - Lane 5', '50m Olympic Pool - Lane 6', '50m Olympic Pool - Lane 7', '50m Olympic Pool - Lane 8', 'Program Pool', 'Hydrotherapy Pool', 'Splash Pad', 'Club Room'];
+        const EVENT_TYPES = { 'Class': 'bg-blue-600', 'Booking': 'bg-green-600', 'Closure': 'bg-red-600', 'Event': 'bg-purple-600', 'Maintenance': 'bg-yellow-600' };
         // ---------------------
 
         const { useState, useEffect, useMemo } = React;
@@ -57,7 +57,18 @@ const firebaseConfig = {
                     return;
                 }
                 const unsubscribe = db.collection('calendar_events').onSnapshot(snapshot => {
-                    const fetchedEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().endDateTime.toDate() }));
+                    const fetchedEvents = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        // Ensure 'zone' is always an array for consistent filtering
+                        const zones = Array.isArray(data.zone) ? data.zone : (data.zone ? [data.zone] : []);
+                        return { 
+                            id: doc.id, 
+                            ...data, 
+                            zone: zones,
+                            startDateTime: data.startDateTime.toDate(), 
+                            endDateTime: data.endDateTime.toDate() 
+                        };
+                    });
                     setEvents(fetchedEvents);
                     setIsLoading(false);
                 }, err => {
@@ -69,7 +80,8 @@ const firebaseConfig = {
 
             const filteredEvents = useMemo(() => {
                 if (zoneFilter === 'All Zones') return events;
-                return events.filter(e => e.zone === zoneFilter);
+                // An event is shown if its zone array includes the selected filter
+                return events.filter(e => e.zone && e.zone.includes(zoneFilter));
             }, [events, zoneFilter]);
 
             const eventsByDate = useMemo(() => {
@@ -162,7 +174,7 @@ const firebaseConfig = {
                          </div>
                          <div className="space-y-2 text-gray-700">
                              <p><strong>Time:</strong> {formatTime(event.startDateTime)} - {formatTime(event.endDateTime)}</p>
-                             <p><strong>Zone:</strong> {event.zone}</p>
+                             <p><strong>Zone(s):</strong> {Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}</p>
                              {event.description && <p className="pt-2 whitespace-pre-wrap">{event.description}</p>}
                          </div>
                          <div className="text-right mt-6">
@@ -177,3 +189,4 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+
