@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRAC Calendar Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%23007bff' d='M0 50 Q 25 25, 50 50 T 100 50 V 100 H 0 Z' /></svg>">
+    <style>
+        body { font-family: sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-100">
+    <div id="root"></div>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+
+    <!-- Babel to transpile JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        // --- CONFIGURATION ---
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwV_OBWgMTEoYpNQtnm3ydxnxHVU7uXAxelRrT9LJXUaacAaov8ZOMwxLCaDUt-dFOf/exec'; // <-- IMPORTANT
+        const ADMIN_PASSWORD = 'CRAC*25*'; // <-- CHANGE THIS
+        
+        // Customise these options to match the zones and event types at the CRAC
+        const ZONES = [
+            'Entire Main Pool',
+            'Main Pool - Lanes 1-4',
+            'Main Pool - Lanes 5-8',
+            'Program Pool',
+            'Hydrotherapy Pool',
+            'Splash Pad',
+            'Club Room',
+        ];
+
+        const EVENT_TYPES = {
+            'Class': 'bg-blue-600',
+            'Booking': 'bg-green-600',
+            'Closure': 'bg-red-600',
+            'Event': 'bg-purple-600',
+            'Maintenance': 'bg-yellow-600',
+        };
+        // ---------------------
+
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            
+            if (!isAuthenticated) {
+                return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+            }
+
+            return <AdminPage />;
+        };
+
+        const LoginScreen = ({ onLogin }) => {
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (password === ADMIN_PASSWORD) {
+                    onLogin();
+                } else {
+                    setError('Incorrect password.');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="bg-gray-700 p-8 rounded-lg shadow-lg w-full max-w-sm">
+                        <h1 className="text-2xl font-bold text-white text-center mb-6">CRAC Calendar Admin</h1>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Enter password"
+                                className="w-full bg-gray-600 text-white rounded-md p-3 focus:ring-2 focus:ring-blue-500 border-gray-500"
+                            />
+                            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-4 rounded-lg">
+                                Login
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminPage = () => {
+            const [events, setEvents] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [selectedEvent, setSelectedEvent] = useState(null);
+
+            const fetchEvents = async () => {
+                setIsLoading(true);
+                setError(null);
+                try {
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    if (!response.ok) throw new Error('Network response was not ok.');
+                    const data = await response.json();
+                    setEvents(data.sort((a,b) => new Date(b.startDateTime) - new Date(a.startDateTime)));
+                } catch (err) {
+                    setError(`Failed to fetch events: ${err.message}`);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchEvents();
+            }, []);
+
+            const handleSaveEvent = async (eventData) => {
+                const action = eventData.id ? 'UPDATE' : 'CREATE';
+                try {
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action, event: eventData }),
+                    });
+                     if (!response.ok) throw new Error('Failed to save event');
+                    const result = await response.json();
+                    if(result.status !== 'success') throw new Error(result.message || 'Unknown error from script');
+
+                    fetchEvents(); // Refresh list after saving
+                    setIsModalOpen(false);
+                    setSelectedEvent(null);
+                } catch (err) {
+                    alert(`Error saving event: ${err.message}`);
+                }
+            };
+            
+            const handleDeleteEvent = async (eventId) => {
+                if (!window.confirm("Are you sure you want to delete this event?")) return;
+                 try {
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'DELETE', id: eventId }),
+                    });
+                    if (!response.ok) throw new Error('Failed to delete event');
+                    const result = await response.json();
+                    if(result.status !== 'success') throw new Error(result.message || 'Unknown error from script');
+                    
+                    fetchEvents(); // Refresh list after deleting
+                } catch (err) {
+                    alert(`Error deleting event: ${err.message}`);
+                }
+            };
+
+            const openModalForNew = () => {
+                setSelectedEvent(null);
+                setIsModalOpen(true);
+            };
+
+            const openModalForEdit = (event) => {
+                setSelectedEvent(event);
+                setIsModalOpen(true);
+            };
+
+            return (
+                <div className="container mx-auto p-4 md:p-8">
+                    <header className="flex flex-col md:flex-row justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold">Event Management</h1>
+                        <button onClick={openModalForNew} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg mt-4 md:mt-0">
+                            Create New Event
+                        </button>
+                    </header>
+                    
+                    {isLoading && <p>Loading events...</p>}
+                    {error && <p className="text-red-400">{error}</p>}
+                    
+                    {!isLoading && !error && (
+                        <div className="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
+                           <ul className="divide-y divide-gray-600">
+                               {events.map(event => (
+                                   <EventListItem 
+                                       key={event.id} 
+                                       event={event} 
+                                       onEdit={() => openModalForEdit(event)} 
+                                       onDelete={() => handleDeleteEvent(event.id)} 
+                                   />
+                               ))}
+                           </ul>
+                        </div>
+                    )}
+
+                    {isModalOpen && (
+                        <EventForm
+                            event={selectedEvent}
+                            onClose={() => setIsModalOpen(false)}
+                            onSave={handleSaveEvent}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const EventListItem = ({ event, onEdit, onDelete }) => {
+            const startDate = new Date(event.startDateTime);
+            const endDate = new Date(event.endDateTime);
+            
+            const formatDate = (date) => `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            
+            return (
+                <li className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-600/50">
+                    <div className="flex-grow">
+                        <div className="flex items-center gap-3 mb-2">
+                             <span className={`px-3 py-1 text-xs font-bold rounded-full text-white ${EVENT_TYPES[event.type] || 'bg-gray-500'}`}>
+                                {event.type}
+                            </span>
+                             <span className="font-semibold text-lg">{event.title}</span>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-1"><strong>Zone:</strong> {event.zone}</p>
+                        <p className="text-sm text-gray-400"><strong>Time:</strong> {formatDate(startDate)} to {formatDate(endDate)}</p>
+                        {event.description && <p className="text-sm text-gray-300 mt-2 whitespace-pre-wrap">{event.description}</p>}
+                    </div>
+                    <div className="flex space-x-2 mt-4 md:mt-0 shrink-0">
+                        <button onClick={onEdit} className="py-1 px-4 text-sm rounded-md bg-gray-500 hover:bg-gray-400">Edit</button>
+                        <button onClick={onDelete} className="py-1 px-4 text-sm rounded-md bg-red-600 hover:bg-red-500">Delete</button>
+                    </div>
+                </li>
+            );
+        };
+        
+        const EventForm = ({ event, onClose, onSave }) => {
+            const [formData, setFormData] = useState({
+                id: event?.id || null,
+                title: event?.title || '',
+                zone: event?.zone || ZONES[0],
+                startDateTime: event?.startDateTime ? new Date(event.startDateTime).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+                endDateTime: event?.endDateTime ? new Date(event.endDateTime).toISOString().slice(0, 16) : new Date(Date.now() + 60*60*1000).toISOString().slice(0, 16),
+                type: event?.type || Object.keys(EVENT_TYPES)[0],
+                description: event?.description || ''
+            });
+            
+            const handleChange = (e) => {
+                const { id, value } = e.target;
+                setFormData(prev => ({...prev, [id]: value}));
+            };
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                // Convert local datetime back to full ISO string for processing
+                const dataToSave = {
+                    ...formData,
+                    startDateTime: new Date(formData.startDateTime).toISOString(),
+                    endDateTime: new Date(formData.endDateTime).toISOString(),
+                };
+                onSave(dataToSave);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-700 rounded-lg shadow-2xl p-8 w-full max-w-2xl relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+                        <h2 className="text-2xl font-bold mb-6">{event ? 'Edit Event' : 'Create New Event'}</h2>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="title" className="block text-sm font-medium mb-1">Event Title</label>
+                                    <input type="text" id="title" value={formData.title} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/>
+                                </div>
+                                <div>
+                                    <label htmlFor="zone" className="block text-sm font-medium mb-1">Zone</label>
+                                    <select id="zone" value={formData.zone} onChange={handleChange} className="w-full bg-gray-600 rounded p-2 border-gray-500">
+                                        {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="startDateTime" className="block text-sm font-medium mb-1">Start Time</label>
+                                    <input type="datetime-local" id="startDateTime" value={formData.startDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/>
+                                </div>
+                                <div>
+                                    <label htmlFor="endDateTime" className="block text-sm font-medium mb-1">End Time</label>
+                                    <input type="datetime-local" id="endDateTime" value={formData.endDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="type" className="block text-sm font-medium mb-1">Event Type</label>
+                                <select id="type" value={formData.type} onChange={handleChange} className="w-full bg-gray-600 rounded p-2 border-gray-500">
+                                    {Object.keys(EVENT_TYPES).map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
+                                <textarea id="description" value={formData.description} onChange={handleChange} rows="4" className="w-full bg-gray-600 rounded p-2 border-gray-500"></textarea>
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <button type="submit" className="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-6 rounded-lg">
+                                    {event ? 'Save Changes' : 'Create Event'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
