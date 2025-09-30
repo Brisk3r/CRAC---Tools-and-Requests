@@ -37,22 +37,58 @@
         };
         const ADMIN_PASSWORD = 'CRAC*25*'; // <-- CHANGE THIS
         
-        const ZONES = ['50m Olympic Pool', '50m Olympic Pool - Lane 1', '50m Olympic Pool - Lane 2', '50m Olympic Pool - Lane 3', '50m Olympic Pool - Lane 4', '50m Olympic Pool - Lane 5', '50m Olympic Pool - Lane 6', '50m Olympic Pool - Lane 7', '50m Olympic Pool - Lane 8', 'Program Pool', 'Hydrotherapy Pool', 'Splash Pad', 'Club Room'];
+        const ZONES_CONFIG = [
+            { id: '50m Olympic Pool', name: '50m Olympic Pool', children: [
+                { id: '50m Olympic Pool - Lane 1', name: 'Lane 1' },
+                { id: '50m Olympic Pool - Lane 2', name: 'Lane 2' },
+                { id: '50m Olympic Pool - Lane 3', name: 'Lane 3' },
+                { id: '50m Olympic Pool - Lane 4', name: 'Lane 4' },
+                { id: '50m Olympic Pool - Lane 5', name: 'Lane 5' },
+                { id: '50m Olympic Pool - Lane 6', name: 'Lane 6' },
+                { id: '50m Olympic Pool - Lane 7', name: 'Lane 7' },
+                { id: '50m Olympic Pool - Lane 8', name: 'Lane 8' },
+            ]},
+            { id: 'Programs Pool', name: 'Programs Pool', children: [
+                { id: 'Programs Pool - Zone 1', name: 'Zone 1' },
+                { id: 'Programs Pool - Zone 2', name: 'Zone 2' },
+                { id: 'Programs Pool - Zone 3', name: 'Zone 3' },
+            ]},
+            { id: '25m Lap Pool', name: '25m Lap Pool', children: [
+                { id: '25m Lap Pool - Lane 1', name: 'Lane 1' },
+                { id: '25m Lap Pool - Lane 2', name: 'Lane 2' },
+                { id: '25m Lap Pool - Lane 3', name: 'Lane 3' },
+                { id: '25m Lap Pool - Lane 4', name: 'Lane 4' },
+                { id: '25m Lap Pool - Lane 5', name: 'Lane 5' },
+                { id: '25m Lap Pool - Lane 6', name: 'Lane 6' },
+                { id: '25m Lap Pool - Lane 7', name: 'Lane 7' },
+                { id: '25m Lap Pool - Lane 8', name: 'Lane 8' },
+            ]},
+            { id: 'Splash Pad', name: 'Splash Pad' },
+            { id: 'Community Room', name: 'Community Room' },
+        ];
+        
+        const getFlatZones = () => {
+            const zones = [];
+            ZONES_CONFIG.forEach(zone => {
+                zones.push(zone.name);
+                if (zone.children) {
+                    zone.children.forEach(child => zones.push(child.id));
+                }
+            });
+            return zones;
+        };
+        const ALL_ZONES_FLAT = getFlatZones();
+
         const EVENT_TYPES = { 'Class': 'bg-blue-600', 'Booking': 'bg-green-600', 'Closure': 'bg-red-600', 'Event': 'bg-purple-600', 'Maintenance': 'bg-yellow-600' };
         // ---------------------
 
         const { useState, useEffect, useMemo } = React;
         
-        // Initialize Firebase
         let db;
         try {
-            if (firebase.apps.length === 0) {
-                firebase.initializeApp(firebaseConfig);
-            }
+            if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-        } catch (e) {
-            console.error("Could not initialize Firebase", e);
-        }
+        } catch (e) { console.error("Could not initialize Firebase", e); }
 
         const App = () => {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -103,15 +139,8 @@
                     .onSnapshot(snapshot => {
                         const fetchedEvents = snapshot.docs.map(doc => {
                             const data = doc.data();
-                            // Ensure zone is always an array
                             const zones = Array.isArray(data.zone) ? data.zone : (data.zone ? [data.zone] : []);
-                            return {
-                                id: doc.id,
-                                ...data,
-                                zone: zones,
-                                startDateTime: data.startDateTime.toDate(),
-                                endDateTime: data.endDateTime.toDate(),
-                            }
+                            return { id: doc.id, ...data, zone: zones, startDateTime: data.startDateTime.toDate(), endDateTime: data.endDateTime.toDate() };
                         });
                         setEvents(fetchedEvents);
                         setIsLoading(false);
@@ -126,32 +155,20 @@
             const handleSaveEvent = async (eventData) => {
                 if (!db) return;
                 const { id, ...data } = eventData;
-                const dataToSave = {
-                    ...data,
-                    startDateTime: firebase.firestore.Timestamp.fromDate(new Date(data.startDateTime)),
-                    endDateTime: firebase.firestore.Timestamp.fromDate(new Date(data.endDateTime)),
-                };
-
+                const dataToSave = { ...data, startDateTime: firebase.firestore.Timestamp.fromDate(new Date(data.startDateTime)), endDateTime: firebase.firestore.Timestamp.fromDate(new Date(data.endDateTime)) };
                 try {
-                    if (id) {
-                        await db.collection('calendar_events').doc(id).update(dataToSave);
-                    } else {
-                        await db.collection('calendar_events').add(dataToSave);
-                    }
+                    if (id) await db.collection('calendar_events').doc(id).update(dataToSave);
+                    else await db.collection('calendar_events').add(dataToSave);
                     setIsModalOpen(false);
                     setSelectedEvent(null);
-                } catch (err) {
-                    alert(`Error saving event: ${err.message}`);
-                }
+                } catch (err) { alert(`Error saving event: ${err.message}`); }
             };
             
             const handleDeleteEvent = async (eventId) => {
                 if (!db || !window.confirm("Are you sure?")) return;
                 try {
                     await db.collection('calendar_events').doc(eventId).delete();
-                } catch (err) {
-                    alert(`Error deleting event: ${err.message}`);
-                }
+                } catch (err) { alert(`Error deleting event: ${err.message}`); }
             };
 
             const openModalForNew = () => { setSelectedEvent(null); setIsModalOpen(true); };
@@ -163,10 +180,8 @@
                         <h1 className="text-3xl font-bold">Event Management</h1>
                         <button onClick={openModalForNew} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg mt-4 md:mt-0">Create New Event</button>
                     </header>
-                    
                     {isLoading && <p>Loading events...</p>}
                     {error && <p className="text-red-400 p-4 bg-red-900/50 rounded-lg">{error}</p>}
-                    
                     {!isLoading && !error && (
                         <div className="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
                            <ul className="divide-y divide-gray-600">
@@ -205,33 +220,59 @@
                 const tzoffset = (new Date()).getTimezoneOffset() * 60000;
                 return (new Date(date - tzoffset)).toISOString().slice(0, 16);
             }
-
-            const getInitialZones = () => {
-                if (!event || !event.zone) return [];
-                return Array.isArray(event.zone) ? event.zone : [event.zone];
-            };
-
-            const [formData, setFormData] = useState({
-                id: event?.id || null,
-                title: event?.title || '',
-                zone: getInitialZones(),
-                startDateTime: toLocalISOString(event ? event.startDateTime : new Date()),
-                endDateTime: toLocalISOString(event ? event.endDateTime : new Date(Date.now() + 60*60*1000)),
-                type: event?.type || Object.keys(EVENT_TYPES)[0],
-                description: event?.description || ''
-            });
+            const getInitialZones = () => { if (!event || !event.zone) return []; return Array.isArray(event.zone) ? event.zone : [event.zone]; };
+            const [formData, setFormData] = useState({ id: event?.id || null, title: event?.title || '', zone: getInitialZones(), startDateTime: toLocalISOString(event ? event.startDateTime : new Date()), endDateTime: toLocalISOString(event ? event.endDateTime : new Date(Date.now() + 60*60*1000)), type: event?.type || Object.keys(EVENT_TYPES)[0], description: event?.description || '' });
             
             const handleChange = (e) => { const { id, value } = e.target; setFormData(prev => ({...prev, [id]: value})); };
             
-            const handleZoneChange = (e) => {
-                const { value, checked } = e.target;
+            const handleZoneChange = (parentZone, childZoneId) => {
                 setFormData(prev => {
-                    const currentZones = prev.zone || [];
-                    if (checked) {
-                        return { ...prev, zone: [...currentZones, value] };
-                    } else {
-                        return { ...prev, zone: currentZones.filter(z => z !== value) };
+                    let newZones = [...prev.zone];
+
+                    if (childZoneId) { // A child checkbox was clicked (e.g., a lane)
+                        if (newZones.includes(childZoneId)) {
+                            newZones = newZones.filter(z => z !== childZoneId);
+                        } else {
+                            newZones.push(childZoneId);
+                        }
+                    } else { // A parent checkbox was clicked
+                        if (parentZone.children) { // Parent with children (e.g., 50m Pool)
+                            const childIds = parentZone.children.map(c => c.id);
+                            const allChildrenSelected = childIds.every(id => newZones.includes(id));
+
+                            if (allChildrenSelected) { // Deselect all children and the parent
+                                newZones = newZones.filter(z => !childIds.includes(z) && z !== parentZone.id);
+                            } else { // Select all children and the parent
+                                childIds.forEach(id => {
+                                    if (!newZones.includes(id)) newZones.push(id);
+                                });
+                                if (!newZones.includes(parentZone.id)) newZones.push(parentZone.id);
+                            }
+                        } else { // Parent without children (e.g., Programs Pool)
+                            if (newZones.includes(parentZone.id)) {
+                                newZones = newZones.filter(z => z !== parentZone.id);
+                            } else {
+                                newZones.push(parentZone.id);
+                            }
+                        }
                     }
+
+                    // Sync parent state for zones that have children
+                    ZONES_CONFIG.forEach(parent => {
+                        if (parent.children) {
+                            const childIds = parent.children.map(c => c.id);
+                            const allChildrenSelected = childIds.every(id => newZones.includes(id));
+                            const parentInZones = newZones.includes(parent.id);
+
+                            if (allChildrenSelected && !parentInZones) {
+                                newZones.push(parent.id);
+                            } else if (!allChildrenSelected && parentInZones) {
+                                newZones = newZones.filter(z => z !== parent.id);
+                            }
+                        }
+                    });
+
+                    return { ...prev, zone: newZones };
                 });
             };
 
@@ -243,26 +284,8 @@
                         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
                         <h2 className="text-2xl font-bold mb-6">{event ? 'Edit Event' : 'Create New Event'}</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            <ZoneSelector selectedZones={formData.zone} onZoneChange={handleZoneChange} />
                             <div><label htmlFor="title" className="block text-sm font-medium mb-1">Event Title</label><input type="text" id="title" value={formData.title} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
-                           
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Zone(s)</label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-gray-600 p-3 rounded-md max-h-48 overflow-y-auto">
-                                    {ZONES.map(zone => (
-                                        <label key={zone} className="flex items-center space-x-2 text-sm cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                value={zone}
-                                                checked={formData.zone.includes(zone)}
-                                                onChange={handleZoneChange}
-                                                className="rounded text-blue-500 focus:ring-blue-500"
-                                            />
-                                            <span>{zone}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label htmlFor="startDateTime" className="block text-sm font-medium mb-1">Start Time</label><input type="datetime-local" id="startDateTime" value={formData.startDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
                                 <div><label htmlFor="endDateTime" className="block text-sm font-medium mb-1">End Time</label><input type="datetime-local" id="endDateTime" value={formData.endDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
@@ -275,6 +298,32 @@
                 </div>
             );
         };
+        
+        const ZoneSelector = ({ selectedZones, onZoneChange }) => (
+            <div>
+                <label className="block text-sm font-medium mb-2">Zone(s)</label>
+                <div className="bg-gray-600 p-3 rounded-md max-h-56 overflow-y-auto space-y-3">
+                    {ZONES_CONFIG.map(zone => (
+                        <div key={zone.id}>
+                            <label className="flex items-center space-x-2 text-base font-semibold cursor-pointer">
+                                <input type="checkbox" checked={selectedZones.includes(zone.id)} onChange={() => onZoneChange(zone)} className="rounded text-blue-500 focus:ring-blue-500"/>
+                                <span>{zone.name}</span>
+                            </label>
+                            {zone.children && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6 mt-2">
+                                    {zone.children.map(child => (
+                                         <label key={child.id} className="flex items-center space-x-2 text-sm cursor-pointer">
+                                            <input type="checkbox" checked={selectedZones.includes(child.id)} onChange={() => onZoneChange(zone, child.id)} className="rounded text-blue-500 focus:ring-blue-500"/>
+                                            <span>{child.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
 
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
