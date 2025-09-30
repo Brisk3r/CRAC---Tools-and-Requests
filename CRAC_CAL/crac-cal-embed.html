@@ -31,6 +31,17 @@
           appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
           measurementId: "G-JT3PMQ0W6T"
         };
+        
+        const OPENING_HOURS = [
+            { day: 'Sunday', open: 8, close: 18 },    // 8am - 6pm
+            { day: 'Monday', open: 6, close: 20 },    // 6am - 8pm
+            { day: 'Tuesday', open: 6, close: 20 },
+            { day: 'Wednesday', open: 6, close: 20 },
+            { day: 'Thursday', open: 6, close: 20 },
+            { day: 'Friday', open: 6, close: 20 },
+            { day: 'Saturday', open: 7, close: 19 }  // 7am - 7pm
+        ];
+
         const ZONES_CONFIG = [
             { id: '50m Olympic Pool', name: '50m Olympic Pool', children: [
                 { id: '50m Olympic Pool - Lane 1', name: 'Lane 1' },
@@ -42,8 +53,21 @@
                 { id: '50m Olympic Pool - Lane 7', name: 'Lane 7' },
                 { id: '50m Olympic Pool - Lane 8', name: 'Lane 8' },
             ]},
-            { id: 'Program Pool', name: 'Program Pool' },
-            { id: 'Hydrotherapy Pool', name: 'Hydrotherapy Pool' },
+            { id: 'Program Pool', name: 'Program Pool', children: [
+                { id: 'Program Pool - Zone 1', name: 'Zone 1' },
+                { id: 'Program Pool - Zone 2', name: 'Zone 2' },
+                { id: 'Program Pool - Zone 3', name: 'Zone 3' },
+            ]},
+            { id: '25m Lap Pool', name: '25m Lap Pool', children: [
+                { id: '25m Lap Pool - Lane 1', name: 'Lane 1' },
+                { id: '25m Lap Pool - Lane 2', name: 'Lane 2' },
+                { id: '25m Lap Pool - Lane 3', name: 'Lane 3' },
+                { id: '25m Lap Pool - Lane 4', name: 'Lane 4' },
+                { id: '25m Lap Pool - Lane 5', name: 'Lane 5' },
+                { id: '25m Lap Pool - Lane 6', name: 'Lane 6' },
+                { id: '25m Lap Pool - Lane 7', name: 'Lane 7' },
+                { id: '25m Lap Pool - Lane 8', name: 'Lane 8' },
+            ]},
             { id: 'Splash Pad', name: 'Splash Pad' },
             { id: 'Club Room', name: 'Club Room' },
         ];
@@ -110,9 +134,13 @@
                     {isLoading && <p>Loading calendar...</p>}
                     {error && <p className="text-red-600">{error}</p>}
                     {!isLoading && !error && (
-                        view === 'month' ?
-                        <CalendarGrid currentDate={currentDate} eventsByDate={eventsByDate} onEventClick={setSelectedEvent} onDayClick={(day) => { setCurrentDate(day); setView('day');}}/> :
-                        <DayView currentDate={currentDate} events={eventsByDate[currentDate.toDateString()] || []} onEventClick={setSelectedEvent} />
+                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        {
+                            view === 'month' ?
+                            <CalendarGrid currentDate={currentDate} eventsByDate={eventsByDate} onEventClick={setSelectedEvent} onDayClick={(day) => { setCurrentDate(day); setView('day');}}/> :
+                            <DayView currentDate={currentDate} events={eventsByDate[currentDate.toDateString()] || []} onEventClick={setSelectedEvent} />
+                        }
+                        </div>
                     )}
                     {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
                 </div>
@@ -156,7 +184,7 @@
         };
 
         const CalendarDay = ({ day, isCurrentMonth, events, onEventClick, onDayClick }) => (
-            <div className={`border-r border-b border-gray-200 p-2 min-h-[120px] ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'} cursor-pointer hover:bg-blue-50`} onClick={() => onDayClick(day)}>
+            <div className={`border-r border-b border-gray-200 p-2 min-h-[120px] ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'} cursor-pointer hover:bg-blue-50 transition-colors`} onClick={() => onDayClick(day)}>
                 <time className={`text-sm ${new Date().toDateString() === day.toDateString() ? 'font-bold text-blue-600' : isCurrentMonth ? 'text-gray-700' : 'text-gray-400'}`}>{day.getDate()}</time>
                 <div className="mt-1 space-y-1">
                     {events.sort((a,b) => a.startDateTime - b.startDateTime).map(event => <EventChip key={event.id} event={event} onClick={(e) => { e.stopPropagation(); onEventClick(event);}} />)}
@@ -165,26 +193,48 @@
         );
 
         const DayView = ({ currentDate, events, onEventClick }) => {
-            const hours = Array.from({ length: 24 }, (_, i) => i);
+            const dayOfWeek = currentDate.getDay();
+            const operatingHours = OPENING_HOURS[dayOfWeek];
+            const startHour = operatingHours.open;
+            const endHour = operatingHours.close;
+
+            const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
             const sortedEvents = events.sort((a, b) => a.startDateTime - b.startDateTime);
+            const PIXELS_PER_MINUTE = 1.5;
+
             return (
-                 <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-                    {hours.map(hour => {
-                        const hourEvents = sortedEvents.filter(e => e.startDateTime.getHours() === hour);
-                        return (
-                            <div key={hour} className="flex border-b border-gray-200 min-h-[60px]">
-                                <div className="w-20 text-center p-2 border-r border-gray-200 shrink-0">
-                                    <span className="text-sm text-gray-500">{hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}{hour >= 12 ? 'pm' : 'am'}</span>
-                                </div>
-                                <div className="p-2 flex-grow">
-                                    <div className="space-y-2">
-                                        {hourEvents.map(event => <EventChip key={event.id} event={event} onClick={() => onEventClick(event)} />)}
-                                    </div>
-                                </div>
+                 <div className="flex">
+                    <div className="w-20 shrink-0">
+                         {hours.map(hour => (
+                            <div key={hour} className="h-[90px] border-r border-b border-gray-200 text-right pr-2 pt-1 relative">
+                                <span className="text-sm text-gray-500">{hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}{hour >= 12 ? 'pm' : 'am'}</span>
                             </div>
-                        );
-                    })}
-                </div>
+                        ))}
+                    </div>
+                    <div className="flex-grow relative">
+                         {hours.map(hour => (<div key={hour} className="h-[90px] border-b border-gray-200"></div>))}
+                         {sortedEvents.map(event => {
+                             const top = ((event.startDateTime.getHours() - startHour) * 60 + event.startDateTime.getMinutes()) * PIXELS_PER_MINUTE;
+                             const duration = (event.endDateTime - event.startDateTime) / (1000 * 60);
+                             const height = Math.max(24, duration * PIXELS_PER_MINUTE);
+
+                             if (event.endDateTime.getHours() < startHour || event.startDateTime.getHours() > endHour) {
+                                 return null;
+                             }
+
+                             return (
+                                 <div key={event.id}
+                                     className={`absolute w-[calc(100%-1rem)] left-2 rounded-lg p-2 text-white text-xs flex flex-col overflow-hidden cursor-pointer ${EVENT_TYPES[event.type] || 'bg-gray-400'}`}
+                                     style={{ top: `${top}px`, height: `${height}px` }}
+                                     onClick={() => onEventClick(event)}
+                                 >
+                                    <p className="font-bold truncate">{event.title}</p>
+                                    <p className="truncate">{event.startDateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {event.endDateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                 </div>
+                             );
+                         })}
+                    </div>
+                 </div>
             );
         };
 
@@ -226,4 +276,5 @@
     </script>
 </body>
 </html>
+
 
