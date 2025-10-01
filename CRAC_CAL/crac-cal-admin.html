@@ -6,21 +6,14 @@
     <title>CRAC Calendar Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%23007bff' d='M0 50 Q 25 25, 50 50 T 100 50 V 100 H 0 Z' /></svg>">
-    <style>
-        body { font-family: sans-serif; }
-    </style>
+    <style> body { font-family: sans-serif; } </style>
 </head>
 <body class="bg-gray-800 text-gray-100">
     <div id="root"></div>
 
-    <!-- React Libraries -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-
-    <!-- Babel to transpile JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
@@ -37,52 +30,37 @@
         };
         const ADMIN_PASSWORD = 'CRAC*25*'; // <-- CHANGE THIS
         
-        const ZONES_CONFIG = [
-            { id: '50m Olympic Pool', name: '50m Olympic Pool', children: [
-                { id: '50m Olympic Pool - Lane 1', name: 'Lane 1' },
-                { id: '50m Olympic Pool - Lane 2', name: 'Lane 2' },
-                { id: '50m Olympic Pool - Lane 3', name: 'Lane 3' },
-                { id: '50m Olympic Pool - Lane 4', name: 'Lane 4' },
-                { id: '50m Olympic Pool - Lane 5', name: 'Lane 5' },
-                { id: '50m Olympic Pool - Lane 6', name: 'Lane 6' },
-                { id: '50m Olympic Pool - Lane 7', name: 'Lane 7' },
-                { id: '50m Olympic Pool - Lane 8', name: 'Lane 8' },
-            ]},
-            { id: 'Programs Pool', name: 'Programs Pool', children: [
-                { id: 'Programs Pool - Zone 1', name: 'Zone 1' },
-                { id: 'Programs Pool - Zone 2', name: 'Zone 2' },
-                { id: 'Programs Pool - Zone 3', name: 'Zone 3' },
-            ]},
-            { id: '25m Lap Pool', name: '25m Lap Pool', children: [
-                { id: '25m Lap Pool - Lane 1', name: 'Lane 1' },
-                { id: '25m Lap Pool - Lane 2', name: 'Lane 2' },
-                { id: '25m Lap Pool - Lane 3', name: 'Lane 3' },
-                { id: '25m Lap Pool - Lane 4', name: 'Lane 4' },
-                { id: '25m Lap Pool - Lane 5', name: 'Lane 5' },
-                { id: '25m Lap Pool - Lane 6', name: 'Lane 6' },
-                { id: '25m Lap Pool - Lane 7', name: 'Lane 7' },
-                { id: '25m Lap Pool - Lane 8', name: 'Lane 8' },
-            ]},
-            { id: 'Splash Pad', name: 'Splash Pad' },
-            { id: 'Community Room', name: 'Community Room' },
-        ];
-        
-        const getFlatZones = () => {
-            const zones = [];
-            ZONES_CONFIG.forEach(zone => {
-                zones.push(zone.name);
-                if (zone.children) {
-                    zone.children.forEach(child => zones.push(child.id));
-                }
-            });
-            return zones;
+        const DEFAULT_SETTINGS = {
+            zones: [
+                { id: '50m Olympic Pool', name: '50m Olympic Pool', children: [
+                    { id: '50m Olympic Pool - Lane 1', name: 'Lane 1' }, { id: '50m Olympic Pool - Lane 2', name: 'Lane 2' },
+                    { id: '50m Olympic Pool - Lane 3', name: 'Lane 3' }, { id: '50m Olympic Pool - Lane 4', name: 'Lane 4' },
+                    { id: '50m Olympic Pool - Lane 5', name: 'Lane 5' }, { id: '50m Olympic Pool - Lane 6', name: 'Lane 6' },
+                    { id: '50m Olympic Pool - Lane 7', name: 'Lane 7' }, { id: '50m Olympic Pool - Lane 8', name: 'Lane 8' },
+                ]},
+                { id: 'Program Pool', name: 'Program Pool', children: [
+                    { id: 'Program Pool - Zone 1', name: 'Zone 1' }, { id: 'Program Pool - Zone 2', name: 'Zone 2' }, { id: 'Program Pool - Zone 3', name: 'Zone 3' },
+                ]},
+                { id: '25m Lap Pool', name: '25m Lap Pool', children: [
+                    { id: '25m Lap Pool - Lane 1', name: 'Lane 1' }, { id: '25m Lap Pool - Lane 2', name: 'Lane 2' },
+                    { id: '25m Lap Pool - Lane 3', name: 'Lane 3' }, { id: '25m Lap Pool - Lane 4', name: 'Lane 4' },
+                    { id: '25m Lap Pool - Lane 5', name: 'Lane 5' }, { id: '25m Lap Pool - Lane 6', name: 'Lane 6' },
+                    { id: '25m Lap Pool - Lane 7', name: 'Lane 7' }, { id: '25m Lap Pool - Lane 8', name: 'Lane 8' },
+                ]},
+                { id: 'Splash Pad', name: 'Splash Pad' },
+                { id: 'Club Room', name: 'Club Room' },
+            ],
+            eventTypes: { 'Class': '#3b82f6', 'Booking': '#16a34a', 'Closure': '#dc2626', 'Event': '#9333ea', 'Maintenance': '#f59e0b' },
+            openingHours: [
+                { day: 'Sunday', open: 8, close: 18 }, { day: 'Monday', open: 5, close: 19 },
+                { day: 'Tuesday', open: 5, close: 19 }, { day: 'Wednesday', open: 5, close: 19 },
+                { day: 'Thursday', open: 5, close: 19 }, { day: 'Friday', open: 5, close: 19 },
+                { day: 'Saturday', open: 7, close: 19 }
+            ]
         };
-        const ALL_ZONES_FLAT = getFlatZones();
-
-        const EVENT_TYPES = { 'Class': 'bg-blue-600', 'Booking': 'bg-green-600', 'Closure': 'bg-red-600', 'Event': 'bg-purple-600', 'Maintenance': 'bg-yellow-600' };
         // ---------------------
 
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect } = React;
         
         let db;
         try {
@@ -99,113 +77,295 @@
         const LoginScreen = ({ onLogin }) => {
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (password === ADMIN_PASSWORD) onLogin();
-                else setError('Incorrect password.');
-            };
-
+            const handleSubmit = (e) => { e.preventDefault(); if (password === ADMIN_PASSWORD) onLogin(); else setError('Incorrect password.'); };
             return (
-                <div className="min-h-screen flex items-center justify-center">
-                    <div className="bg-gray-700 p-8 rounded-lg shadow-lg w-full max-w-sm">
-                        <h1 className="text-2xl font-bold text-white text-center mb-6">CRAC Calendar Admin</h1>
-                        <form onSubmit={handleSubmit}>
-                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="w-full bg-gray-600 text-white rounded-md p-3 focus:ring-2 focus:ring-blue-500 border-gray-500" autoFocus />
-                            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-4 rounded-lg">Login</button>
-                        </form>
-                    </div>
-                </div>
+                <div className="min-h-screen flex items-center justify-center"><div className="bg-gray-700 p-8 rounded-lg shadow-lg w-full max-w-sm"><h1 className="text-2xl font-bold text-white text-center mb-6">CRAC Calendar Admin</h1><form onSubmit={handleSubmit}><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="w-full bg-gray-600 text-white rounded-md p-3 focus:ring-2 focus:ring-blue-500 border-gray-500" autoFocus />{error && <p className="text-red-400 text-sm mt-2">{error}</p>}<button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-4 rounded-lg">Login</button></form></div></div>
             );
         };
 
         const AdminPage = () => {
             const [events, setEvents] = useState([]);
+            const [settings, setSettings] = useState(null);
             const [isLoading, setIsLoading] = useState(true);
             const [error, setError] = useState(null);
             const [isModalOpen, setIsModalOpen] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
 
             useEffect(() => {
-                if (!db) {
-                    setError("Firebase is not configured. Please add your config details.");
-                    setIsLoading(false);
-                    return;
-                }
+                if (!db) { setError("Firebase is not configured."); setIsLoading(false); return; }
                 
-                const unsubscribe = db.collection('calendar_events')
-                    .orderBy('startDateTime', 'desc')
-                    .onSnapshot(snapshot => {
-                        const fetchedEvents = snapshot.docs.map(doc => {
-                            const data = doc.data();
-                            const zones = Array.isArray(data.zone) ? data.zone : (data.zone ? [data.zone] : []);
-                            return { id: doc.id, ...data, zone: zones, startDateTime: data.startDateTime.toDate(), endDateTime: data.endDateTime.toDate() };
-                        });
-                        setEvents(fetchedEvents);
-                        setIsLoading(false);
-                    }, err => {
-                        setError(`Failed to fetch events: ${err.message}`);
-                        setIsLoading(false);
-                    });
+                let settingsLoaded = false;
+                let eventsLoaded = false;
+                const checkLoading = () => { if(settingsLoaded && eventsLoaded) setIsLoading(false); };
+
+                const settingsRef = db.collection('calendar_settings').doc('main_config');
+                const unsubSettings = settingsRef.onSnapshot(doc => {
+                    if (doc.exists) {
+                        setSettings(doc.data());
+                    } else {
+                        settingsRef.set(DEFAULT_SETTINGS).then(() => setSettings(DEFAULT_SETTINGS));
+                    }
+                    settingsLoaded = true;
+                    checkLoading();
+                }, err => { setError(`Failed to load settings: ${err.message}`); });
+
+                const unsubEvents = db.collection('calendar_events').orderBy('startDateTime', 'desc').onSnapshot(snapshot => {
+                    setEvents(snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return { id: doc.id, ...data, startDateTime: data.startDateTime.toDate(), endDateTime: data.endDateTime.toDate() };
+                    }));
+                    eventsLoaded = true;
+                    checkLoading();
+                }, err => { setError(`Failed to fetch events: ${err.message}`); });
                 
-                return () => unsubscribe();
+                return () => { unsubEvents(); unsubSettings(); };
             }, []);
 
             const handleSaveEvent = async (eventData) => {
-                if (!db) return;
+                if(!db) return;
                 const { id, ...data } = eventData;
-                const dataToSave = { ...data, startDateTime: firebase.firestore.Timestamp.fromDate(new Date(data.startDateTime)), endDateTime: firebase.firestore.Timestamp.fromDate(new Date(data.endDateTime)) };
+                data.startDateTime = firebase.firestore.Timestamp.fromDate(new Date(data.startDateTime));
+                data.endDateTime = firebase.firestore.Timestamp.fromDate(new Date(data.endDateTime));
+
                 try {
-                    if (id) await db.collection('calendar_events').doc(id).update(dataToSave);
-                    else await db.collection('calendar_events').add(dataToSave);
+                    if (id) {
+                        await db.collection('calendar_events').doc(id).update(data);
+                    } else {
+                        await db.collection('calendar_events').add(data);
+                    }
                     setIsModalOpen(false);
-                    setSelectedEvent(null);
-                } catch (err) { alert(`Error saving event: ${err.message}`); }
+                } catch(err) {
+                    alert(`Error saving event: ${err.message}`);
+                }
             };
             
             const handleDeleteEvent = async (eventId) => {
-                if (!db || !window.confirm("Are you sure?")) return;
+                if(!db || !window.confirm("Are you sure you want to permanently delete this event?")) return;
                 try {
                     await db.collection('calendar_events').doc(eventId).delete();
-                } catch (err) { alert(`Error deleting event: ${err.message}`); }
+                } catch(err) {
+                    alert(`Error deleting event: ${err.message}`);
+                }
             };
 
-            const openModalForNew = () => { setSelectedEvent(null); setIsModalOpen(true); };
-            const openModalForEdit = (event) => { setSelectedEvent(event); setIsModalOpen(true); };
+            const handleSaveSettings = async (newSettings) => {
+                if (!db) return;
+                try {
+                    await db.collection('calendar_settings').doc('main_config').set(newSettings);
+                    setIsSettingsOpen(false);
+                } catch(err) {
+                    alert(`Error saving settings: ${err.message}`);
+                }
+            };
+            
+            if (isLoading || !settings) return <div className="text-center p-10">Loading configuration and events...</div>;
 
             return (
                 <div className="container mx-auto p-4 md:p-8">
                     <header className="flex flex-col md:flex-row justify-between items-center mb-8">
                         <h1 className="text-3xl font-bold">Event Management</h1>
-                        <button onClick={openModalForNew} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg mt-4 md:mt-0">Create New Event</button>
-                    </header>
-                    {isLoading && <p>Loading events...</p>}
-                    {error && <p className="text-red-400 p-4 bg-red-900/50 rounded-lg">{error}</p>}
-                    {!isLoading && !error && (
-                        <div className="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
-                           <ul className="divide-y divide-gray-600">
-                               {events.map(event => <EventListItem key={event.id} event={event} onEdit={() => openModalForEdit(event)} onDelete={() => handleDeleteEvent(event.id)} />)}
-                           </ul>
+                        <div className="flex items-center gap-4 mt-4 md:mt-0">
+                           <button onClick={() => setIsSettingsOpen(true)} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">Settings</button>
+                           <button onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Create New Event</button>
                         </div>
-                    )}
-                    {isModalOpen && <EventForm event={selectedEvent} onClose={() => setIsModalOpen(false)} onSave={handleSaveEvent} />}
+                    </header>
+                    {error && <p className="text-red-400 p-4 bg-red-900/50 rounded-lg">{error}</p>}
+                    <div className="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
+                       <ul className="divide-y divide-gray-600">
+                           {events.map(event => <EventListItem key={event.id} event={event} settings={settings} onEdit={() => { setSelectedEvent(event); setIsModalOpen(true);}} onDelete={() => handleDeleteEvent(event.id)} />)}
+                       </ul>
+                    </div>
+                    {isModalOpen && <EventForm event={selectedEvent} settings={settings} onClose={() => setIsModalOpen(false)} onSave={handleSaveEvent} />}
+                    {isSettingsOpen && <SettingsModal settings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
+                </div>
+            );
+        };
+        
+        const SettingsModal = ({ settings, onSave, onClose }) => {
+            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); // Deep copy
+            const [activeTab, setActiveTab] = useState('zones');
+
+            return (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-700 rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+                        <header className="p-4 border-b border-gray-600"><h2 className="text-2xl font-bold">Calendar Settings</h2></header>
+                        <div className="flex flex-grow overflow-hidden">
+                            <nav className="w-1/4 p-4 border-r border-gray-600">
+                                <button onClick={() => setActiveTab('zones')} className={`w-full text-left p-2 rounded mb-2 ${activeTab === 'zones' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}>Zones</button>
+                                <button onClick={() => setActiveTab('eventTypes')} className={`w-full text-left p-2 rounded mb-2 ${activeTab === 'eventTypes' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}>Event Types</button>
+                                <button onClick={() => setActiveTab('openingHours')} className={`w-full text-left p-2 rounded ${activeTab === 'openingHours' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}>Opening Hours</button>
+                            </nav>
+                            <main className="w-3/4 p-6 overflow-y-auto">
+                                {activeTab === 'zones' && <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />}
+                                {activeTab === 'eventTypes' && <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />}
+                                {activeTab === 'openingHours' && <OpeningHoursSettings settings={localSettings} setSettings={setLocalSettings} />}
+                            </main>
+                        </div>
+                        <footer className="p-4 border-t border-gray-600 flex justify-end gap-4">
+                            <button onClick={onClose} className="py-2 px-4 rounded-md bg-gray-500 hover:bg-gray-400">Cancel</button>
+                            <button onClick={() => onSave(localSettings)} className="py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 font-bold">Save Settings</button>
+                        </footer>
+                    </div>
                 </div>
             );
         };
 
-        const EventListItem = ({ event, onEdit, onDelete }) => {
+        const ZoneSettings = ({ settings, setSettings }) => {
+            const [newZoneName, setNewZoneName] = useState('');
+            const [newChildName, setNewChildName] = useState('');
+            const [selectedParent, setSelectedParent] = useState('');
+
+            const addParentZone = () => {
+                if (!newZoneName.trim()) return;
+                const newZone = { id: newZoneName.trim(), name: newZoneName.trim() };
+                setSettings(prev => ({ ...prev, zones: [...prev.zones, newZone] }));
+                setNewZoneName('');
+            };
+
+            const addChildZone = () => {
+                if (!newChildName.trim() || !selectedParent) return;
+                const childId = `${selectedParent} - ${newChildName.trim()}`;
+                const newChild = { id: childId, name: newChildName.trim() };
+                setSettings(prev => ({
+                    ...prev,
+                    zones: prev.zones.map(z => {
+                        if (z.id === selectedParent) {
+                            return { ...z, children: [...(z.children || []), newChild] };
+                        }
+                        return z;
+                    })
+                }));
+                setNewChildName('');
+            };
+
+            const deleteZone = (zoneId) => {
+                if (!window.confirm(`Are you sure you want to delete this zone and all its children?`)) return;
+                setSettings(prev => ({
+                    ...prev,
+                    zones: prev.zones.filter(z => z.id !== zoneId)
+                }));
+            };
+            
+            const deleteChildZone = (parentId, childId) => {
+                 setSettings(prev => ({
+                    ...prev,
+                    zones: prev.zones.map(z => {
+                        if (z.id === parentId) {
+                            return { ...z, children: z.children.filter(c => c.id !== childId) };
+                        }
+                        return z;
+                    })
+                }));
+            }
+
+            return (
+                <div>
+                    <h3 className="text-xl font-bold mb-4">Manage Zones</h3>
+                    <div className="bg-gray-600 p-4 rounded-lg mb-6">
+                        <h4 className="font-semibold mb-2">Add New Parent Zone</h4>
+                        <div className="flex gap-2"><input type="text" value={newZoneName} onChange={e => setNewZoneName(e.target.value)} placeholder="e.g., Kids Play Area" className="flex-grow bg-gray-500 p-2 rounded-md" /><button onClick={addParentZone} className="bg-blue-600 px-4 rounded-md font-semibold">Add</button></div>
+                    </div>
+                     <div className="bg-gray-600 p-4 rounded-lg mb-6">
+                        <h4 className="font-semibold mb-2">Add New Child Zone (Lane/Sub-zone)</h4>
+                        <div className="flex gap-2"><select value={selectedParent} onChange={e => setSelectedParent(e.target.value)} className="bg-gray-500 p-2 rounded-md"><option value="">Select Parent...</option>{settings.zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}</select><input type="text" value={newChildName} onChange={e => setNewChildName(e.target.value)} placeholder="e.g., Lane 9" className="flex-grow bg-gray-500 p-2 rounded-md" /><button onClick={addChildZone} className="bg-blue-600 px-4 rounded-md font-semibold">Add</button></div>
+                    </div>
+                    <div className="space-y-4">
+                        {settings.zones.map(zone => (
+                            <div key={zone.id} className="bg-gray-600 p-3 rounded-lg">
+                                <div className="flex justify-between items-center"><span className="font-bold">{zone.name}</span><button onClick={() => deleteZone(zone.id)} className="text-red-400 hover:text-red-300 text-sm">Delete Zone</button></div>
+                                {zone.children && <ul className="mt-2 ml-4 space-y-1">{zone.children.map(child => <li key={child.id} className="flex justify-between items-center text-sm text-gray-300"><span>{child.name}</span><button onClick={() => deleteChildZone(zone.id, child.id)} className="text-red-500 hover:text-red-400 text-xs">remove</button></li>)}</ul>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        
+        const EventTypeSettings = ({ settings, setSettings }) => {
+            const [name, setName] = useState('');
+            const [color, setColor] = useState('#8b5cf6');
+
+            const addEventType = () => {
+                if (!name.trim()) return;
+                setSettings(prev => ({
+                    ...prev,
+                    eventTypes: { ...prev.eventTypes, [name.trim()]: color }
+                }));
+                setName('');
+                setColor('#8b5cf6');
+            };
+
+            const deleteEventType = (typeName) => {
+                if (!window.confirm(`Are you sure you want to delete the "${typeName}" event type?`)) return;
+                const { [typeName]: _, ...rest } = settings.eventTypes;
+                setSettings(prev => ({ ...prev, eventTypes: rest }));
+            };
+
+            return (
+                 <div>
+                    <h3 className="text-xl font-bold mb-4">Manage Event Types</h3>
+                     <div className="bg-gray-600 p-4 rounded-lg mb-6">
+                        <h4 className="font-semibold mb-2">Add New Event Type</h4>
+                        <div className="flex gap-2 items-center">
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., School Holiday Program" className="flex-grow bg-gray-500 p-2 rounded-md" />
+                            <input type="color" value={color} onChange={e => setColor(e.target.value)} className="bg-transparent h-10 w-10 rounded-md cursor-pointer" />
+                            <button onClick={addEventType} className="bg-blue-600 px-4 py-2 rounded-md font-semibold">Add</button>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        {Object.entries(settings.eventTypes).map(([name, color]) => (
+                            <div key={name} className="bg-gray-600 p-3 rounded-lg flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full" style={{ backgroundColor: color }}></div>
+                                    <span className="font-semibold">{name}</span>
+                                </div>
+                                <button onClick={() => deleteEventType(name)} className="text-red-400 hover:text-red-300 text-sm">Delete</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        
+        const OpeningHoursSettings = ({ settings, setSettings }) => {
+            const handleChange = (day, field, value) => {
+                setSettings(prev => ({
+                    ...prev,
+                    openingHours: prev.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(value) } : h)
+                }));
+            };
+            return (
+                <div>
+                    <h3 className="text-xl font-bold mb-4">Manage Opening Hours</h3>
+                    <div className="space-y-4">
+                        {settings.openingHours.map(hour => (
+                            <div key={hour.day} className="flex items-center justify-between bg-gray-600 p-3 rounded">
+                                <span className="font-semibold">{hour.day}</span>
+                                <div className="flex items-center gap-4">
+                                    <input type="number" value={hour.open} onChange={e => handleChange(hour.day, 'open', e.target.value)} className="w-20 bg-gray-500 p-1 rounded" min="0" max="23" />
+                                    <span>to</span>
+                                    <input type="number" value={hour.close} onChange={e => handleChange(hour.day, 'close', e.target.value)} className="w-20 bg-gray-500 p-1 rounded" min="1" max="24" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        
+        const EventListItem = ({ event, settings, onEdit, onDelete }) => {
+            const eventTypes = settings.eventTypes || {};
             const formatDate = (date) => `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
             return (
                 <li className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-600/50">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                             <span className={`px-3 py-1 text-xs font-bold rounded-full text-white ${EVENT_TYPES[event.type] || 'bg-gray-500'}`}>{event.type}</span>
+                             <span className={`px-3 py-1 text-xs font-bold rounded-full text-white`} style={{backgroundColor: eventTypes[event.type] || '#6b7280'}}>{event.type}</span>
                              <span className="font-semibold text-lg">{event.title}</span>
                         </div>
                         <p className="text-sm text-gray-400 mb-1"><strong>Zone(s):</strong> {Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}</p>
                         <p className="text-sm text-gray-400"><strong>Time:</strong> {formatDate(event.startDateTime)} to {formatDate(event.endDateTime)}</p>
-                        {event.description && <p className="text-sm text-gray-300 mt-2 whitespace-pre-wrap">{event.description}</p>}
                     </div>
                     <div className="flex space-x-2 mt-4 md:mt-0 shrink-0">
                         <button onClick={onEdit} className="py-1 px-4 text-sm rounded-md bg-gray-500 hover:bg-gray-400">Edit</button>
@@ -215,116 +375,57 @@
             );
         };
         
-        const EventForm = ({ event, onClose, onSave }) => {
-            const toLocalISOString = (date) => {
-                const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-                return (new Date(date - tzoffset)).toISOString().slice(0, 16);
-            }
-            const getInitialZones = () => { if (!event || !event.zone) return []; return Array.isArray(event.zone) ? event.zone : [event.zone]; };
-            const [formData, setFormData] = useState({ id: event?.id || null, title: event?.title || '', zone: getInitialZones(), startDateTime: toLocalISOString(event ? event.startDateTime : new Date()), endDateTime: toLocalISOString(event ? event.endDateTime : new Date(Date.now() + 60*60*1000)), type: event?.type || Object.keys(EVENT_TYPES)[0], description: event?.description || '' });
-            
-            const handleChange = (e) => { const { id, value } = e.target; setFormData(prev => ({...prev, [id]: value})); };
-            
-            const handleZoneChange = (parentZone, childZoneId) => {
-                setFormData(prev => {
-                    let newZones = [...prev.zone];
+        const EventForm = ({ event, settings, onClose, onSave }) => {
+            const [formData, setFormData] = useState({
+                title: event?.title || '',
+                description: event?.description || '',
+                zone: event?.zone || [],
+                type: event?.type || Object.keys(settings.eventTypes)[0] || '',
+                startDateTime: event ? new Date(event.startDateTime.getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '',
+                endDateTime: event ? new Date(event.endDateTime.getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''
+            });
+            const [selectedZones, setSelectedZones] = useState(event?.zone || []);
 
-                    if (childZoneId) { // A child checkbox was clicked (e.g., a lane)
-                        if (newZones.includes(childZoneId)) {
-                            newZones = newZones.filter(z => z !== childZoneId);
-                        } else {
-                            newZones.push(childZoneId);
-                        }
-                    } else { // A parent checkbox was clicked
-                        if (parentZone.children) { // Parent with children (e.g., 50m Pool)
-                            const childIds = parentZone.children.map(c => c.id);
-                            const allChildrenSelected = childIds.every(id => newZones.includes(id));
-
-                            if (allChildrenSelected) { // Deselect all children and the parent
-                                newZones = newZones.filter(z => !childIds.includes(z) && z !== parentZone.id);
-                            } else { // Select all children and the parent
-                                childIds.forEach(id => {
-                                    if (!newZones.includes(id)) newZones.push(id);
-                                });
-                                if (!newZones.includes(parentZone.id)) newZones.push(parentZone.id);
-                            }
-                        } else { // Parent without children (e.g., Programs Pool)
-                            if (newZones.includes(parentZone.id)) {
-                                newZones = newZones.filter(z => z !== parentZone.id);
-                            } else {
-                                newZones.push(parentZone.id);
-                            }
-                        }
+            const handleChange = e => setFormData(prev => ({...prev, [e.target.id]: e.target.value }));
+            
+            const handleZoneChange = (zoneId, isParent = false) => {
+                let newSelectedZones = [...selectedZones];
+                const parentZone = settings.zones.find(z => z.id === zoneId);
+                const children = parentZone?.children?.map(c => c.id) || [];
+                
+                if (isParent) {
+                    const allChildrenSelected = children.every(c => newSelectedZones.includes(c));
+                    if (allChildrenSelected) {
+                        newSelectedZones = newSelectedZones.filter(z => !children.includes(z));
+                    } else {
+                        newSelectedZones = [...new Set([...newSelectedZones, ...children])];
                     }
-
-                    // Sync parent state for zones that have children
-                    ZONES_CONFIG.forEach(parent => {
-                        if (parent.children) {
-                            const childIds = parent.children.map(c => c.id);
-                            const allChildrenSelected = childIds.every(id => newZones.includes(id));
-                            const parentInZones = newZones.includes(parent.id);
-
-                            if (allChildrenSelected && !parentInZones) {
-                                newZones.push(parent.id);
-                            } else if (!allChildrenSelected && parentInZones) {
-                                newZones = newZones.filter(z => z !== parent.id);
-                            }
-                        }
-                    });
-
-                    return { ...prev, zone: newZones };
-                });
+                } else {
+                    if (newSelectedZones.includes(zoneId)) {
+                        newSelectedZones = newSelectedZones.filter(z => z !== zoneId);
+                    } else {
+                        newSelectedZones.push(zoneId);
+                    }
+                }
+                setSelectedZones(newSelectedZones);
             };
 
-            const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onSave({ id: event?.id, ...formData, zone: selectedZones });
+            };
 
             return (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-700 rounded-lg shadow-2xl p-8 w-full max-w-2xl relative">
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
-                        <h2 className="text-2xl font-bold mb-6">{event ? 'Edit Event' : 'Create New Event'}</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <ZoneSelector selectedZones={formData.zone} onZoneChange={handleZoneChange} />
-                            <div><label htmlFor="title" className="block text-sm font-medium mb-1">Event Title</label><input type="text" id="title" value={formData.title} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label htmlFor="startDateTime" className="block text-sm font-medium mb-1">Start Time</label><input type="datetime-local" id="startDateTime" value={formData.startDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
-                                <div><label htmlFor="endDateTime" className="block text-sm font-medium mb-1">End Time</label><input type="datetime-local" id="endDateTime" value={formData.endDateTime} onChange={handleChange} required className="w-full bg-gray-600 rounded p-2 border-gray-500"/></div>
-                            </div>
-                            <div><label htmlFor="type" className="block text-sm font-medium mb-1">Event Type</label><select id="type" value={formData.type} onChange={handleChange} className="w-full bg-gray-600 rounded p-2 border-gray-500">{Object.keys(EVENT_TYPES).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-                            <div><label htmlFor="description" className="block text-sm font-medium mb-1">Description</label><textarea id="description" value={formData.description} onChange={handleChange} rows="4" className="w-full bg-gray-600 rounded p-2 border-gray-500"></textarea></div>
-                            <div className="flex justify-end pt-4"><button type="submit" className="bg-blue-600 hover:bg-blue-700 font-bold py-2 px-6 rounded-lg">{event ? 'Save Changes' : 'Create Event'}</button></div>
-                        </form>
-                    </div>
-                </div>
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div className="bg-gray-700 rounded-lg shadow-2xl w-full max-w-2xl h-[90vh] flex flex-col"><header className="p-4 border-b border-gray-600"><h2 className="text-2xl font-bold">{event ? 'Edit Event' : 'Create Event'}</h2></header><main className="flex-grow p-6 overflow-y-auto space-y-4">
+                    <div><label htmlFor="title" className="block text-sm font-semibold mb-1">Title</label><input type="text" id="title" value={formData.title} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md" required /></div>
+                    <div><label className="block text-sm font-semibold mb-2">Zones</label><div className="bg-gray-600 p-3 rounded-md max-h-48 overflow-y-auto space-y-2">{settings.zones.map(zone => <div key={zone.id}><label className="flex items-center font-semibold"><input type="checkbox" checked={zone.children ? zone.children.every(c => selectedZones.includes(c.id)) : selectedZones.includes(zone.id)} onChange={() => handleZoneChange(zone.id, !!zone.children)} className="mr-2 h-4 w-4" />{zone.name}</label>{zone.children && <div className="ml-6 mt-1 space-y-1">{zone.children.map(child => <label key={child.id} className="flex items-center text-sm"><input type="checkbox" checked={selectedZones.includes(child.id)} onChange={() => handleZoneChange(child.id)} className="mr-2 h-4 w-4"/>{child.name}</label>)}</div>}</div>)}</div></div>
+                    <div className="grid grid-cols-2 gap-4"><div><label htmlFor="type" className="block text-sm font-semibold mb-1">Type</label><select id="type" value={formData.type} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md">{Object.keys(settings.eventTypes).map(t => <option key={t} value={t}>{t}</option>)}</select></div></div>
+                    <div className="grid grid-cols-2 gap-4"><div><label htmlFor="startDateTime" className="block text-sm font-semibold mb-1">Start Time</label><input type="datetime-local" id="startDateTime" value={formData.startDateTime} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md" required /></div><div><label htmlFor="endDateTime" className="block text-sm font-semibold mb-1">End Time</label><input type="datetime-local" id="endDateTime" value={formData.endDateTime} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md" required /></div></div>
+                    <div><label htmlFor="description" className="block text-sm font-semibold mb-1">Description</label><textarea id="description" value={formData.description} onChange={handleChange} rows="4" className="w-full bg-gray-600 p-2 rounded-md"></textarea></div>
+                </main><footer className="p-4 border-t border-gray-600 flex justify-end gap-4"><button onClick={onClose} className="py-2 px-4 rounded-md bg-gray-500 hover:bg-gray-400">Cancel</button><button onClick={handleSubmit} className="py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 font-bold">Save Event</button></footer></div></div>
             );
         };
         
-        const ZoneSelector = ({ selectedZones, onZoneChange }) => (
-            <div>
-                <label className="block text-sm font-medium mb-2">Zone(s)</label>
-                <div className="bg-gray-600 p-3 rounded-md max-h-56 overflow-y-auto space-y-3">
-                    {ZONES_CONFIG.map(zone => (
-                        <div key={zone.id}>
-                            <label className="flex items-center space-x-2 text-base font-semibold cursor-pointer">
-                                <input type="checkbox" checked={selectedZones.includes(zone.id)} onChange={() => onZoneChange(zone)} className="rounded text-blue-500 focus:ring-blue-500"/>
-                                <span>{zone.name}</span>
-                            </label>
-                            {zone.children && (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6 mt-2">
-                                    {zone.children.map(child => (
-                                         <label key={child.id} className="flex items-center space-x-2 text-sm cursor-pointer">
-                                            <input type="checkbox" checked={selectedZones.includes(child.id)} onChange={() => onZoneChange(zone, child.id)} className="rounded text-blue-500 focus:ring-blue-500"/>
-                                            <span>{child.name}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
