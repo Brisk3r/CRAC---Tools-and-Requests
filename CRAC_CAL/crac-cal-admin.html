@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRAC Calendar Admin</title>
+    <title>Calendar Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%23007bff' d='M0 50 Q 25 25, 50 50 T 100 50 V 100 H 0 Z' /></svg>">
-    <style> body { font-family: sans-serif; } </style>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-800 text-gray-100">
+<body class="bg-gray-100">
     <div id="root"></div>
 
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
@@ -28,58 +31,44 @@
           appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
           measurementId: "G-JT3PMQ0W6T"
         };
-        const ADMIN_PASSWORD = 'CRAC*25*'; // <-- CHANGE THIS
-        
-        const DEFAULT_SETTINGS = {
-            zones: [
-                { id: '50m Olympic Pool', name: '50m Olympic Pool', children: [
-                    { id: '50m Olympic Pool - Lane 1', name: 'Lane 1' }, { id: '50m Olympic Pool - Lane 2', name: 'Lane 2' },
-                    { id: '50m Olympic Pool - Lane 3', name: 'Lane 3' }, { id: '50m Olympic Pool - Lane 4', name: 'Lane 4' },
-                    { id: '50m Olympic Pool - Lane 5', name: 'Lane 5' }, { id: '50m Olympic Pool - Lane 6', name: 'Lane 6' },
-                    { id: '50m Olympic Pool - Lane 7', name: 'Lane 7' }, { id: '50m Olympic Pool - Lane 8', name: 'Lane 8' },
-                ]},
-                { id: 'Program Pool', name: 'Program Pool', children: [
-                    { id: 'Program Pool - Zone 1', name: 'Zone 1' }, { id: 'Program Pool - Zone 2', name: 'Zone 2' }, { id: 'Program Pool - Zone 3', name: 'Zone 3' },
-                ]},
-                { id: '25m Lap Pool', name: '25m Lap Pool', children: [
-                    { id: '25m Lap Pool - Lane 1', name: 'Lane 1' }, { id: '25m Lap Pool - Lane 2', name: 'Lane 2' },
-                    { id: '25m Lap Pool - Lane 3', name: 'Lane 3' }, { id: '25m Lap Pool - Lane 4', name: 'Lane 4' },
-                    { id: '25m Lap Pool - Lane 5', name: 'Lane 5' }, { id: '25m Lap Pool - Lane 6', name: 'Lane 6' },
-                    { id: '25m Lap Pool - Lane 7', name: 'Lane 7' }, { id: '25m Lap Pool - Lane 8', name: 'Lane 8' },
-                ]},
-                { id: 'Splash Pad', name: 'Splash Pad' },
-                { id: 'Club Room', name: 'Club Room' },
-            ],
-            eventTypes: { 'Class': '#3b82f6', 'Booking': '#16a34a', 'Closure': '#dc2626', 'Event': '#9333ea', 'Maintenance': '#f59e0b' },
-            openingHours: [
-                { day: 'Sunday', open: 8, close: 18 }, { day: 'Monday', open: 5, close: 19 },
-                { day: 'Tuesday', open: 5, close: 19 }, { day: 'Wednesday', open: 5, close: 19 },
-                { day: 'Thursday', open: 5, close: 19 }, { day: 'Friday', open: 5, close: 19 },
-                { day: 'Saturday', open: 7, close: 19 }
-            ]
-        };
+        const ADMIN_PASSWORD = "CRAC*25*"; // IMPORTANT: Change this password
         // ---------------------
 
-        const { useState, useEffect } = React;
-        
+        const { useState, useEffect, useMemo } = React;
         let db;
         try {
             if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-        } catch (e) { console.error("Could not initialize Firebase", e); }
+        } catch(e) { console.error("Firebase init failed", e); }
 
         const App = () => {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
-            if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+            if (!isAuthenticated) return <Login onAuth={() => setIsAuthenticated(true)} />;
             return <AdminPage />;
         };
-
-        const LoginScreen = ({ onLogin }) => {
+        
+        const Login = ({ onAuth }) => {
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-            const handleSubmit = (e) => { e.preventDefault(); if (password === ADMIN_PASSWORD) onLogin(); else setError('Incorrect password.'); };
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (password === ADMIN_PASSWORD) {
+                    onAuth(true);
+                } else {
+                    setError('Incorrect password.');
+                }
+            };
             return (
-                <div className="min-h-screen flex items-center justify-center"><div className="bg-gray-700 p-8 rounded-lg shadow-lg w-full max-w-sm"><h1 className="text-2xl font-bold text-white text-center mb-6">CRAC Calendar Admin</h1><form onSubmit={handleSubmit}><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" className="w-full bg-gray-600 text-white rounded-md p-3 focus:ring-2 focus:ring-blue-500 border-gray-500" autoFocus />{error && <p className="text-red-400 text-sm mt-2">{error}</p>}<button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-4 rounded-lg">Login</button></form></div></div>
+                <div className="min-h-screen flex items-center justify-center bg-gray-200">
+                    <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+                        <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
+                        <form onSubmit={handleSubmit}>
+                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 border rounded-lg mb-4"/>
+                            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+                            <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">Login</button>
+                        </form>
+                    </div>
+                </div>
             );
         };
 
@@ -91,343 +80,269 @@
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
-
+            
             useEffect(() => {
-                if (!db) { setError("Firebase is not configured."); setIsLoading(false); return; }
+                if (!db) { setError("Database not connected."); setIsLoading(false); return; }
+                let settingsLoaded = false, eventsLoaded = false;
+                const checkLoading = () => { if (settingsLoaded && eventsLoaded) setIsLoading(false); };
                 
-                let settingsLoaded = false;
-                let eventsLoaded = false;
-                const checkLoading = () => { if(settingsLoaded && eventsLoaded) setIsLoading(false); };
-
-                const settingsRef = db.collection('calendar_settings').doc('main_config');
-                const unsubSettings = settingsRef.onSnapshot(doc => {
-                    if (doc.exists) {
-                        setSettings(doc.data());
-                    } else {
-                        settingsRef.set(DEFAULT_SETTINGS).then(() => setSettings(DEFAULT_SETTINGS));
+                const unsubSettings = db.collection('calendar_settings').doc('main_config').onSnapshot(doc => {
+                    if (doc.exists) { setSettings(doc.data()); } 
+                    else { 
+                        const defaultSettings = { 
+                            zones: [ { id: '50m Olympic Pool', children: Array.from({length: 8}, (_, i) => ({id: `50m Olympic Pool - Lane ${i+1}`})) }, { id: '25m Lap Pool', children: Array.from({length: 8}, (_, i) => ({id: `25m Lap Pool - Lane ${i+1}`})) }, { id: 'Program Pool', children: Array.from({length: 3}, (_, i) => ({id: `Program Pool - Zone ${i+1}`})) }, {id: 'Hydrotherapy Pool', children: []}, {id: 'Splash Pad', children: []}, {id: 'Club Room', children: []} ], 
+                            eventTypes: { 'Class': '#3b82f6', 'Booking': '#16a34a', 'Closure': '#dc2626', 'Event': '#9333ea', 'Maintenance': '#facc15' },
+                            openingHours: [ {day: 'Monday', open: 5, close: 19}, {day: 'Tuesday', open: 5, close: 19}, {day: 'Wednesday', open: 5, close: 19}, {day: 'Thursday', open: 5, close: 19}, {day: 'Friday', open: 5, close: 19}, {day: 'Saturday', open: 8, close: 18}, {day: 'Sunday', open: 8, close: 18} ]
+                        };
+                        db.collection('calendar_settings').doc('main_config').set(defaultSettings);
+                        setSettings(defaultSettings);
                     }
-                    settingsLoaded = true;
-                    checkLoading();
-                }, err => { setError(`Failed to load settings: ${err.message}`); });
-
-                const unsubEvents = db.collection('calendar_events').orderBy('startDateTime', 'desc').onSnapshot(snapshot => {
-                    setEvents(snapshot.docs.map(doc => {
-                        const data = doc.data();
-                        return { id: doc.id, ...data, startDateTime: data.startDateTime.toDate(), endDateTime: data.endDateTime.toDate() };
-                    }));
-                    eventsLoaded = true;
-                    checkLoading();
-                }, err => { setError(`Failed to fetch events: ${err.message}`); });
+                    settingsLoaded = true; checkLoading();
+                }, err => setError(`Settings Error: ${err.message}`));
                 
-                return () => { unsubEvents(); unsubSettings(); };
+                const unsubEvents = db.collection('calendar_events').orderBy('startDateTime', 'desc').onSnapshot(snapshot => {
+                    setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().endDateTime.toDate() })));
+                    eventsLoaded = true; checkLoading();
+                }, err => setError(`Events Error: ${err.message}`));
+                return () => { unsubSettings(); unsubEvents(); };
             }, []);
 
-            const handleSaveEvent = async (eventData) => {
-                if(!db) return;
-                const { id, ...data } = eventData;
-                data.startDateTime = firebase.firestore.Timestamp.fromDate(new Date(data.startDateTime));
-                data.endDateTime = firebase.firestore.Timestamp.fromDate(new Date(data.endDateTime));
+            const openModal = (event = null) => { setSelectedEvent(event); setIsModalOpen(true); };
+            const closeModal = () => setIsModalOpen(false);
 
-                try {
-                    if (id) {
-                        await db.collection('calendar_events').doc(id).update(data);
-                    } else {
-                        await db.collection('calendar_events').add(data);
-                    }
-                    setIsModalOpen(false);
-                } catch(err) {
-                    alert(`Error saving event: ${err.message}`);
-                }
-            };
-            
-            const handleDeleteEvent = async (eventId) => {
-                if(!db || !window.confirm("Are you sure you want to permanently delete this event?")) return;
-                try {
-                    await db.collection('calendar_events').doc(eventId).delete();
-                } catch(err) {
-                    alert(`Error deleting event: ${err.message}`);
-                }
-            };
-
-            const handleSaveSettings = async (newSettings) => {
+            const handleSaveEvent = async (eventData, recurrence) => {
                 if (!db) return;
                 try {
-                    await db.collection('calendar_settings').doc('main_config').set(newSettings);
-                    setIsSettingsOpen(false);
-                } catch(err) {
-                    alert(`Error saving settings: ${err.message}`);
-                }
-            };
-            
-            if (isLoading || !settings) return <div className="text-center p-10">Loading configuration and events...</div>;
+                    if (recurrence.isRecurring && recurrence.endDate && recurrence.days.length > 0) {
+                        const recurrenceId = `recur_${Date.now()}`;
+                        let currentDay = new Date(eventData.startDateTime);
+                        const recurrenceEndDate = new Date(recurrence.endDate);
+                        
+                        const startTime = new Date(eventData.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                        const endTime = new Date(eventData.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
+                        const batch = db.batch();
+
+                        while (currentDay <= recurrenceEndDate) {
+                            const dayOfWeek = currentDay.toLocaleDateString('en-US', { weekday: 'long' });
+                            if (recurrence.days.includes(dayOfWeek)) {
+                                const newStart = new Date(currentDay);
+                                const [startHour, startMinute] = startTime.split(':');
+                                newStart.setHours(startHour, startMinute, 0, 0);
+
+                                const newEnd = new Date(currentDay);
+                                const [endHour, endMinute] = endTime.split(':');
+                                newEnd.setHours(endHour, endMinute, 0, 0);
+
+                                const newEvent = { ...eventData, startDateTime: newStart, endDateTime: newEnd, recurrenceId };
+                                const newEventRef = db.collection('calendar_events').doc();
+                                batch.set(newEventRef, newEvent);
+                            }
+                            currentDay.setDate(currentDay.getDate() + 1);
+                        }
+                        await batch.commit();
+                    } else {
+                         if (selectedEvent) {
+                            await db.collection('calendar_events').doc(selectedEvent.id).update(eventData);
+                        } else {
+                            await db.collection('calendar_events').add(eventData);
+                        }
+                    }
+                    closeModal();
+                } catch (err) { console.error("Error saving event:", err); setError(`Save failed: ${err.message}`); }
+            };
+            const handleDeleteEvent = async (id) => { if (window.confirm('Are you sure?')) { try { await db.collection('calendar_events').doc(id).delete(); } catch(err) { console.error(err); } } };
+            const handleSaveSettings = async (newSettings) => { await db.collection('calendar_settings').doc('main_config').set(newSettings, { merge: true }); };
+
+            if (isLoading) return <div className="text-center p-10">Loading Admin...</div>;
             return (
-                <div className="container mx-auto p-4 md:p-8">
-                    <header className="flex flex-col md:flex-row justify-between items-center mb-8">
-                        <h1 className="text-3xl font-bold">Event Management</h1>
-                        <div className="flex items-center gap-4 mt-4 md:mt-0">
-                           <button onClick={() => setIsSettingsOpen(true)} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">Settings</button>
-                           <button onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Create New Event</button>
+                <div className="container mx-auto p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-3xl font-bold">Calendar Admin</h1>
+                        <div>
+                             <button onClick={() => setIsSettingsOpen(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold mr-4 hover:bg-gray-700">Settings</button>
+                             <button onClick={() => openModal()} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">Create New Event</button>
                         </div>
-                    </header>
-                    {error && <p className="text-red-400 p-4 bg-red-900/50 rounded-lg">{error}</p>}
-                    <div className="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
-                       <ul className="divide-y divide-gray-600">
-                           {events.map(event => <EventListItem key={event.id} event={event} settings={settings} onEdit={() => { setSelectedEvent(event); setIsModalOpen(true);}} onDelete={() => handleDeleteEvent(event.id)} />)}
-                       </ul>
                     </div>
-                    {isModalOpen && <EventForm event={selectedEvent} settings={settings} onClose={() => setIsModalOpen(false)} onSave={handleSaveEvent} />}
+                    {error && <p className="text-red-500 bg-red-100 p-3 rounded-lg mb-4">{error}</p>}
+                    <EventList events={events} onEdit={openModal} onDelete={handleDeleteEvent} />
+                    {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings} />}
                     {isSettingsOpen && <SettingsModal settings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
                 </div>
             );
         };
         
-        const SettingsModal = ({ settings, onSave, onClose }) => {
-            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); // Deep copy
-            const [activeTab, setActiveTab] = useState('zones');
+        const EventList = ({ events, onEdit, onDelete }) => (
+            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                <table className="min-w-full leading-normal">
+                    <thead><tr>
+                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Title / Type</th>
+                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Time</th>
+                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Zones</th>
+                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
+                    </tr></thead>
+                    <tbody>{events.map(event => <EventRow key={event.id} event={event} onEdit={onEdit} onDelete={onDelete} />)}</tbody>
+                </table>
+            </div>
+        );
 
-            return (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-700 rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
-                        <header className="p-4 border-b border-gray-600"><h2 className="text-2xl font-bold">Calendar Settings</h2></header>
-                        <div className="flex flex-grow overflow-hidden">
-                            <nav className="w-1/4 p-4 border-r border-gray-600">
-                                <button onClick={() => setActiveTab('zones')} className={`w-full text-left p-2 rounded mb-2 ${activeTab === 'zones' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}>Zones</button>
-                                <button onClick={() => setActiveTab('eventTypes')} className={`w-full text-left p-2 rounded mb-2 ${activeTab === 'eventTypes' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}>Event Types</button>
-                                <button onClick={() => setActiveTab('openingHours')} className={`w-full text-left p-2 rounded ${activeTab === 'openingHours' ? 'bg-blue-600' : 'hover:bg-gray-600'}`}>Opening Hours</button>
-                            </nav>
-                            <main className="w-3/4 p-6 overflow-y-auto">
-                                {activeTab === 'zones' && <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />}
-                                {activeTab === 'eventTypes' && <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />}
-                                {activeTab === 'openingHours' && <OpeningHoursSettings settings={localSettings} setSettings={setLocalSettings} />}
-                            </main>
-                        </div>
-                        <footer className="p-4 border-t border-gray-600 flex justify-end gap-4">
-                            <button onClick={onClose} className="py-2 px-4 rounded-md bg-gray-500 hover:bg-gray-400">Cancel</button>
-                            <button onClick={() => onSave(localSettings)} className="py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 font-bold">Save Settings</button>
-                        </footer>
-                    </div>
-                </div>
-            );
-        };
+        const EventRow = ({ event, onEdit, onDelete }) => (
+            <tr>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 font-bold whitespace-no-wrap">{event.title}</p><p className="text-gray-600 whitespace-no-wrap">{event.type}</p></td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 whitespace-no-wrap">{event.startDateTime.toLocaleString()}</p><p className="text-gray-600 whitespace-no-wrap">to {event.endDateTime.toLocaleString()}</p></td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 whitespace-no-wrap max-w-xs truncate">{Array.isArray(event.zone) ? event.zone.join(', ') : ''}</p></td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right"><button onClick={() => onEdit(event)} className="text-blue-600 hover:text-blue-900 mr-2">Edit</button><button onClick={() => onDelete(event.id)} className="text-red-600 hover:text-red-900">Delete</button></td>
+            </tr>
+        );
+        
+        const EventForm = ({ event, onSave, onClose, settings }) => {
+            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: 'Class' });
+            const [startDateTime, setStartDateTime] = useState('');
+            const [endDateTime, setEndDateTime] = useState('');
+            const [isRecurring, setIsRecurring] = useState(false);
+            const [recurrence, setRecurrence] = useState({ frequency: 'weekly', days: [], endDate: '' });
 
-        const ZoneSettings = ({ settings, setSettings }) => {
-            const [newZoneName, setNewZoneName] = useState('');
-            const [newChildName, setNewChildName] = useState('');
-            const [selectedParent, setSelectedParent] = useState('');
-
-            const addParentZone = () => {
-                if (!newZoneName.trim()) return;
-                const newZone = { id: newZoneName.trim(), name: newZoneName.trim() };
-                setSettings(prev => ({ ...prev, zones: [...prev.zones, newZone] }));
-                setNewZoneName('');
-            };
-
-            const addChildZone = () => {
-                if (!newChildName.trim() || !selectedParent) return;
-                const childId = `${selectedParent} - ${newChildName.trim()}`;
-                const newChild = { id: childId, name: newChildName.trim() };
-                setSettings(prev => ({
-                    ...prev,
-                    zones: prev.zones.map(z => {
-                        if (z.id === selectedParent) {
-                            return { ...z, children: [...(z.children || []), newChild] };
-                        }
-                        return z;
-                    })
-                }));
-                setNewChildName('');
-            };
-
-            const deleteZone = (zoneId) => {
-                if (!window.confirm(`Are you sure you want to delete this zone and all its children?`)) return;
-                setSettings(prev => ({
-                    ...prev,
-                    zones: prev.zones.filter(z => z.id !== zoneId)
-                }));
-            };
+            const toLocalISOString = (date) => { const tzoffset = (new Date()).getTimezoneOffset() * 60000; return (new Date(date - tzoffset)).toISOString().slice(0, -8); };
             
-            const deleteChildZone = (parentId, childId) => {
-                 setSettings(prev => ({
-                    ...prev,
-                    zones: prev.zones.map(z => {
-                        if (z.id === parentId) {
-                            return { ...z, children: z.children.filter(c => c.id !== childId) };
-                        }
-                        return z;
-                    })
-                }));
-            }
-
-            return (
-                <div>
-                    <h3 className="text-xl font-bold mb-4">Manage Zones</h3>
-                    <div className="bg-gray-600 p-4 rounded-lg mb-6">
-                        <h4 className="font-semibold mb-2">Add New Parent Zone</h4>
-                        <div className="flex gap-2"><input type="text" value={newZoneName} onChange={e => setNewZoneName(e.target.value)} placeholder="e.g., Kids Play Area" className="flex-grow bg-gray-500 p-2 rounded-md" /><button onClick={addParentZone} className="bg-blue-600 px-4 rounded-md font-semibold">Add</button></div>
-                    </div>
-                     <div className="bg-gray-600 p-4 rounded-lg mb-6">
-                        <h4 className="font-semibold mb-2">Add New Child Zone (Lane/Sub-zone)</h4>
-                        <div className="flex gap-2"><select value={selectedParent} onChange={e => setSelectedParent(e.target.value)} className="bg-gray-500 p-2 rounded-md"><option value="">Select Parent...</option>{settings.zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}</select><input type="text" value={newChildName} onChange={e => setNewChildName(e.target.value)} placeholder="e.g., Lane 9" className="flex-grow bg-gray-500 p-2 rounded-md" /><button onClick={addChildZone} className="bg-blue-600 px-4 rounded-md font-semibold">Add</button></div>
-                    </div>
-                    <div className="space-y-4">
-                        {settings.zones.map(zone => (
-                            <div key={zone.id} className="bg-gray-600 p-3 rounded-lg">
-                                <div className="flex justify-between items-center"><span className="font-bold">{zone.name}</span><button onClick={() => deleteZone(zone.id)} className="text-red-400 hover:text-red-300 text-sm">Delete Zone</button></div>
-                                {zone.children && <ul className="mt-2 ml-4 space-y-1">{zone.children.map(child => <li key={child.id} className="flex justify-between items-center text-sm text-gray-300"><span>{child.name}</span><button onClick={() => deleteChildZone(zone.id, child.id)} className="text-red-500 hover:text-red-400 text-xs">remove</button></li>)}</ul>}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-        
-        const EventTypeSettings = ({ settings, setSettings }) => {
-            const [name, setName] = useState('');
-            const [color, setColor] = useState('#8b5cf6');
-
-            const addEventType = () => {
-                if (!name.trim()) return;
-                setSettings(prev => ({
-                    ...prev,
-                    eventTypes: { ...prev.eventTypes, [name.trim()]: color }
-                }));
-                setName('');
-                setColor('#8b5cf6');
-            };
-
-            const deleteEventType = (typeName) => {
-                if (!window.confirm(`Are you sure you want to delete the "${typeName}" event type?`)) return;
-                const { [typeName]: _, ...rest } = settings.eventTypes;
-                setSettings(prev => ({ ...prev, eventTypes: rest }));
-            };
-
-            return (
-                 <div>
-                    <h3 className="text-xl font-bold mb-4">Manage Event Types</h3>
-                     <div className="bg-gray-600 p-4 rounded-lg mb-6">
-                        <h4 className="font-semibold mb-2">Add New Event Type</h4>
-                        <div className="flex gap-2 items-center">
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., School Holiday Program" className="flex-grow bg-gray-500 p-2 rounded-md" />
-                            <input type="color" value={color} onChange={e => setColor(e.target.value)} className="bg-transparent h-10 w-10 rounded-md cursor-pointer" />
-                            <button onClick={addEventType} className="bg-blue-600 px-4 py-2 rounded-md font-semibold">Add</button>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        {Object.entries(settings.eventTypes).map(([name, color]) => (
-                            <div key={name} className="bg-gray-600 p-3 rounded-lg flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded-full" style={{ backgroundColor: color }}></div>
-                                    <span className="font-semibold">{name}</span>
-                                </div>
-                                <button onClick={() => deleteEventType(name)} className="text-red-400 hover:text-red-300 text-sm">Delete</button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-        
-        const OpeningHoursSettings = ({ settings, setSettings }) => {
-            const handleChange = (day, field, value) => {
-                setSettings(prev => ({
-                    ...prev,
-                    openingHours: prev.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(value) } : h)
-                }));
-            };
-            return (
-                <div>
-                    <h3 className="text-xl font-bold mb-4">Manage Opening Hours</h3>
-                    <div className="space-y-4">
-                        {settings.openingHours.map(hour => (
-                            <div key={hour.day} className="flex items-center justify-between bg-gray-600 p-3 rounded">
-                                <span className="font-semibold">{hour.day}</span>
-                                <div className="flex items-center gap-4">
-                                    <input type="number" value={hour.open} onChange={e => handleChange(hour.day, 'open', e.target.value)} className="w-20 bg-gray-500 p-1 rounded" min="0" max="23" />
-                                    <span>to</span>
-                                    <input type="number" value={hour.close} onChange={e => handleChange(hour.day, 'close', e.target.value)} className="w-20 bg-gray-500 p-1 rounded" min="1" max="24" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-        
-        const EventListItem = ({ event, settings, onEdit, onDelete }) => {
-            const eventTypes = settings.eventTypes || {};
-            const formatDate = (date) => `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-            return (
-                <li className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-600/50">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                             <span className={`px-3 py-1 text-xs font-bold rounded-full text-white`} style={{backgroundColor: eventTypes[event.type] || '#6b7280'}}>{event.type}</span>
-                             <span className="font-semibold text-lg">{event.title}</span>
-                        </div>
-                        <p className="text-sm text-gray-400 mb-1"><strong>Zone(s):</strong> {Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}</p>
-                        <p className="text-sm text-gray-400"><strong>Time:</strong> {formatDate(event.startDateTime)} to {formatDate(event.endDateTime)}</p>
-                    </div>
-                    <div className="flex space-x-2 mt-4 md:mt-0 shrink-0">
-                        <button onClick={onEdit} className="py-1 px-4 text-sm rounded-md bg-gray-500 hover:bg-gray-400">Edit</button>
-                        <button onClick={onDelete} className="py-1 px-4 text-sm rounded-md bg-red-600 hover:bg-red-500">Delete</button>
-                    </div>
-                </li>
-            );
-        };
-        
-        const EventForm = ({ event, settings, onClose, onSave }) => {
-            const [formData, setFormData] = useState({
-                title: event?.title || '',
-                description: event?.description || '',
-                zone: event?.zone || [],
-                type: event?.type || Object.keys(settings.eventTypes)[0] || '',
-                startDateTime: event ? new Date(event.startDateTime.getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '',
-                endDateTime: event ? new Date(event.endDateTime.getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''
-            });
-            const [selectedZones, setSelectedZones] = useState(event?.zone || []);
-
-            const handleChange = e => setFormData(prev => ({...prev, [e.target.id]: e.target.value }));
-            
-            const handleZoneChange = (zoneId, isParent = false) => {
-                let newSelectedZones = [...selectedZones];
-                const parentZone = settings.zones.find(z => z.id === zoneId);
-                const children = parentZone?.children?.map(c => c.id) || [];
-                
-                if (isParent) {
-                    const allChildrenSelected = children.every(c => newSelectedZones.includes(c));
-                    if (allChildrenSelected) {
-                        newSelectedZones = newSelectedZones.filter(z => !children.includes(z));
-                    } else {
-                        newSelectedZones = [...new Set([...newSelectedZones, ...children])];
-                    }
+            useEffect(() => {
+                if (event) {
+                    setFormData({ title: event.title, description: event.description, zone: event.zone, type: event.type });
+                    setStartDateTime(toLocalISOString(event.startDateTime));
+                    setEndDateTime(toLocalISOString(event.endDateTime));
                 } else {
-                    if (newSelectedZones.includes(zoneId)) {
-                        newSelectedZones = newSelectedZones.filter(z => z !== zoneId);
-                    } else {
-                        newSelectedZones.push(zoneId);
-                    }
+                    const now = new Date();
+                    now.setMinutes(0);
+                    const end = new Date(now);
+                    end.setHours(now.getHours() + 1);
+                    setStartDateTime(toLocalISOString(now));
+                    setEndDateTime(toLocalISOString(end));
                 }
-                setSelectedZones(newSelectedZones);
+            }, [event]);
+
+            const handleZoneChange = (e, zoneId, children = []) => {
+                const isChecked = e.target.checked;
+                let newZones = new Set(formData.zone);
+                if (isChecked) {
+                    newZones.add(zoneId);
+                    children.forEach(c => newZones.add(c.id));
+                } else {
+                    newZones.delete(zoneId);
+                    children.forEach(c => newZones.delete(c.id));
+                }
+                setFormData(prev => ({ ...prev, zone: Array.from(newZones) }));
+            };
+
+            const handleChildZoneChange = (e, childId, parentId) => {
+                const isChecked = e.target.checked;
+                let newZones = new Set(formData.zone);
+                if(isChecked) newZones.add(childId); else newZones.delete(childId);
+                const parentZone = settings.zones.find(z => z.id === parentId);
+                const allChildrenSelected = parentZone.children.every(c => newZones.has(c.id));
+                if (allChildrenSelected) newZones.add(parentId); else newZones.delete(parentId);
+                setFormData(prev => ({ ...prev, zone: Array.from(newZones) }));
+            };
+            
+            const handleRecurrenceDayChange = (day) => {
+                const newDays = new Set(recurrence.days);
+                if (newDays.has(day)) newDays.delete(day); else newDays.add(day);
+                setRecurrence(prev => ({ ...prev, days: Array.from(newDays) }));
             };
 
             const handleSubmit = (e) => {
                 e.preventDefault();
-                onSave({ id: event?.id, ...formData, zone: selectedZones });
+                const finalData = { ...formData, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime) };
+                onSave(finalData, {isRecurring, ...recurrence});
             };
 
             return (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"><div className="bg-gray-700 rounded-lg shadow-2xl w-full max-w-2xl h-[90vh] flex flex-col"><header className="p-4 border-b border-gray-600"><h2 className="text-2xl font-bold">{event ? 'Edit Event' : 'Create Event'}</h2></header><main className="flex-grow p-6 overflow-y-auto space-y-4">
-                    <div><label htmlFor="title" className="block text-sm font-semibold mb-1">Title</label><input type="text" id="title" value={formData.title} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md" required /></div>
-                    <div><label className="block text-sm font-semibold mb-2">Zones</label><div className="bg-gray-600 p-3 rounded-md max-h-48 overflow-y-auto space-y-2">{settings.zones.map(zone => <div key={zone.id}><label className="flex items-center font-semibold"><input type="checkbox" checked={zone.children ? zone.children.every(c => selectedZones.includes(c.id)) : selectedZones.includes(zone.id)} onChange={() => handleZoneChange(zone.id, !!zone.children)} className="mr-2 h-4 w-4" />{zone.name}</label>{zone.children && <div className="ml-6 mt-1 space-y-1">{zone.children.map(child => <label key={child.id} className="flex items-center text-sm"><input type="checkbox" checked={selectedZones.includes(child.id)} onChange={() => handleZoneChange(child.id)} className="mr-2 h-4 w-4"/>{child.name}</label>)}</div>}</div>)}</div></div>
-                    <div className="grid grid-cols-2 gap-4"><div><label htmlFor="type" className="block text-sm font-semibold mb-1">Type</label><select id="type" value={formData.type} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md">{Object.keys(settings.eventTypes).map(t => <option key={t} value={t}>{t}</option>)}</select></div></div>
-                    <div className="grid grid-cols-2 gap-4"><div><label htmlFor="startDateTime" className="block text-sm font-semibold mb-1">Start Time</label><input type="datetime-local" id="startDateTime" value={formData.startDateTime} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md" required /></div><div><label htmlFor="endDateTime" className="block text-sm font-semibold mb-1">End Time</label><input type="datetime-local" id="endDateTime" value={formData.endDateTime} onChange={handleChange} className="w-full bg-gray-600 p-2 rounded-md" required /></div></div>
-                    <div><label htmlFor="description" className="block text-sm font-semibold mb-1">Description</label><textarea id="description" value={formData.description} onChange={handleChange} rows="4" className="w-full bg-gray-600 p-2 rounded-md"></textarea></div>
-                </main><footer className="p-4 border-t border-gray-600 flex justify-end gap-4"><button onClick={onClose} className="py-2 px-4 rounded-md bg-gray-500 hover:bg-gray-400">Cancel</button><button onClick={handleSubmit} className="py-2 px-4 rounded-md bg-blue-600 hover:bg-blue-700 font-bold">Save Event</button></footer></div></div>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b">
+                            <h2 className="text-2xl font-bold">{event ? 'Edit Event' : 'Create New Event'}</h2>
+                        </div>
+                        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-6 space-y-4">
+                             <div><label>Title</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2 border rounded-lg" required /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label>Start Time</label><input type="datetime-local" value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
+                                <div><label>End Time</label><input type="datetime-local" value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
+                            </div>
+                            <div><label>Event Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border rounded-lg"><option disabled>Select Type</option>{Object.keys(settings?.eventTypes || {}).map(type => <option key={type} value={type}>{type}</option>)}</select></div>
+                            <div className="space-y-2">
+                                <h4 className="font-semibold">Zones</h4>
+                                {settings?.zones?.map(zone => (
+                                    <div key={zone.id} className="p-3 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center"><input type="checkbox" id={`zone-${zone.id}`} checked={formData.zone.includes(zone.id)} onChange={e => handleZoneChange(e, zone.id, zone.children)} className="h-4 w-4 mr-2" /><label htmlFor={`zone-${zone.id}`} className="font-bold">{zone.id}</label></div>
+                                        {zone.children && zone.children.length > 0 && (<div className="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6 pt-2">
+                                            {zone.children.map(child => <div key={child.id}><input type="checkbox" id={`zone-${child.id}`} checked={formData.zone.includes(child.id)} onChange={e => handleChildZoneChange(e, child.id, zone.id)} className="h-4 w-4 mr-2" /><label htmlFor={`zone-${child.id}`} className="text-sm">{child.id.split(' - ')[1]}</label></div>)}
+                                        </div>)}
+                                    </div>
+                                ))}
+                            </div>
+                            <div><label>Description</label><textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-2 border rounded-lg" rows="3"></textarea></div>
+
+                            {/* Recurring Event Section */}
+                            {!event && (
+                            <div className="space-y-3 pt-4 border-t">
+                                <div className="flex items-center">
+                                    <input type="checkbox" id="isRecurring" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} className="h-4 w-4 mr-2" />
+                                    <label htmlFor="isRecurring" className="font-semibold text-lg">🔁 Recurring Event</label>
+                                </div>
+                                {isRecurring && (
+                                    <div className="p-4 bg-blue-50 rounded-lg space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label>Repeats</label><select value={recurrence.frequency} onChange={e => setRecurrence({...recurrence, frequency: e.target.value})} className="w-full p-2 border rounded-lg"><option value="weekly">Weekly</option></select></div>
+                                            <div><label>Ends on</label><input type="date" value={recurrence.endDate} onChange={e => setRecurrence({...recurrence, endDate: e.target.value})} className="w-full p-2 border rounded-lg" required={isRecurring} /></div>
+                                        </div>
+                                        <div>
+                                            <label className="block mb-2">On</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                                                    <button type="button" key={day} onClick={() => handleRecurrenceDayChange(day)} className={`px-3 py-1 rounded-full text-sm ${recurrence.days.includes(day) ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>{day.substring(0,3)}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            )}
+
+                        </form>
+                        <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
+                            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+                            <button onClick={handleSubmit} className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">{event ? 'Save Changes' : 'Save Event'}</button>
+                        </div>
+                    </div>
+                </div>
             );
         };
         
+        // Settings Modal and its child components
+        const SettingsModal = ({ settings, onSave, onClose }) => {
+            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings)));
+            const [activeTab, setActiveTab] = useState('zones');
+            const handleSave = () => { onSave(localSettings); onClose(); };
+            return (<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col"><div className="p-4 border-b"><h2 className="text-2xl font-bold">Settings</h2></div><div className="flex-grow flex overflow-hidden"><nav className="w-1/4 bg-gray-50 p-4 border-r"><button onClick={() => setActiveTab('zones')} className={`block w-full text-left p-2 rounded-lg mb-2 ${activeTab === 'zones' ? 'bg-blue-100 text-blue-700' : ''}`}>Zones</button><button onClick={() => setActiveTab('eventTypes')} className={`block w-full text-left p-2 rounded-lg mb-2 ${activeTab === 'eventTypes' ? 'bg-blue-100 text-blue-700' : ''}`}>Event Types</button><button onClick={() => setActiveTab('hours')} className={`block w-full text-left p-2 rounded-lg ${activeTab === 'hours' ? 'bg-blue-100 text-blue-700' : ''}`}>Opening Hours</button></nav><main className="w-3/4 p-6 overflow-y-auto">{activeTab === 'zones' && <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />}{activeTab === 'eventTypes' && <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />}{activeTab === 'hours' && <HoursSettings settings={localSettings} setSettings={setLocalSettings} />}</main></div><div className="p-4 bg-gray-50 border-t flex justify-end gap-3"><button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Save Changes</button></div></div></div>);
+        };
+        const ZoneSettings = ({ settings, setSettings }) => {
+            const [newParentZone, setNewParentZone] = useState('');
+            const [newChildZone, setNewChildZone] = useState({ parentId: '', name: '' });
+            const addParent = () => { if(!newParentZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newParentZone, children: []}]})); setNewParentZone(''); };
+            const addChild = () => { if(!newChildZone.parentId || !newChildZone.name) return; setSettings(s => ({...s, zones: s.zones.map(p => p.id === newChildZone.parentId ? {...p, children: [...p.children, {id: `${p.id} - ${newChildZone.name}`}]} : p)})); setNewChildZone({parentId: '', name: ''}); };
+            const deleteZone = (idToDelete) => { setSettings(s => ({ ...s, zones: s.zones.filter(p => p.id !== idToDelete).map(p => ({...p, children: p.children.filter(c => c.id !== idToDelete)})) })) };
+            return <div><h3 className="text-xl font-bold mb-4">Manage Zones</h3><div className="space-y-4">{settings.zones.map(p => (<div key={p.id} className="bg-gray-100 p-3 rounded-lg"><div className="flex justify-between items-center"><span className="font-semibold">{p.id}</span><button onClick={() => deleteZone(p.id)} className="text-red-500 text-xs">Delete</button></div><div className="pl-6 mt-2 space-y-1">{p.children?.map(c => (<div key={c.id} className="flex justify-between items-center"><span className="text-sm">{c.id}</span><button onClick={() => deleteZone(c.id)} className="text-red-500 text-xs">Delete</button></div>))}</div></div>))}</div><div className="mt-6 border-t pt-4 space-y-4"><div className="flex gap-2"><input value={newParentZone} onChange={e => setNewParentZone(e.target.value)} placeholder="New Parent Zone Name" className="flex-grow p-2 border rounded-lg"/><button onClick={addParent} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div><div className="flex gap-2"><select value={newChildZone.parentId} onChange={e => setNewChildZone({...newChildZone, parentId: e.target.value})} className="p-2 border rounded-lg"><option value="">Select Parent</option>{settings.zones.map(p=><option key={p.id} value={p.id}>{p.id}</option>)}</select><input value={newChildZone.name} onChange={e => setNewChildZone({...newChildZone, name: e.target.value})} placeholder="New Child Name (e.g. Lane 9)" className="flex-grow p-2 border rounded-lg" /><button onClick={addChild} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div></div>;
+        };
+        const EventTypeSettings = ({ settings, setSettings }) => {
+            const [name, setName] = useState(''); const [color, setColor] = useState('#000000');
+            const add = () => { if (!name) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [name]: color}})); setName(''); setColor('#000000'); };
+            const remove = (key) => { const newTypes = {...settings.eventTypes}; delete newTypes[key]; setSettings(s => ({...s, eventTypes: newTypes})); };
+            return <div><h3 className="text-xl font-bold mb-4">Manage Event Types</h3><div className="space-y-2">{Object.entries(settings.eventTypes).map(([key, val])=>(<div key={key} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded" style={{backgroundColor:val}}></div><span>{key}</span></div><button onClick={()=>remove(key)} className="text-red-500 text-xs">Delete</button></div>))}</div><div className="mt-6 border-t pt-4 flex gap-2"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New Event Type" className="flex-grow p-2 border rounded-lg"/><input type="color" value={color} onChange={e=>setColor(e.target.value)} className="p-1 h-10 w-10 border rounded-lg"/><button onClick={add} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div>;
+        };
+        const HoursSettings = ({ settings, setSettings }) => {
+            const handleHourChange = (day, field, value) => { setSettings(s => ({...s, openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(value)} : h)})); };
+            return <div><h3 className="text-xl font-bold mb-4">Manage Opening Hours</h3><div className="space-y-2">{settings.openingHours.map(h=>(<div key={h.day} className="grid grid-cols-3 items-center gap-4 bg-gray-100 p-2 rounded-lg"><span className="font-semibold">{h.day}</span><div><label className="text-xs">Open</label><select value={h.open} onChange={e => handleHourChange(h.day, 'open', e.target.value)} className="w-full p-2 border rounded-lg">{Array.from({length:24},(_,i)=><option key={i} value={i}>{`${i}:00`}</option>)}</select></div><div><label className="text-xs">Close</label><select value={h.close} onChange={e => handleHourChange(h.day, 'close', e.target.value)} className="w-full p-2 border rounded-lg">{Array.from({length:24},(_,i)=><option key={i} value={i}>{`${i}:00`}</option>)}</select></div></div>))}</div></div>;
+        };
+
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
-
