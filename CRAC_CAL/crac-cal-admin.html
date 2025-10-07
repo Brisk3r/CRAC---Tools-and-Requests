@@ -32,6 +32,7 @@
           measurementId: "G-JT3PMQ0W6T"
         };
         const ADMIN_PASSWORD = "CRAC*25*"; // IMPORTANT: Change this password
+        const TARGET_VENUE = 'CRAC'; // Set to 'CRAC' or 'YCP'
         // ---------------------
 
         const { useState, useEffect, useMemo } = React;
@@ -61,7 +62,7 @@
             return (
                 <div className="min-h-screen flex items-center justify-center bg-gray-200">
                     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-                        <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
+                        <h2 className="text-2xl font-bold text-center mb-6">Admin Login for {TARGET_VENUE}</h2>
                         <form onSubmit={handleSubmit}>
                             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 border rounded-lg mb-4"/>
                             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
@@ -102,10 +103,13 @@
                     settingsLoaded = true; checkLoading();
                 }, err => setError(`Settings Error: ${err.message}`));
                 
-                const unsubEvents = db.collection('calendar_events').orderBy('startDateTime', 'desc').onSnapshot(snapshot => {
-                    setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().recurrence && doc.data().recurrence.endDate ? doc.data().recurrence.endDate.toDate() : doc.data().endDateTime.toDate() })));
-                    eventsLoaded = true; checkLoading();
-                }, err => setError(`Events Error: ${err.message}`));
+                const unsubEvents = db.collection('calendar_events')
+                    .where('venue', '==', TARGET_VENUE)
+                    .orderBy('startDateTime', 'desc')
+                    .onSnapshot(snapshot => {
+                        setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().recurrence && doc.data().recurrence.endDate ? doc.data().recurrence.endDate.toDate() : doc.data().endDateTime.toDate() })));
+                        eventsLoaded = true; checkLoading();
+                    }, err => setError(`Events Error: ${err.message}`));
                 return () => { unsubSettings(); unsubEvents(); };
             }, []);
 
@@ -115,10 +119,10 @@
             const handleSaveEvent = async (eventData) => {
                 if (!db) return;
                 try {
-                    const dataToSave = { ...eventData };
+                    const dataToSave = { ...eventData, venue: TARGET_VENUE };
                     if (dataToSave.recurrence && dataToSave.recurrence.endDate) {
                         const [year, month, day] = dataToSave.recurrence.endDate.split('-').map(Number);
-                        const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Noon UTC to be safe
+                        const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
                         dataToSave.recurrence.endDate = firebase.firestore.Timestamp.fromDate(utcDate);
                     }
 
@@ -162,7 +166,7 @@
             return (
                 <div className="container mx-auto p-6">
                     <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-3xl font-bold">Calendar Admin</h1>
+                        <h1 className="text-3xl font-bold">Calendar Admin: {TARGET_VENUE}</h1>
                         <div>
                              <button onClick={() => setIsSettingsOpen(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold mr-4 hover:bg-gray-700">Settings</button>
                              <button onClick={() => openModal()} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">Create New Event</button>
@@ -217,7 +221,7 @@
         );
         
         const EventForm = ({ event, onSave, onClose, settings }) => {
-            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: 'Class', recurrence: null });
+            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: 'Class', recurrence: null, venue: TARGET_VENUE });
             const [startDateTime, setStartDateTime] = useState('');
             const [endDateTime, setEndDateTime] = useState('');
             
@@ -227,26 +231,19 @@
             useEffect(() => {
                 if (event) {
                     const initialFormData = {
-                        title: event.title,
-                        description: event.description,
-                        zone: event.zone,
-                        type: event.type,
+                        title: event.title, description: event.description, zone: event.zone, type: event.type, venue: event.venue || TARGET_VENUE,
                         recurrence: event.recurrence ? { ...event.recurrence } : null
                     };
                     if (event.recurrence && event.recurrence.endDate) {
-                        const endDate = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : event.recurrence.endDate;
+                        const endDate = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
                         initialFormData.recurrence.endDate = toLocalDateString(endDate);
                     }
                     setFormData(initialFormData);
                     setStartDateTime(toLocalISOString(event.startDateTime));
                     setEndDateTime(event.recurrence ? '' : toLocalISOString(event.endDateTime));
                 } else {
-                    const now = new Date();
-                    now.setMinutes(0);
-                    const end = new Date(now);
-                    end.setHours(now.getHours() + 1);
-                    setStartDateTime(toLocalISOString(now));
-                    setEndDateTime(toLocalISOString(end));
+                    const now = new Date(); now.setMinutes(0); const end = new Date(now); end.setHours(now.getHours() + 1);
+                    setStartDateTime(toLocalISOString(now)); setEndDateTime(toLocalISOString(end));
                 }
             }, [event]);
 
@@ -271,8 +268,7 @@
             };
             
             const handleRecurrenceDayChange = (day) => {
-                const currentDays = formData.recurrence?.days || [];
-                const newDays = new Set(currentDays);
+                const currentDays = formData.recurrence?.days || []; const newDays = new Set(currentDays);
                 if (newDays.has(day)) newDays.delete(day); else newDays.add(day);
                 handleRecurrenceChange('days', Array.from(newDays));
             };
@@ -281,11 +277,7 @@
                 e.preventDefault();
                 const sTime = new Date(startDateTime);
                 const finalData = { ...formData, startDateTime: sTime };
-                if (formData.recurrence) {
-                    finalData.endDateTime = sTime; // For recurring, end time of first event is based on start
-                } else {
-                    finalData.endDateTime = new Date(endDateTime);
-                }
+                if (formData.recurrence) { finalData.endDateTime = sTime; } else { finalData.endDateTime = new Date(endDateTime); }
                 onSave(finalData);
             };
 
@@ -301,7 +293,10 @@
                                 <div><label>Start Time</label><input type="datetime-local" value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
                                 {!isRecurring && (<div><label>End Time</label><input type="datetime-local" value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required={!isRecurring} /></div>)}
                             </div>
-                            <div><label>Event Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border rounded-lg"><option disabled>Select Type</option>{Object.keys(settings?.eventTypes || {}).map(type => <option key={type} value={type}>{type}</option>)}</select></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label>Event Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border rounded-lg"><option disabled>Select Type</option>{Object.keys(settings?.eventTypes || {}).map(type => <option key={type} value={type}>{type}</option>)}</select></div>
+                                <div><label>Venue</label><select value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} className="w-full p-2 border rounded-lg bg-gray-200"><option value={TARGET_VENUE}>{TARGET_VENUE}</option></select></div>
+                            </div>
                             <div className="space-y-2">
                                 <h4 className="font-semibold">Zones</h4>
                                 {settings?.zones?.map(zone => (
@@ -356,7 +351,7 @@
         };
         const EventTypeSettings = ({ settings, setSettings }) => {
             const [name, setName] = useState(''); const [color, setColor] = useState('#000000'); const add = () => { if (!name) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [name]: color}})); setName(''); setColor('#000000'); }; const remove = (key) => { const newTypes = {...settings.eventTypes}; delete newTypes[key]; setSettings(s => ({...s, eventTypes: newTypes})); };
-            return <div><h3 className="text-xl font-bold mb-4">Manage Event Types</h3><div className="space-y-2">{Object.entries(settings.eventTypes).map(([key, val])=>(<div key={key} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded" style={{backgroundColor:val}}></div><span>{key}</span></div><button onClick={()=>remove(key)} className="text-red-500 text-xs">Delete</button></div>))}</div><div className="mt-6 border-t pt-4 flex gap-2"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New Event Type" className="flex-grow p-2 border rounded-lg"/><input type="color" value={color} onChange={e=>setColor(e.target.value)} className="p-1 h-10 w-10 border rounded-lg"/><button onClick={add} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div>;
+            return <div><h3 className="text-xl font-bold mb-4">Manage Event Types</h3><div className="space-y-2">{Object.entries(settings.eventTypes).map(([key, val])=>(<div key={key} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded" style={{backgroundColor:val}}></div><span>{key}</span></div><button onClick={()=>remove(key)} className="text-red-500 text-xs">Delete</button></div>))}</div><div className="mt-6 border-t pt-4 flex gap-2"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New Event Type" className="flex-grow p-2 border rounded-lg"/><input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-16 h-10 border rounded-lg" style={{padding: '0.2rem'}}/><button onClick={add} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div>;
         };
         const HoursSettings = ({ settings, setSettings }) => {
             const handleHourChange = (day, field, value) => { setSettings(s => ({...s, openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(value)} : h)})); };
