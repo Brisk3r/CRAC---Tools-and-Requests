@@ -80,6 +80,8 @@
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [dateFilter, setDateFilter] = useState('all');
             
             useEffect(() => {
                 if (!db) { setError("Database not connected."); setIsLoading(false); return; }
@@ -101,58 +103,60 @@
                 }, err => setError(`Settings Error: ${err.message}`));
                 
                 const unsubEvents = db.collection('calendar_events').orderBy('startDateTime', 'desc').onSnapshot(snapshot => {
-                    setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().endDateTime.toDate() })));
+                    setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().recurrence && doc.data().recurrence.endDate ? doc.data().recurrence.endDate.toDate() : doc.data().endDateTime.toDate() })));
                     eventsLoaded = true; checkLoading();
                 }, err => setError(`Events Error: ${err.message}`));
                 return () => { unsubSettings(); unsubEvents(); };
             }, []);
 
             const openModal = (event = null) => { setSelectedEvent(event); setIsModalOpen(true); };
-            const closeModal = () => setIsModalOpen(false);
+            const closeModal = () => { setIsModalOpen(false); setSelectedEvent(null); };
 
-            const handleSaveEvent = async (eventData, recurrence) => {
+            const handleSaveEvent = async (eventData) => {
                 if (!db) return;
                 try {
-                    if (recurrence.isRecurring && recurrence.endDate && recurrence.days.length > 0) {
-                        const recurrenceId = `recur_${Date.now()}`;
-                        let currentDay = new Date(eventData.startDateTime);
-                        const recurrenceEndDate = new Date(recurrence.endDate);
-                        
-                        const startTime = new Date(eventData.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                        const endTime = new Date(eventData.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    const dataToSave = { ...eventData };
+                    if (dataToSave.recurrence && dataToSave.recurrence.endDate) {
+                        const [year, month, day] = dataToSave.recurrence.endDate.split('-').map(Number);
+                        const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Noon UTC to be safe
+                        dataToSave.recurrence.endDate = firebase.firestore.Timestamp.fromDate(utcDate);
+                    }
 
-                        const batch = db.batch();
-
-                        while (currentDay <= recurrenceEndDate) {
-                            const dayOfWeek = currentDay.toLocaleDateString('en-US', { weekday: 'long' });
-                            if (recurrence.days.includes(dayOfWeek)) {
-                                const newStart = new Date(currentDay);
-                                const [startHour, startMinute] = startTime.split(':');
-                                newStart.setHours(startHour, startMinute, 0, 0);
-
-                                const newEnd = new Date(currentDay);
-                                const [endHour, endMinute] = endTime.split(':');
-                                newEnd.setHours(endHour, endMinute, 0, 0);
-
-                                const newEvent = { ...eventData, startDateTime: newStart, endDateTime: newEnd, recurrenceId };
-                                const newEventRef = db.collection('calendar_events').doc();
-                                batch.set(newEventRef, newEvent);
-                            }
-                            currentDay.setDate(currentDay.getDate() + 1);
-                        }
-                        await batch.commit();
+                    if (selectedEvent) {
+                        await db.collection('calendar_events').doc(selectedEvent.id).update(dataToSave);
                     } else {
-                         if (selectedEvent) {
-                            await db.collection('calendar_events').doc(selectedEvent.id).update(eventData);
-                        } else {
-                            await db.collection('calendar_events').add(eventData);
-                        }
+                        await db.collection('calendar_events').add(dataToSave);
                     }
                     closeModal();
                 } catch (err) { console.error("Error saving event:", err); setError(`Save failed: ${err.message}`); }
             };
-            const handleDeleteEvent = async (id) => { if (window.confirm('Are you sure?')) { try { await db.collection('calendar_events').doc(id).delete(); } catch(err) { console.error(err); } } };
+
+            const handleDeleteEvent = async (id) => { if (window.confirm('Are you sure you want to delete this event series?')) { try { await db.collection('calendar_events').doc(id).delete(); } catch(err) { console.error(err); } } };
             const handleSaveSettings = async (newSettings) => { await db.collection('calendar_settings').doc('main_config').set(newSettings, { merge: true }); };
+
+            const filteredEvents = useMemo(() => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const endOfWeek = new Date(today);
+                endOfWeek.setDate(today.getDate() + 6);
+                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+                return events.filter(event => {
+                    const titleMatch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
+                    if (!titleMatch) return false;
+
+                    const eventStart = new Date(event.startDateTime);
+                    eventStart.setHours(0,0,0,0);
+                    
+                    switch(dateFilter) {
+                        case 'today': return eventStart.getTime() === today.getTime();
+                        case 'week': return eventStart >= today && eventStart <= endOfWeek;
+                        case 'month': return eventStart.getMonth() === today.getMonth() && eventStart.getFullYear() === today.getFullYear();
+                        default: return true;
+                    }
+                });
+            }, [events, searchTerm, dateFilter]);
+
 
             if (isLoading) return <div className="text-center p-10">Loading Admin...</div>;
             return (
@@ -164,8 +168,17 @@
                              <button onClick={() => openModal()} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">Create New Event</button>
                         </div>
                     </div>
+                     <div className="mb-4 flex flex-col md:flex-row gap-4">
+                        <input type="text" placeholder="Search by title..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-1/3 p-2 border rounded-lg" />
+                        <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="w-full md:w-auto p-2 border rounded-lg bg-white">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
                     {error && <p className="text-red-500 bg-red-100 p-3 rounded-lg mb-4">{error}</p>}
-                    <EventList events={events} onEdit={openModal} onDelete={handleDeleteEvent} />
+                    <EventList events={filteredEvents} onEdit={openModal} onDelete={handleDeleteEvent} />
                     {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings} />}
                     {isSettingsOpen && <SettingsModal settings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
                 </div>
@@ -173,7 +186,7 @@
         };
         
         const EventList = ({ events, onEdit, onDelete }) => (
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="bg-white shadow-md rounded-lg overflow-x-auto">
                 <table className="min-w-full leading-normal">
                     <thead><tr>
                         <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Title / Type</th>
@@ -188,7 +201,15 @@
 
         const EventRow = ({ event, onEdit, onDelete }) => (
             <tr>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 font-bold whitespace-no-wrap">{event.title}</p><p className="text-gray-600 whitespace-no-wrap">{event.type}</p></td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                    <div className="flex items-center">
+                        {event.recurrence && <span title="Recurring Event" className="mr-2">🔁</span>}
+                        <div>
+                            <p className="text-gray-900 font-bold whitespace-no-wrap">{event.title}</p>
+                            <p className="text-gray-600 whitespace-no-wrap">{event.type}</p>
+                        </div>
+                    </div>
+                </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 whitespace-no-wrap">{event.startDateTime.toLocaleString()}</p><p className="text-gray-600 whitespace-no-wrap">to {event.endDateTime.toLocaleString()}</p></td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 whitespace-no-wrap max-w-xs truncate">{Array.isArray(event.zone) ? event.zone.join(', ') : ''}</p></td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right"><button onClick={() => onEdit(event)} className="text-blue-600 hover:text-blue-900 mr-2">Edit</button><button onClick={() => onDelete(event.id)} className="text-red-600 hover:text-red-900">Delete</button></td>
@@ -196,19 +217,29 @@
         );
         
         const EventForm = ({ event, onSave, onClose, settings }) => {
-            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: 'Class' });
+            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: 'Class', recurrence: null });
             const [startDateTime, setStartDateTime] = useState('');
             const [endDateTime, setEndDateTime] = useState('');
-            const [isRecurring, setIsRecurring] = useState(false);
-            const [recurrence, setRecurrence] = useState({ frequency: 'weekly', days: [], endDate: '' });
-
-            const toLocalISOString = (date) => { const tzoffset = (new Date()).getTimezoneOffset() * 60000; return (new Date(date - tzoffset)).toISOString().slice(0, -8); };
+            
+            const toLocalISOString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+            const toLocalDateString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
             
             useEffect(() => {
                 if (event) {
-                    setFormData({ title: event.title, description: event.description, zone: event.zone, type: event.type });
+                    const initialFormData = {
+                        title: event.title,
+                        description: event.description,
+                        zone: event.zone,
+                        type: event.type,
+                        recurrence: event.recurrence ? { ...event.recurrence } : null
+                    };
+                    if (event.recurrence && event.recurrence.endDate) {
+                        const endDate = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : event.recurrence.endDate;
+                        initialFormData.recurrence.endDate = toLocalDateString(endDate);
+                    }
+                    setFormData(initialFormData);
                     setStartDateTime(toLocalISOString(event.startDateTime));
-                    setEndDateTime(toLocalISOString(event.endDateTime));
+                    setEndDateTime(event.recurrence ? '' : toLocalISOString(event.endDateTime));
                 } else {
                     const now = new Date();
                     now.setMinutes(0);
@@ -220,21 +251,14 @@
             }, [event]);
 
             const handleZoneChange = (e, zoneId, children = []) => {
-                const isChecked = e.target.checked;
-                let newZones = new Set(formData.zone);
-                if (isChecked) {
-                    newZones.add(zoneId);
-                    children.forEach(c => newZones.add(c.id));
-                } else {
-                    newZones.delete(zoneId);
-                    children.forEach(c => newZones.delete(c.id));
-                }
+                const isChecked = e.target.checked; let newZones = new Set(formData.zone);
+                if (isChecked) { newZones.add(zoneId); children.forEach(c => newZones.add(c.id)); } 
+                else { newZones.delete(zoneId); children.forEach(c => newZones.delete(c.id)); }
                 setFormData(prev => ({ ...prev, zone: Array.from(newZones) }));
             };
 
             const handleChildZoneChange = (e, childId, parentId) => {
-                const isChecked = e.target.checked;
-                let newZones = new Set(formData.zone);
+                const isChecked = e.target.checked; let newZones = new Set(formData.zone);
                 if(isChecked) newZones.add(childId); else newZones.delete(childId);
                 const parentZone = settings.zones.find(z => z.id === parentId);
                 const allChildrenSelected = parentZone.children.every(c => newZones.has(c.id));
@@ -242,29 +266,40 @@
                 setFormData(prev => ({ ...prev, zone: Array.from(newZones) }));
             };
             
+            const handleRecurrenceChange = (field, value) => {
+                setFormData(prev => ({ ...prev, recurrence: { ...(prev.recurrence || { frequency: 'weekly', days: [] }), [field]: value } }));
+            };
+            
             const handleRecurrenceDayChange = (day) => {
-                const newDays = new Set(recurrence.days);
+                const currentDays = formData.recurrence?.days || [];
+                const newDays = new Set(currentDays);
                 if (newDays.has(day)) newDays.delete(day); else newDays.add(day);
-                setRecurrence(prev => ({ ...prev, days: Array.from(newDays) }));
+                handleRecurrenceChange('days', Array.from(newDays));
             };
 
             const handleSubmit = (e) => {
                 e.preventDefault();
-                const finalData = { ...formData, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime) };
-                onSave(finalData, {isRecurring, ...recurrence});
+                const sTime = new Date(startDateTime);
+                const finalData = { ...formData, startDateTime: sTime };
+                if (formData.recurrence) {
+                    finalData.endDateTime = sTime; // For recurring, end time of first event is based on start
+                } else {
+                    finalData.endDateTime = new Date(endDateTime);
+                }
+                onSave(finalData);
             };
+
+            const isRecurring = !!formData.recurrence;
 
             return (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-                        <div className="p-6 border-b">
-                            <h2 className="text-2xl font-bold">{event ? 'Edit Event' : 'Create New Event'}</h2>
-                        </div>
+                        <div className="p-6 border-b"><h2 className="text-2xl font-bold">{event ? 'Edit Event' : 'Create New Event'}</h2></div>
                         <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-6 space-y-4">
-                             <div><label>Title</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2 border rounded-lg" required /></div>
+                            <div><label>Title</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2 border rounded-lg" required /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label>Start Time</label><input type="datetime-local" value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
-                                <div><label>End Time</label><input type="datetime-local" value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
+                                {!isRecurring && (<div><label>End Time</label><input type="datetime-local" value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required={!isRecurring} /></div>)}
                             </div>
                             <div><label>Event Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border rounded-lg"><option disabled>Select Type</option>{Object.keys(settings?.eventTypes || {}).map(type => <option key={type} value={type}>{type}</option>)}</select></div>
                             <div className="space-y-2">
@@ -279,33 +314,28 @@
                                 ))}
                             </div>
                             <div><label>Description</label><textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-2 border rounded-lg" rows="3"></textarea></div>
-
-                            {/* Recurring Event Section */}
-                            {!event && (
                             <div className="space-y-3 pt-4 border-t">
                                 <div className="flex items-center">
-                                    <input type="checkbox" id="isRecurring" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} className="h-4 w-4 mr-2" />
+                                    <input type="checkbox" id="isRecurring" checked={isRecurring} onChange={(e) => setFormData(prev => ({...prev, recurrence: e.target.checked ? { frequency: 'weekly', days: [], endDate: '' } : null})) } className="h-4 w-4 mr-2" />
                                     <label htmlFor="isRecurring" className="font-semibold text-lg">🔁 Recurring Event</label>
                                 </div>
                                 {isRecurring && (
                                     <div className="p-4 bg-blue-50 rounded-lg space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div><label>Repeats</label><select value={recurrence.frequency} onChange={e => setRecurrence({...recurrence, frequency: e.target.value})} className="w-full p-2 border rounded-lg"><option value="weekly">Weekly</option></select></div>
-                                            <div><label>Ends on</label><input type="date" value={recurrence.endDate} onChange={e => setRecurrence({...recurrence, endDate: e.target.value})} className="w-full p-2 border rounded-lg" required={isRecurring} /></div>
+                                            <div><label>Repeats</label><select value={formData.recurrence.frequency} onChange={e => handleRecurrenceChange('frequency', e.target.value)} className="w-full p-2 border rounded-lg"><option value="weekly">Weekly</option></select></div>
+                                            <div><label>Ends on</label><input type="date" value={formData.recurrence?.endDate || ''} onChange={e => handleRecurrenceChange('endDate', e.target.value)} className="w-full p-2 border rounded-lg" required={isRecurring} /></div>
                                         </div>
                                         <div>
                                             <label className="block mb-2">On</label>
                                             <div className="flex flex-wrap gap-2">
                                                 {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                                                    <button type="button" key={day} onClick={() => handleRecurrenceDayChange(day)} className={`px-3 py-1 rounded-full text-sm ${recurrence.days.includes(day) ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>{day.substring(0,3)}</button>
+                                                    <button type="button" key={day} onClick={() => handleRecurrenceDayChange(day)} className={`px-3 py-1 rounded-full text-sm ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>{day.substring(0,3)}</button>
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
                                 )}
                             </div>
-                            )}
-
                         </form>
                         <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
                             <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
@@ -316,25 +346,16 @@
             );
         };
         
-        // Settings Modal and its child components
         const SettingsModal = ({ settings, onSave, onClose }) => {
-            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings)));
-            const [activeTab, setActiveTab] = useState('zones');
-            const handleSave = () => { onSave(localSettings); onClose(); };
+            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); const [activeTab, setActiveTab] = useState('zones'); const handleSave = () => { onSave(localSettings); onClose(); };
             return (<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col"><div className="p-4 border-b"><h2 className="text-2xl font-bold">Settings</h2></div><div className="flex-grow flex overflow-hidden"><nav className="w-1/4 bg-gray-50 p-4 border-r"><button onClick={() => setActiveTab('zones')} className={`block w-full text-left p-2 rounded-lg mb-2 ${activeTab === 'zones' ? 'bg-blue-100 text-blue-700' : ''}`}>Zones</button><button onClick={() => setActiveTab('eventTypes')} className={`block w-full text-left p-2 rounded-lg mb-2 ${activeTab === 'eventTypes' ? 'bg-blue-100 text-blue-700' : ''}`}>Event Types</button><button onClick={() => setActiveTab('hours')} className={`block w-full text-left p-2 rounded-lg ${activeTab === 'hours' ? 'bg-blue-100 text-blue-700' : ''}`}>Opening Hours</button></nav><main className="w-3/4 p-6 overflow-y-auto">{activeTab === 'zones' && <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />}{activeTab === 'eventTypes' && <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />}{activeTab === 'hours' && <HoursSettings settings={localSettings} setSettings={setLocalSettings} />}</main></div><div className="p-4 bg-gray-50 border-t flex justify-end gap-3"><button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Save Changes</button></div></div></div>);
         };
         const ZoneSettings = ({ settings, setSettings }) => {
-            const [newParentZone, setNewParentZone] = useState('');
-            const [newChildZone, setNewChildZone] = useState({ parentId: '', name: '' });
-            const addParent = () => { if(!newParentZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newParentZone, children: []}]})); setNewParentZone(''); };
-            const addChild = () => { if(!newChildZone.parentId || !newChildZone.name) return; setSettings(s => ({...s, zones: s.zones.map(p => p.id === newChildZone.parentId ? {...p, children: [...p.children, {id: `${p.id} - ${newChildZone.name}`}]} : p)})); setNewChildZone({parentId: '', name: ''}); };
-            const deleteZone = (idToDelete) => { setSettings(s => ({ ...s, zones: s.zones.filter(p => p.id !== idToDelete).map(p => ({...p, children: p.children.filter(c => c.id !== idToDelete)})) })) };
+            const [newParentZone, setNewParentZone] = useState(''); const [newChildZone, setNewChildZone] = useState({ parentId: '', name: '' }); const addParent = () => { if(!newParentZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newParentZone, children: []}]})); setNewParentZone(''); }; const addChild = () => { if(!newChildZone.parentId || !newChildZone.name) return; setSettings(s => ({...s, zones: s.zones.map(p => p.id === newChildZone.parentId ? {...p, children: [...p.children, {id: `${p.id} - ${newChildZone.name}`}]} : p)})); setNewChildZone({parentId: '', name: ''}); }; const deleteZone = (idToDelete) => { setSettings(s => ({ ...s, zones: s.zones.filter(p => p.id !== idToDelete).map(p => ({...p, children: p.children.filter(c => c.id !== idToDelete)})) })) };
             return <div><h3 className="text-xl font-bold mb-4">Manage Zones</h3><div className="space-y-4">{settings.zones.map(p => (<div key={p.id} className="bg-gray-100 p-3 rounded-lg"><div className="flex justify-between items-center"><span className="font-semibold">{p.id}</span><button onClick={() => deleteZone(p.id)} className="text-red-500 text-xs">Delete</button></div><div className="pl-6 mt-2 space-y-1">{p.children?.map(c => (<div key={c.id} className="flex justify-between items-center"><span className="text-sm">{c.id}</span><button onClick={() => deleteZone(c.id)} className="text-red-500 text-xs">Delete</button></div>))}</div></div>))}</div><div className="mt-6 border-t pt-4 space-y-4"><div className="flex gap-2"><input value={newParentZone} onChange={e => setNewParentZone(e.target.value)} placeholder="New Parent Zone Name" className="flex-grow p-2 border rounded-lg"/><button onClick={addParent} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div><div className="flex gap-2"><select value={newChildZone.parentId} onChange={e => setNewChildZone({...newChildZone, parentId: e.target.value})} className="p-2 border rounded-lg"><option value="">Select Parent</option>{settings.zones.map(p=><option key={p.id} value={p.id}>{p.id}</option>)}</select><input value={newChildZone.name} onChange={e => setNewChildZone({...newChildZone, name: e.target.value})} placeholder="New Child Name (e.g. Lane 9)" className="flex-grow p-2 border rounded-lg" /><button onClick={addChild} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div></div>;
         };
         const EventTypeSettings = ({ settings, setSettings }) => {
-            const [name, setName] = useState(''); const [color, setColor] = useState('#000000');
-            const add = () => { if (!name) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [name]: color}})); setName(''); setColor('#000000'); };
-            const remove = (key) => { const newTypes = {...settings.eventTypes}; delete newTypes[key]; setSettings(s => ({...s, eventTypes: newTypes})); };
+            const [name, setName] = useState(''); const [color, setColor] = useState('#000000'); const add = () => { if (!name) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [name]: color}})); setName(''); setColor('#000000'); }; const remove = (key) => { const newTypes = {...settings.eventTypes}; delete newTypes[key]; setSettings(s => ({...s, eventTypes: newTypes})); };
             return <div><h3 className="text-xl font-bold mb-4">Manage Event Types</h3><div className="space-y-2">{Object.entries(settings.eventTypes).map(([key, val])=>(<div key={key} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded" style={{backgroundColor:val}}></div><span>{key}</span></div><button onClick={()=>remove(key)} className="text-red-500 text-xs">Delete</button></div>))}</div><div className="mt-6 border-t pt-4 flex gap-2"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New Event Type" className="flex-grow p-2 border rounded-lg"/><input type="color" value={color} onChange={e=>setColor(e.target.value)} className="p-1 h-10 w-10 border rounded-lg"/><button onClick={add} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div>;
         };
         const HoursSettings = ({ settings, setSettings }) => {
@@ -346,3 +367,4 @@
     </script>
 </body>
 </html>
+
