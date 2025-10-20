@@ -191,15 +191,7 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIG & INITIALIZATION ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{
-  apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
-  authDomain: "osf---availability-roster.firebaseapp.com",
-  projectId: "osf---availability-roster",
-  storageBucket: "osf---availability-roster.firebasestorage.app",
-  messagingSenderId: "1069751236100",
-  appId: "1:1069751236100:web:6a2c9a1570f99927e86751",
-  measurementId: "G-JT3PMQ0W6T"
-}');
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{"apiKey":"AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg","authDomain":"osf---availability-roster.firebaseapp.com","projectId":"osf---availability-roster","storageBucket":"osf---availability-roster.firebasestorage.app","messagingSenderId":"1069751236100","appId":"1:1069751236100:web:6a2c9a1570f99927e86751", measurementId: "G-JT3PMQ0W6T"}');
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'social-approval-app';
 
         let app, auth, db;
@@ -531,3 +523,4 @@
 
 </body>
 </html>
+
