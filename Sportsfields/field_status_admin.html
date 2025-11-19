@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInAnonymously,
-  signInWithCustomToken,
   onAuthStateChanged
 } from 'firebase/auth';
 import {
@@ -20,82 +19,43 @@ import {
   where,
   getDocs,
   runTransaction,
-  writeBatch
+  writeBatch,
+  setLogLevel
 } from 'firebase/firestore';
-import { setLogLevel } from 'firebase/firestore';
 
-// --- Global Firebase & App Config ---
-
-// These variables are provided by the environment.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = JSON.parse(
-  typeof __firebase_config !== 'undefined'
-    ? __firebase_config
-    : '{}'
-);
-const initialAuthToken = typeof __initial_auth_token !== 'undefined'
-  ? __initial_auth_token
-  : undefined;
-
-// --- Firebase Utility Functions ---
-
-// Helper to get the collection for fields
-const getFieldsCol = (db) => collection(db, `/artifacts/${appId}/public/data/sports_fields_status`);
-
-// Helper to get the single doc for status options
-const getStatusDoc = (db) => doc(db, `/artifacts/${appId}/public/data/sports_fields_status_config/statuses`);
-
+// --- 1. PRODUCTION FIREBASE CONFIGURATION ---
+const firebaseConfig = {
+  apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+  authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+  projectId: "opsf---comms-task-tracker",
+  storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
+  messagingSenderId: "489224390639",
+  appId: "1:489224390639:web:c5da72d0dc302d8332581a",
+  measurementId: "G-CBJK0070Z1"
+};
+f
+// --- 2. DATABASE PATHS (Root Level) ---
+const getFieldsCol = (db) => collection(db, "sports_fields_status");
+const getStatusDoc = (db) => doc(db, "sports_fields_status_config", "statuses");
 
 // --- React Components ---
 
-/**
- * A simple loading spinner component
- */
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center p-10">
-    <svg
-      className="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      ></circle>
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      ></path>
+    <svg className="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
     <span className="text-lg text-gray-700">Loading...</span>
   </div>
 );
 
-/**
- * A reusable modal component
- */
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={onClose}>
-      <div
-        className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-600 text-white transition hover:bg-gray-800"
-          aria-label="Close modal"
-        >
-          &times;
-        </button>
+      <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-600 text-white transition hover:bg-gray-800">&times;</button>
         <h3 className="mb-4 text-xl font-semibold text-gray-900">{title}</h3>
         <div>{children}</div>
       </div>
@@ -103,814 +63,295 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-
-/**
- * Admin page for managing fields and statuses.
- */
 const AdminPage = ({ db }) => {
   const [activeTab, setActiveTab] = useState('editor');
-  
-  // States for data
   const [fields, setFields] = useState([]);
-  const [statuses, setStatuses] = useState([]); // Array for admin UI
-  
-  // Loading and error states
+  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // States for modals
+  // Modals state
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [editingField, setEditingField] = useState(null); // null for new, object for edit
-  const [editingStatus, setEditingStatus] = useState(null); // null for new, object for edit
+  const [editingField, setEditingField] = useState(null);
+  const [editingStatus, setEditingStatus] = useState(null);
 
-  // Fetch and subscribe to data
   useEffect(() => {
     if (!db) return;
-
-    setLoading(true); // Set loading once at the start
+    setLoading(true);
     const subs = [];
-
     try {
-      // Subscribe to statuses
-      subs.push(
-        onSnapshot(
-          getStatusDoc(db),
-          (docSnap) => {
-            setStatuses(docSnap.data()?.options || []);
-          },
-          (err) => {
-            console.error("Error fetching statuses: ", err);
-            setError("Could not load status options.");
-            setLoading(false); // Stop loading on error
-          }
-        )
-      );
+      subs.push(onSnapshot(getStatusDoc(db), (docSnap) => {
+        setStatuses(docSnap.data()?.options || []);
+      }, (err) => {
+        console.error("Error fetching statuses:", err);
+        setError("Could not load status options.");
+        setLoading(false);
+      }));
 
-      // Subscribe to fields
-      const q = query(getFieldsCol(db));
-      subs.push(
-        onSnapshot(
-          q,
-          (snapshot) => {
-            const fieldList = snapshot.docs
-              .map((doc) => ({ id: doc.id, ...doc.data() }))
-              .sort((a, b) => a.name.localeCompare(b.name));
-            setFields(fieldList);
-            setLoading(false); // Stop loading *after* fields are loaded
-          },
-          (err) => {
-            console.error("Error fetching fields: ", err);
-            setError("Could not load fields.");
-            setLoading(false); // Stop loading on error
-          }
-        )
-      );
-
+      subs.push(onSnapshot(query(getFieldsCol(db)), (snapshot) => {
+        const fieldList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.name.localeCompare(b.name));
+        setFields(fieldList);
+        setLoading(false);
+      }, (err) => {
+        console.error("Error fetching fields:", err);
+        setError("Could not load fields.");
+        setLoading(false);
+      }));
     } catch (err) {
-      console.error("Error setting up subscriptions: ", err);
+      console.error("Error setting up subscriptions:", err);
       setError("An unexpected error occurred.");
-      setLoading(false); // Stop loading on error
+      setLoading(false);
     }
-
-    // Cleanup subscriptions
     return () => subs.forEach(unsub => unsub());
-  }, [db]); 
+  }, [db]);
 
-  // --- Helper for Text Contrast ---
   const getContrastColor = (hexColor) => {
     if (!hexColor) return 'black';
     const hex = hexColor.replace("#", "");
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
-    // Standard brightness formula
     return ((r * 299 + g * 587 + b * 114) / 1000) > 128 ? 'black' : 'white';
   };
 
-  // --- CRUD Operations ---
-
-  // Update a field's status
   const handleSetFieldStatus = async (fieldId, statusId) => {
     try {
-      const fieldRef = doc(getFieldsCol(db), fieldId);
-      await updateDoc(fieldRef, { currentStatusId: statusId });
-    } catch (err) {
-      console.error("Error updating status: ", err);
-    }
+      await updateDoc(doc(getFieldsCol(db), fieldId), { currentStatusId: statusId });
+    } catch (err) { console.error("Error updating status:", err); }
   };
 
-  // Save/Update a field (from modal)
   const handleSaveField = async (name, webLink, mapLink) => {
     if (!name.trim()) return;
-    
-    const fieldData = {
-        name: name.trim(),
-        webLink: webLink.trim(),
-        mapLink: mapLink.trim()
-    };
-
+    const fieldData = { name: name.trim(), webLink: webLink.trim(), mapLink: mapLink.trim() };
     try {
       if (editingField && editingField.id) {
-        // Update existing field
-        const fieldRef = doc(getFieldsCol(db), editingField.id);
-        await updateDoc(fieldRef, fieldData);
+        await updateDoc(doc(getFieldsCol(db), editingField.id), fieldData);
       } else {
-        // Add new field
-        // Use first status as default, or null
         const defaultStatusId = statuses.length > 0 ? statuses[0].id : null;
-        await addDoc(getFieldsCol(db), {
-          ...fieldData,
-          currentStatusId: defaultStatusId,
-        });
+        await addDoc(getFieldsCol(db), { ...fieldData, currentStatusId: defaultStatusId });
       }
-      setIsFieldModalOpen(false);
-      setEditingField(null);
-    } catch (err) {
-      console.error("Error saving field: ", err);
-    }
+      setIsFieldModalOpen(false); setEditingField(null);
+    } catch (err) { console.error("Error saving field:", err); }
   };
 
-  // Delete a field
   const handleDeleteField = async (fieldId) => {
     if (!window.confirm("Are you sure you want to delete this field?")) return;
-    try {
-      await deleteDoc(doc(getFieldsCol(db), fieldId));
-    } catch (err) {
-      console.error("Error deleting field: ", err);
-    }
+    try { await deleteDoc(doc(getFieldsCol(db), fieldId)); } catch (err) { console.error("Error deleting field:", err); }
   };
 
-  // Save/Update a status option (from modal)
   const handleSaveStatus = async (text, color, infoLink) => {
     if (!text.trim() || !color.trim()) return;
-    
-    const statusData = {
-        text: text.trim(),
-        color: color.trim(),
-        infoLink: infoLink?.trim() || ""
-    };
-
+    const statusData = { text: text.trim(), color: color.trim(), infoLink: infoLink?.trim() || "" };
     let newStatuses;
     if (editingStatus && editingStatus.id) {
-      // Update existing status
-      newStatuses = statuses.map(s => 
-        s.id === editingStatus.id ? { ...s, ...statusData } : s
-      );
+      newStatuses = statuses.map(s => s.id === editingStatus.id ? { ...s, ...statusData } : s);
     } else {
-      // Add new status
-      const newStatus = { id: crypto.randomUUID(), ...statusData };
-      newStatuses = [...statuses, newStatus];
+      newStatuses = [...statuses, { id: crypto.randomUUID(), ...statusData }];
     }
-    
     try {
       await setDoc(getStatusDoc(db), { options: newStatuses });
-      setIsStatusModalOpen(false);
-      setEditingStatus(null);
-    } catch (err) {
-      console.error("Error saving status: ", err);
-    }
+      setIsStatusModalOpen(false); setEditingStatus(null);
+    } catch (err) { console.error("Error saving status:", err); }
   };
 
-  // Delete a status option
   const handleDeleteStatus = async (statusId) => {
-    // Note: This does not automatically update fields using this status.
     const newStatuses = statuses.filter(s => s.id !== statusId);
     try {
       await setDoc(getStatusDoc(db), { options: newStatuses });
-      
       const newDefaultStatusId = newStatuses.length > 0 ? newStatuses[0].id : null;
-      
-      // Find all fields using the deleted status
       const q = query(getFieldsCol(db), where("currentStatusId", "==", statusId));
       const fieldsToUpdate = await getDocs(q);
-      
-      // Use a transaction to update them all
       await runTransaction(db, async (transaction) => {
         fieldsToUpdate.docs.forEach(fieldDoc => {
           transaction.update(fieldDoc.ref, { currentStatusId: newDefaultStatusId });
         });
       });
-      
-    } catch (err) {
-      console.error("Error deleting status: ", err);
-    }
+    } catch (err) { console.error("Error deleting status:", err); }
   };
-  
-  // --- Render Functions for Modals ---
-  
+
+  // Render helpers
   const renderFieldModal = () => (
-    <Modal
-      isOpen={isFieldModalOpen}
-      onClose={() => {
-        setIsFieldModalOpen(false);
-        setEditingField(null);
-      }}
-      title={editingField ? "Edit Field" : "Add New Field"}
-    >
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        handleSaveField(
-            e.target.fieldName.value,
-            e.target.webLink.value,
-            e.target.mapLink.value
-        );
-      }}>
+    <Modal isOpen={isFieldModalOpen} onClose={() => { setIsFieldModalOpen(false); setEditingField(null); }} title={editingField ? "Edit Field" : "Add New Field"}>
+      <form onSubmit={(e) => { e.preventDefault(); handleSaveField(e.target.fieldName.value, e.target.webLink.value, e.target.mapLink.value); }}>
         <div className="space-y-4">
-            <div>
-                <label htmlFor="fieldName" className="block text-sm font-medium text-gray-700">
-                Field Name *
-                </label>
-                <input
-                type="text"
-                id="fieldName"
-                name="fieldName"
-                defaultValue={editingField?.name || ""}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                required
-                />
-            </div>
-
-            <div>
-                <label htmlFor="webLink" className="block text-sm font-medium text-gray-700">
-                Web Page URL (Optional)
-                </label>
-                <input
-                type="url"
-                id="webLink"
-                name="webLink"
-                defaultValue={editingField?.webLink || ""}
-                placeholder="https://..."
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                />
-                <p className="text-xs text-gray-500 mt-1">Link to the council page or more info.</p>
-            </div>
-
-            <div>
-                <label htmlFor="mapLink" className="block text-sm font-medium text-gray-700">
-                Map Directions URL (Optional)
-                </label>
-                <input
-                type="url"
-                id="mapLink"
-                name="mapLink"
-                defaultValue={editingField?.mapLink || ""}
-                placeholder="https://maps.google.com/..."
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                />
-                <p className="text-xs text-gray-500 mt-1">Link to Google Maps location.</p>
-            </div>
+          <div><label className="block text-sm font-medium text-gray-700">Field Name *</label><input type="text" name="fieldName" defaultValue={editingField?.name || ""} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm" required /></div>
+          <div><label className="block text-sm font-medium text-gray-700">Web Page URL</label><input type="url" name="webLink" defaultValue={editingField?.webLink || ""} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm" /><p className="text-xs text-gray-500">Link to council page.</p></div>
+          <div><label className="block text-sm font-medium text-gray-700">Map Directions URL</label><input type="url" name="mapLink" defaultValue={editingField?.mapLink || ""} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm" /><p className="text-xs text-gray-500">Google Maps link.</p></div>
         </div>
-
-        <div className="mt-6 flex justify-end space-x-2">
-          <button
-            type="button"
-            onClick={() => {
-              setIsFieldModalOpen(false);
-              setEditingField(null);
-            }}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-          >
-            Save Field
-          </button>
-        </div>
+        <div className="mt-6 flex justify-end space-x-2"><button type="button" onClick={() => { setIsFieldModalOpen(false); setEditingField(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save Field</button></div>
       </form>
     </Modal>
   );
 
   const renderStatusModal = () => (
-    <Modal
-      isOpen={isStatusModalOpen}
-      onClose={() => {
-        setIsStatusModalOpen(false);
-        setEditingStatus(null);
-      }}
-      title={editingStatus ? "Edit Status" : "Add New Status"}
-    >
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        handleSaveStatus(
-            e.target.statusText.value, 
-            e.target.statusColor.value,
-            e.target.infoLink.value
-        );
-      }}>
+    <Modal isOpen={isStatusModalOpen} onClose={() => { setIsStatusModalOpen(false); setEditingStatus(null); }} title={editingStatus ? "Edit Status" : "Add New Status"}>
+      <form onSubmit={(e) => { e.preventDefault(); handleSaveStatus(e.target.statusText.value, e.target.statusColor.value, e.target.infoLink.value); }}>
         <div className="space-y-4">
-            <div>
-            <label htmlFor="statusText" className="block text-sm font-medium text-gray-700">
-                Status Text *
-            </label>
-            <input
-                type="text"
-                id="statusText"
-                name="statusText"
-                defaultValue={editingStatus?.text || ""}
-                placeholder='e.g., "Open", "Closed"'
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                required
-            />
-            </div>
-            
-            <div>
-            <label htmlFor="infoLink" className="block text-sm font-medium text-gray-700">
-                Policy/Info URL (Optional)
-            </label>
-            <input
-                type="url"
-                id="infoLink"
-                name="infoLink"
-                defaultValue={editingStatus?.infoLink || ""}
-                placeholder="https://..."
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-            />
-            <p className="text-xs text-gray-500 mt-1">Useful for linking to a Wet Weather Policy.</p>
-            </div>
-
-            <div>
-            <label htmlFor="statusColor" className="block text-sm font-medium text-gray-700">
-                Status Color *
-            </label>
-            <div className="flex items-center mt-1">
-                <input
-                type="color"
-                id="statusColor"
-                name="statusColor"
-                defaultValue={editingStatus?.color || "#000000"}
-                className="h-10 w-10 rounded-md border-gray-300 p-0"
-                />
-                <span className="ml-3 text-sm text-gray-500">Click to pick a color</span>
-            </div>
-            </div>
+          <div><label className="block text-sm font-medium text-gray-700">Status Text *</label><input type="text" name="statusText" defaultValue={editingStatus?.text || ""} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm" required /></div>
+          <div><label className="block text-sm font-medium text-gray-700">Policy/Info URL</label><input type="url" name="infoLink" defaultValue={editingStatus?.infoLink || ""} className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm" /><p className="text-xs text-gray-500">Link to Wet Weather Policy etc.</p></div>
+          <div><label className="block text-sm font-medium text-gray-700">Color *</label><div className="flex items-center mt-1"><input type="color" name="statusColor" defaultValue={editingStatus?.color || "#000000"} className="h-10 w-10 rounded-md border-gray-300 p-0" /><span className="ml-3 text-sm text-gray-500">Click to pick</span></div></div>
         </div>
-        <div className="mt-6 flex justify-end space-x-2">
-          <button
-            type="button"
-            onClick={() => {
-              setIsStatusModalOpen(false);
-              setEditingStatus(null);
-            }}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-          >
-            Save Status
-          </button>
-        </div>
+        <div className="mt-6 flex justify-end space-x-2"><button type="button" onClick={() => { setIsStatusModalOpen(false); setEditingStatus(null); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save Status</button></div>
       </form>
     </Modal>
   );
 
-  // --- Render Functions for Tabs ---
-  
-  const renderTabEditor = () => (
-    <div>
-      <h2 className="text-xl font-semibold text-gray-800">Set Field Statuses</h2>
-      <p className="mb-4 text-sm text-gray-600">
-        Tap a button to instantly update the status.
-      </p>
-      {statuses.length === 0 ? (
-        <div className="rounded-md bg-yellow-50 p-4">
-          <p className="text-sm font-medium text-yellow-800">
-            Please add at least one status option in the "Manage Status Options" tab to get started.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {fields.map(field => (
-            <div key={field.id} className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-              <span className="mb-3 text-lg font-medium text-gray-800">{field.name}</span>
-              
-              <div className="flex flex-wrap gap-2">
-                {statuses.map(status => {
-                    const isActive = field.currentStatusId === status.id;
-                    const textColor = getContrastColor(status.color);
-                    
-                    return (
-                        <button
-                            key={status.id}
-                            onClick={() => handleSetFieldStatus(field.id, status.id)}
-                            className={`
-                                relative px-4 py-2 rounded-md text-sm font-bold transition-all duration-200 border-2
-                                ${isActive ? 'scale-105 shadow-md' : 'opacity-60 hover:opacity-100'}
-                            `}
-                            style={{
-                                backgroundColor: isActive ? status.color : 'transparent',
-                                borderColor: status.color,
-                                color: isActive ? textColor : status.color
-                            }}
-                        >
-                            {isActive && (
-                                <span className="absolute -top-2 -right-2 h-4 w-4 bg-blue-500 rounded-full border border-white shadow flex items-center justify-center">
-                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </span>
-                            )}
-                            {status.text}
-                        </button>
-                    );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-  
-  const renderTabFields = () => (
-    <div>
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Manage Fields</h2>
-        <button
-          onClick={() => {
-            setEditingField(null);
-            setIsFieldModalOpen(true);
-          }}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-        >
-          Add New Field
-        </button>
-      </div>
-      <p className="mb-4 text-sm text-gray-600">
-        Add, edit, or remove the sports fields. You can now add links to maps and websites.
-      </p>
-      <div className="divide-y divide-gray-200 rounded-md border bg-white">
-        {fields.map(field => (
-          <div key={field.id} className="flex flex-col items-start p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col">
-                <span className="text-lg font-medium text-gray-800">{field.name}</span>
-                <div className="flex space-x-3 mt-1">
-                    {field.webLink && <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Web Link Set</span>}
-                    {field.mapLink && <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Map Link Set</span>}
-                </div>
-            </div>
-            <div className="mt-2 flex space-x-2 sm:mt-0">
-              <button
-                onClick={() => {
-                  setEditingField(field);
-                  setIsFieldModalOpen(true);
-                }}
-                className="rounded-md bg-yellow-500 px-3 py-1 text-sm text-white shadow-sm hover:bg-yellow-600"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteField(field.id)}
-                className="rounded-md bg-red-600 px-3 py-1 text-sm text-white shadow-sm hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-        {fields.length === 0 && (
-          <p className="p-4 text-center text-gray-500">No fields added yet.</p>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderTabStatuses = () => (
-    <div>
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Manage Status Options</h2>
-        <button
-          onClick={() => {
-            setEditingStatus(null);
-            setIsStatusModalOpen(true);
-          }}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-        >
-          Add New Status
-        </button>
-      </div>
-      <p className="mb-4 text-sm text-gray-600">
-        Define the status options available (e.g., Open, Closed, Event).
-      </p>
-      <div className="divide-y divide-gray-200 rounded-md border bg-white">
-        {statuses.map(status => (
-          <div key={status.id} className="flex flex-col items-start p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center">
-              <span
-                className="mr-3 h-6 w-6 rounded-full border border-gray-300"
-                style={{ backgroundColor: status.color }}
-              ></span>
-              <div className="flex flex-col">
-                <span className="text-lg text-gray-800">{status.text}</span>
-                {status.infoLink && (
-                    <span className="text-xs text-blue-500 truncate max-w-xs">
-                        Links to: {status.infoLink}
-                    </span>
-                )}
-              </div>
-            </div>
-            <div className="mt-2 flex space-x-2 sm:mt-0">
-              <button
-                onClick={() => {
-                  setEditingStatus(status);
-                  setIsStatusModalOpen(true);
-                }}
-                className="rounded-md bg-yellow-500 px-3 py-1 text-sm text-white shadow-sm hover:bg-yellow-600"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteStatus(status.id)}
-                className="rounded-md bg-red-600 px-3 py-1 text-sm text-white shadow-sm hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-        {statuses.length === 0 && (
-          <p className="p-4 text-center text-gray-500">No statuses added yet.</p>
-        )}
-      </div>
-    </div>
-  );
-
-  // --- Main AdminPage Render ---
-
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="p-4 text-center text-red-600">{error}</div>;
 
-  const tabs = [
-    { id: 'editor', label: 'Set Statuses' },
-    { id: 'fields', label: 'Manage Fields' },
-    { id: 'statuses', label: 'Manage Status Options' },
-  ];
+  const tabs = [{ id: 'editor', label: 'Set Statuses' }, { id: 'fields', label: 'Manage Fields' }, { id: 'statuses', label: 'Manage Status Options' }];
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-6">
       {renderFieldModal()}
       {renderStatusModal()}
-      
-      <h1 className="mb-6 text-center text-3xl font-bold text-gray-800">
-        Admin Control Panel
-      </h1>
-      
-      {/* Tab Navigation */}
+      <h1 className="mb-6 text-center text-3xl font-bold text-gray-800">Admin Control Panel</h1>
       <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex flex-wrap space-x-4 sm:space-x-8" aria-label="Tabs">
+        <nav className="-mb-px flex flex-wrap space-x-4 sm:space-x-8">
           {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium
-                ${activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }
-              `}
-            >
-              {tab.label}
-            </button>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium ${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}>{tab.label}</button>
           ))}
         </nav>
       </div>
-
-      {/* Tab Content */}
       <div className="rounded-lg bg-gray-50 p-4 shadow-inner sm:p-6">
-        {activeTab === 'editor' && renderTabEditor()}
-        {activeTab === 'fields' && renderTabFields()}
-        {activeTab === 'statuses' && renderTabStatuses()}
+        {activeTab === 'editor' && (
+          <div className="space-y-6">
+            {fields.map(field => (
+              <div key={field.id} className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <span className="mb-3 text-lg font-medium text-gray-800">{field.name}</span>
+                <div className="flex flex-wrap gap-2">
+                  {statuses.map(status => {
+                    const isActive = field.currentStatusId === status.id;
+                    return (
+                      <button key={status.id} onClick={() => handleSetFieldStatus(field.id, status.id)} className={`relative px-4 py-2 rounded-md text-sm font-bold transition-all duration-200 border-2 ${isActive ? 'scale-105 shadow-md' : 'opacity-60 hover:opacity-100'}`} style={{ backgroundColor: isActive ? status.color : 'transparent', borderColor: status.color, color: isActive ? getContrastColor(status.color) : status.color }}>
+                        {isActive && <span className="absolute -top-2 -right-2 h-4 w-4 bg-blue-500 rounded-full border border-white shadow flex items-center justify-center"><svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg></span>}
+                        {status.text}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {activeTab === 'fields' && (
+          <div>
+            <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-semibold text-gray-800">Manage Fields</h2><button onClick={() => { setEditingField(null); setIsFieldModalOpen(true); }} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">Add New Field</button></div>
+            <div className="divide-y divide-gray-200 rounded-md border bg-white">
+              {fields.map(field => (
+                <div key={field.id} className="flex flex-col items-start p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col"><span className="text-lg font-medium text-gray-800">{field.name}</span><div className="flex space-x-3 mt-1">{field.webLink && <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Web Link Set</span>}{field.mapLink && <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Map Link Set</span>}</div></div>
+                  <div className="mt-2 flex space-x-2 sm:mt-0"><button onClick={() => { setEditingField(field); setIsFieldModalOpen(true); }} className="rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">Edit</button><button onClick={() => handleDeleteField(field.id)} className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700">Delete</button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {activeTab === 'statuses' && (
+          <div>
+            <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-semibold text-gray-800">Manage Status Options</h2><button onClick={() => { setEditingStatus(null); setIsStatusModalOpen(true); }} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">Add New Status</button></div>
+            <div className="divide-y divide-gray-200 rounded-md border bg-white">
+              {statuses.map(status => (
+                <div key={status.id} className="flex flex-col items-start p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center"><span className="mr-3 h-6 w-6 rounded-full border border-gray-300" style={{ backgroundColor: status.color }}></span><div className="flex flex-col"><span className="text-lg text-gray-800">{status.text}</span>{status.infoLink && <span className="text-xs text-blue-500 truncate max-w-xs">Link set</span>}</div></div>
+                  <div className="mt-2 flex space-x-2 sm:mt-0"><button onClick={() => { setEditingStatus(status); setIsStatusModalOpen(true); }} className="rounded-md bg-yellow-500 px-3 py-1 text-sm text-white hover:bg-yellow-600">Edit</button><button onClick={() => handleDeleteStatus(status.id)} className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700">Delete</button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// --- Preload Data Function ---
-
 const preloadDefaultData = async (db) => {
-  console.log("Checking for default data...");
-
-  // --- 1. Define Default Statuses ---
-  // Using simple IDs for preloading
-  const defaultStatuses = [
-    { id: 'status-open', text: 'Open', color: '#22c55e' }, // tailwind-green-500
-    { id: 'status-closed', text: 'Closed', color: '#ef4444' }, // tailwind-red-500
-    { id: 'status-wet-weather', text: 'CLOSED Wet Weather Sports Management Policy Applies', color: '#f97316' } // tailwind-orange-500
-  ];
-  const defaultClosedStatusId = 'status-closed'; // We'll use this for fields
-
-  // --- 2. Check and Preload Statuses ---
   try {
     const statusDocRef = getStatusDoc(db);
     const statusSnap = await getDoc(statusDocRef);
-    
     if (!statusSnap.exists()) {
-      console.log("No statuses found. Preloading default statuses...");
+      console.log("Preloading statuses...");
+      const defaultStatuses = [
+        { id: 'status-open', text: 'Open', color: '#22c55e', infoLink: '' },
+        { id: 'status-closed', text: 'Closed', color: '#ef4444', infoLink: '' },
+        { id: 'status-wet-weather', text: 'CLOSED Wet Weather Sports Management Policy Applies', color: '#f97316', infoLink: '' }
+      ];
       await setDoc(statusDocRef, { options: defaultStatuses });
-    } else {
-      console.log("Statuses already exist.");
     }
-  } catch (err) {
-    console.error("Error preloading statuses: ", err);
-  }
 
-  // --- 3. Define Default Fields ---
-  // Raw list from your prompt
-  const rawFieldNames = [
-    "West Barnier Park - Soccer Fields - 1",
-    "West Barnier Park - Soccer Fields - 2; 3; 4 (junior fields)",
-    "West Barnier Park - Terry West Athletics Field (Soccer BP5)",
-    "East Brooms Head Oval, Brooms Head",
-    "East Brushgrove Oval, Brushgrove",
-    "West Ellem Oval (Upper Fisher), Grafton",
-    "West Fisher Park (Lower),",
-    "West Hawthorne Rodeo Park, South Grafton",
-    "West Hay St Rugby Union Fields, South Grafton",
-    "East Ilarwill Oval, Ilarwill",
-    "West JJ Lawrence Fields, South Grafton",
-    "East Ken Leeson Oval, Iluka",
-    "East Lawrence Cricket Oval, Lawrence",
-    "East Maclean Showground, Maclean",
-    "West McIntosh Oval, Coutts Crossing",
-    "West McKittrick Oval, South Grafton",
-    "West North Street Field - Grafton",
-    "West Orara Golf Course, Coutts Crossing",
-    "West Rushforth Park, South Grafton - Junior Area between Field 3 & Rushforth Road",
-    "West Rushforth Park, South Grafton - Number 1 Soccer Field",
-    "West Rushforth Park, South Grafton - Number 2 Soccer Field",
-    "West Rushforth Park, South Grafton - Number 3 Soccer Field",
-    "West Rushforth Park, South Grafton - Number 4",
-    "West Small Park, Ulmarra",
-    "West Victoria Park, Tucabia",
-    "West Wajard Park, Coutts Crossing",
-    "West Westward Park, Grafton - Grass area Only",
-    "East Wherrett Park - Barry Watts Oval (BW1; BW2; BW3 & BW4 Soccer Fields)",
-    "East Wherrett Park - Golf Practice Area",
-    "East Wherrett Park - No 1 Cricket Field (WP1 & WP2 Football / Rugby League Fields)",
-    "East Wherrett Park - Number 2 Cricket Field",
-    "East Wherrett Park - Number 3 Cricket Field",
-    "West Wooli Sports Ground",
-    "East Yamba Oval - Kane Douglas Rugby Field",
-    "East Yamba Oval, Yamba (Cnr River and Coldstream St's)",
-    "East Yamba Sporting Complex - AFL Field",
-    "East Yamba Sporting Complex - Rugby League Field",
-    "East Yamba Sports Complex (Angourie Road - Touch Fields 1; 2; 6; 7; 5; 10 & Synthetic Cricket Wicket 1 & 2)",
-    "East Yamba Sports Complex (No. 1 Soccer Field, Touch Fields 3 & 4)",
-    "East Yamba Sports Complex (No. 2 Soccer Field, Touch Fields 8; 9)"
-  ];
-
-  // Clean the list: strip East/West prefixes and trailing commas
-  const fieldNames = rawFieldNames.map(name => {
-      let cleanName = name.replace(/,$/, ''); // Remove trailing comma
-      if (cleanName.startsWith("West ")) return cleanName.substring(5);
-      if (cleanName.startsWith("East ")) return cleanName.substring(5);
-      return cleanName;
-  });
-
-  // --- 4. Check and Preload Fields ---
-  try {
     const fieldsColRef = getFieldsCol(db);
-    const fieldsQuery = query(fieldsColRef); // Check if any fields exist
-    const fieldsSnap = await getDocs(fieldsQuery);
-
+    const fieldsSnap = await getDocs(query(fieldsColRef));
     if (fieldsSnap.empty) {
-      console.log("No fields found. Preloading default fields...");
-      // Use a batch write for efficiency
+      console.log("Preloading fields...");
+      const rawFieldNames = [
+        "Barnier Park - Soccer Fields - 1", "Barnier Park - Soccer Fields - 2; 3; 4 (junior fields)", "Barnier Park - Terry West Athletics Field (Soccer BP5)",
+        "Brooms Head Oval, Brooms Head", "Brushgrove Oval, Brushgrove", "Ellem Oval (Upper Fisher), Grafton", "Fisher Park (Lower),",
+        "Hawthorne Rodeo Park, South Grafton", "Hay St Rugby Union Fields, South Grafton", "Ilarwill Oval, Ilarwill", "JJ Lawrence Fields, South Grafton",
+        "Ken Leeson Oval, Iluka", "Lawrence Cricket Oval, Lawrence", "Maclean Showground, Maclean", "McIntosh Oval, Coutts Crossing",
+        "McKittrick Oval, South Grafton", "North Street Field - Grafton", "Orara Golf Course, Coutts Crossing",
+        "Rushforth Park, South Grafton - Junior Area between Field 3 & Rushforth Road", "Rushforth Park, South Grafton - Number 1 Soccer Field",
+        "Rushforth Park, South Grafton - Number 2 Soccer Field", "Rushforth Park, South Grafton - Number 3 Soccer Field",
+        "Rushforth Park, South Grafton - Number 4", "Small Park, Ulmarra", "Victoria Park, Tucabia", "Wajard Park, Coutts Crossing",
+        "Westward Park, Grafton - Grass area Only", "Wherrett Park - Barry Watts Oval (BW1; BW2; BW3 & BW4 Soccer Fields)",
+        "Wherrett Park - Golf Practice Area", "Wherrett Park - No 1 Cricket Field (WP1 & WP2 Football / Rugby League Fields)",
+        "Wherrett Park - Number 2 Cricket Field", "Wherrett Park - Number 3 Cricket Field", "Wooli Sports Ground",
+        "Yamba Oval - Kane Douglas Rugby Field", "Yamba Oval, Yamba (Cnr River and Coldstream St's)", "Yamba Sporting Complex - AFL Field",
+        "Yamba Sporting Complex - Rugby League Field", "Yamba Sports Complex (Angourie Road - Touch Fields 1; 2; 6; 7; 5; 10 & Synthetic Cricket Wicket 1 & 2)",
+        "Yamba Sports Complex (No. 1 Soccer Field, Touch Fields 3 & 4)", "Yamba Sports Complex (No. 2 Soccer Field, Touch Fields 8; 9)"
+      ];
       const batch = writeBatch(db);
-      fieldNames.forEach(name => {
-        const newFieldRef = doc(fieldsColRef); // Create a new doc reference
-        batch.set(newFieldRef, {
-          name: name,
-          currentStatusId: defaultClosedStatusId // Default to "Closed"
-        });
+      rawFieldNames.forEach(name => {
+        batch.set(doc(fieldsColRef), { name: name, currentStatusId: 'status-closed', webLink: '', mapLink: '' });
       });
       await batch.commit();
-      console.log("Successfully preloaded fields.");
-    } else {
-      console.log("Fields already exist.");
     }
-  } catch (err) {
-    console.error("Error preloading fields: ", err);
-  }
+  } catch (err) { console.error("Error preloading:", err); }
 };
 
-
-/**
- * Main App Component
- * Handles auth, Firebase init, and renders the AdminPage.
- */
 export default function App() {
   const [db, setDb] = useState(null);
   const [auth, setAuth] = useState(null);
-  const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [error, setError] = useState(null);
-  const preloadAttempted = React.useRef(false); // Add ref to track preloading
+  const preloadAttempted = React.useRef(false);
 
-  // Initialize Firebase and Auth
   useEffect(() => {
-    if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-      setError("Firebase config is missing.");
-      setIsAuthReady(true); // Stop loading
-      return;
-    }
-
     try {
       const app = initializeApp(firebaseConfig);
       const firestoreDb = getFirestore(app);
       const firebaseAuth = getAuth(app);
-      
-      setLogLevel('debug'); // For development
-      
       setDb(firestoreDb);
       setAuth(firebaseAuth);
 
       const unsub = onAuthStateChanged(firebaseAuth, async (user) => {
         if (user) {
-          setUserId(user.uid);
-
-          // --- FIX: Call preload *after* auth is ready and only ONCE ---
           if (firestoreDb && !preloadAttempted.current) {
-            preloadAttempted.current = true; // Mark as attempted
-            await preloadDefaultData(firestoreDb); // await to ensure it runs
+            preloadAttempted.current = true;
+            await preloadDefaultData(firestoreDb);
           }
-          
           setIsAuthReady(true);
-        } else if (initialAuthToken) {
-          try {
-            await signInWithCustomToken(firebaseAuth, initialAuthToken);
-            // onAuthStateChanged will fire again with the new user
-          } catch (err) {
-            console.error("Error signing in with custom token: ", err);
-            setError("Authentication failed. Please refresh.");
-            setIsAuthReady(true); // Stop loading even on auth error
-          }
         } else {
-          try {
-            await signInAnonymously(firebaseAuth);
-            // onAuthStateChanged will fire again with the new user
-          } catch (err) {
-            console.error("Error signing in anonymously: ", err);
-            setError("Anonymous authentication failed. Please refresh.");
-            setIsAuthReady(true);
-          }
+          try { await signInAnonymously(firebaseAuth); } 
+          catch (err) { setError("Authentication failed."); }
         }
       });
-      
-      return () => unsub(); // Cleanup auth listener
+      return () => unsub();
+    } catch (err) { setError("Config Error."); }
+  }, []);
 
-    } catch (err) {
-      console.error("Error initializing Firebase: ", err);
-      setError("Could not initialize app. Please check console.");
-      setIsAuthReady(true);
-    }
-  }, []); // Empty dep array, runs once
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-red-50 p-4">
-        <div className="max-w-md rounded-lg bg-white p-8 shadow-xl">
-          <h2 className="mb-4 text-2xl font-bold text-red-700">Application Error</h2>
-          <p className="text-gray-700">{error}</p>
-          <p className="mt-4 text-sm text-gray-500">
-            Please check the browser console for more details and ensure your Firebase configuration is correct.
-          </p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!isAuthReady) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
+  if (!isAuthReady) return <LoadingSpinner />;
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
       <header className="bg-white shadow-sm">
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-4">
-          <div className="text-lg font-bold text-blue-700">
-            Field Status Manager
-          </div>
-          <div className="text-gray-500">
-            Admin Panel
-          </div>
+          <div className="text-lg font-bold text-blue-700">Field Status Manager</div>
+          <div className="text-gray-500">Admin Panel</div>
         </nav>
       </header>
-
-      <main>
-        <AdminPage db={db} />
-      </main>
+      <main><AdminPage db={db} /></main>
     </div>
   );
 }
