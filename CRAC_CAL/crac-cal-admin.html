@@ -3,54 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar Admin</title>
+    <title>Calendar Admin | Clarence Regional Aquatic Centre</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%23007bff' d='M0 50 Q 25 25, 50 50 T 100 50 V 100 H 0 Z' /></svg>">
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800 antialiased">
     <div id="root"></div>
 
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <!-- React 18 -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <script type="text/babel">
-        // --- CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
-  authDomain: "osf---availability-roster.firebaseapp.com",
-  projectId: "osf---availability-roster",
-  storageBucket: "osf---availability-roster.firebasestorage.app",
-  messagingSenderId: "1069751236100",
-  appId: "1:1069751236100:web:2832210ad7e9ed50e86751",
-  measurementId: "G-K5F1SSNK5H"
-};
-        const ADMIN_PASSWORD = "CRAC*25*"; // IMPORTANT: Change this password
-        const TARGET_VENUE = 'CRAC'; // Set to 'CRAC' or 'YCP'
-        // ---------------------
+        // --- ICONS (Lucide React style) ---
+        const Icons = {
+            Search: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Edit: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+            Trash: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>,
+            Repeat: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>,
+            LogOut: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+            Check: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            AlertTriangle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
+            Database: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        };
 
         const { useState, useEffect, useMemo } = React;
-        let db;
-        try {
-            if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-        } catch(e) { console.error("Firebase init failed", e); }
 
+        // --- CONSTANTS ---
+        const ADMIN_PASSWORD = "CRAC*25*"; 
+        const TARGET_VENUE = 'CRAC'; 
+
+        // --- DEFAULTS (Only used when initializing DB) ---
+        const CRAC_DEFAULTS = { 
+            zones: [ 
+                { id: '50m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
+                { id: 'LTS Pool', children: [] }, 
+                { id: 'Splash Park', children: [] }, 
+                { id: 'Multi-Purpose Room', children: [] } 
+            ], 
+            eventTypes: { 
+                'Learn to Swim': '#3B82F6', 
+                'Aqua Fitness': '#10B981', 
+                'Public Swim': '#F59E0B', 
+                'School Carnival': '#EF4444', 
+                'Lane Hire': '#8B5CF6' 
+            },
+            openingHours: [ 
+                {day: 'Monday', open: 5, close: 19}, {day: 'Tuesday', open: 5, close: 19}, 
+                {day: 'Wednesday', open: 5, close: 19}, {day: 'Thursday', open: 5, close: 19}, 
+                {day: 'Friday', open: 5, close: 19}, {day: 'Saturday', open: 8, close: 18}, 
+                {day: 'Sunday', open: 8, close: 18} 
+            ]
+        };
+
+        // --- FIREBASE INIT (Strictly using User Config) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+            authDomain: "osf---availability-roster.firebaseapp.com",
+            projectId: "osf---availability-roster",
+            storageBucket: "osf---availability-roster.firebasestorage.app",
+            messagingSenderId: "1069751236100",
+            appId: "1:1069751236100:web:2832210ad7e9ed50e86751",
+            measurementId: "G-K5F1SSNK5H"
+        };
+
+        let db, auth;
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
+
+        // --- MAIN APP ---
         const App = () => {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [user, setUser] = useState(null);
+            const [firebaseReady, setFirebaseReady] = useState(false);
+            const [authError, setAuthError] = useState(null);
+
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        // Use compat method
+                        await auth.signInAnonymously();
+                    } catch (err) {
+                        console.error("Auth Error:", err);
+                        setAuthError(err.message);
+                    }
+                };
+                
+                const unsubscribe = auth.onAuthStateChanged((u) => {
+                    if (u) {
+                        setUser(u);
+                        setFirebaseReady(true);
+                    }
+                });
+                
+                initAuth();
+                return () => unsubscribe();
+            }, []);
+
             if (!isAuthenticated) return <Login onAuth={() => setIsAuthenticated(true)} />;
-            return <AdminPage />;
+            
+            if (authError) return <div className="h-screen flex items-center justify-center text-red-500 gap-2"><Icons.AlertTriangle /> Auth Error: {authError}</div>;
+            if (!firebaseReady || !user) return <div className="h-screen flex flex-col items-center justify-center text-gray-500 gap-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p>Connecting to osf---availability-roster...</p></div>;
+            
+            return <AdminPage onLogout={() => setIsAuthenticated(false)} user={user} />;
         };
-        
+
         const Login = ({ onAuth }) => {
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
+
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if (password === ADMIN_PASSWORD) {
@@ -59,307 +146,493 @@ const firebaseConfig = {
                     setError('Incorrect password.');
                 }
             };
+
             return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-200">
-                    <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-                        <h2 className="text-2xl font-bold text-center mb-6">Admin Login for {TARGET_VENUE}</h2>
-                        <form onSubmit={handleSubmit}>
-                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 border rounded-lg mb-4"/>
-                            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-                            <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">Login</button>
+                <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+                    <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm fade-in">
+                        <div className="text-center mb-8">
+                            <h1 className="text-2xl font-bold text-blue-900">Admin Portal</h1>
+                            <p className="text-gray-500 text-sm mt-1">{TARGET_VENUE === 'CRAC' ? 'Clarence Regional Aquatic Centre' : 'Yamba Community Pool'}</p>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Access Password</label>
+                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter password" autoFocus />
+                            </div>
+                            {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-100">{error}</p>}
+                            <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm">Login</button>
                         </form>
                     </div>
                 </div>
             );
         };
 
-        const AdminPage = () => {
+        const AdminPage = ({ onLogout, user }) => {
             const [events, setEvents] = useState([]);
-            const [settings, setSettings] = useState(null);
+            const [settings, setSettings] = useState(null); // Null initially to detect "not loaded" vs "empty"
             const [isLoading, setIsLoading] = useState(true);
-            const [error, setError] = useState(null);
+            const [dbStatus, setDbStatus] = useState("Initializing...");
+            
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [searchTerm, setSearchTerm] = useState('');
             const [dateFilter, setDateFilter] = useState('all');
-            
+
+            // --- LOAD DATA ---
             useEffect(() => {
-                if (!db) { setError("Database not connected."); setIsLoading(false); return; }
-                let settingsLoaded = false, eventsLoaded = false;
-                const checkLoading = () => { if (settingsLoaded && eventsLoaded) setIsLoading(false); };
+                if (!db || !user) return;
                 
+                let settingsLoaded = false, eventsLoaded = false;
+                const checkLoading = () => { 
+                    if (settingsLoaded && eventsLoaded) {
+                        setIsLoading(false);
+                        setDbStatus("Connected");
+                    }
+                };
+
+                // 1. SETTINGS LISTENER (calendar_settings/main_config)
                 const unsubSettings = db.collection('calendar_settings').doc('main_config').onSnapshot(doc => {
-                    if (doc.exists) { setSettings(doc.data()); } 
-                    else { 
-                        const defaultSettings = { 
-                            zones: [ { id: '50m Olympic Pool', children: Array.from({length: 8}, (_, i) => ({id: `50m Olympic Pool - Lane ${i+1}`})) }, { id: '25m Lap Pool', children: Array.from({length: 8}, (_, i) => ({id: `25m Lap Pool - Lane ${i+1}`})) }, { id: 'Program Pool', children: Array.from({length: 3}, (_, i) => ({id: `Program Pool - Zone ${i+1}`})) }, {id: 'Hydrotherapy Pool', children: []}, {id: 'Splash Pad', children: []}, {id: 'Club Room', children: []} ], 
-                            eventTypes: { 'Class': '#3b82f6', 'Booking': '#16a34a', 'Closure': '#dc2626', 'Event': '#9333ea', 'Maintenance': '#facc15' },
-                            openingHours: [ {day: 'Monday', open: 5, close: 19}, {day: 'Tuesday', open: 5, close: 19}, {day: 'Wednesday', open: 5, close: 19}, {day: 'Thursday', open: 5, close: 19}, {day: 'Friday', open: 5, close: 19}, {day: 'Saturday', open: 8, close: 18}, {day: 'Sunday', open: 8, close: 18} ]
-                        };
-                        db.collection('calendar_settings').doc('main_config').set(defaultSettings);
-                        setSettings(defaultSettings);
+                    if (doc.exists) {
+                        setSettings(doc.data());
+                    } else {
+                        console.warn("Settings document 'main_config' does not exist.");
+                        setSettings(null); // Explicitly null to show "Init" button
                     }
                     settingsLoaded = true; checkLoading();
-                }, err => setError(`Settings Error: ${err.message}`));
-                
+                }, err => {
+                    console.error("Settings Error:", err);
+                    setDbStatus(`Error: ${err.message}`);
+                    settingsLoaded = true; checkLoading();
+                });
+
+                // 2. EVENTS LISTENER (calendar_events)
                 const unsubEvents = db.collection('calendar_events')
-                    .where('venue', '==', TARGET_VENUE)
-                    .orderBy('startDateTime', 'desc')
                     .onSnapshot(snapshot => {
-                        setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), startDateTime: doc.data().startDateTime.toDate(), endDateTime: doc.data().recurrence && doc.data().recurrence.endDate ? doc.data().recurrence.endDate.toDate() : doc.data().endDateTime.toDate() })));
+                        const fetched = snapshot.docs.map(doc => {
+                            const d = doc.data();
+                            return {
+                                id: doc.id,
+                                ...d,
+                                startDateTime: d.startDateTime?.toDate ? d.startDateTime.toDate() : new Date(d.startDateTime),
+                                endDateTime: d.recurrence?.endDate?.toDate ? d.recurrence.endDate.toDate() : (d.endDateTime?.toDate ? d.endDateTime.toDate() : new Date(d.endDateTime))
+                            };
+                        });
+                        fetched.sort((a,b) => b.startDateTime - a.startDateTime);
+                        setEvents(fetched);
                         eventsLoaded = true; checkLoading();
-                    }, err => setError(`Events Error: ${err.message}`));
+                    }, err => {
+                        console.error("Events Error:", err);
+                        setDbStatus(`Error: ${err.message}`);
+                        eventsLoaded = true; checkLoading();
+                    });
+
                 return () => { unsubSettings(); unsubEvents(); };
-            }, []);
+            }, [user]);
+
+            // --- HANDLERS ---
+            const initializeDatabase = async () => {
+                if (!window.confirm("Initialize database with CRAC default settings? This will create the configuration file.")) return;
+                try {
+                    await db.collection('calendar_settings').doc('main_config').set(CRAC_DEFAULTS);
+                    // Listener will auto-update state
+                } catch(err) {
+                    alert("Initialization failed: " + err.message);
+                }
+            };
 
             const openModal = (event = null) => { setSelectedEvent(event); setIsModalOpen(true); };
             const closeModal = () => { setIsModalOpen(false); setSelectedEvent(null); };
 
             const handleSaveEvent = async (eventData) => {
-                if (!db) return;
                 try {
                     const dataToSave = { ...eventData, venue: TARGET_VENUE };
-                    if (dataToSave.recurrence && dataToSave.recurrence.endDate) {
-                        const [year, month, day] = dataToSave.recurrence.endDate.split('-').map(Number);
-                        const utcDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-                        dataToSave.recurrence.endDate = firebase.firestore.Timestamp.fromDate(utcDate);
-                    }
-
                     if (selectedEvent) {
                         await db.collection('calendar_events').doc(selectedEvent.id).update(dataToSave);
                     } else {
                         await db.collection('calendar_events').add(dataToSave);
                     }
                     closeModal();
-                } catch (err) { console.error("Error saving event:", err); setError(`Save failed: ${err.message}`); }
+                } catch (err) { console.error(err); alert("Error saving: " + err.message); }
             };
 
-            const handleDeleteEvent = async (id) => { if (window.confirm('Are you sure you want to delete this event series?')) { try { await db.collection('calendar_events').doc(id).delete(); } catch(err) { console.error(err); } } };
-            const handleSaveSettings = async (newSettings) => { await db.collection('calendar_settings').doc('main_config').set(newSettings, { merge: true }); };
+            const handleDeleteEvent = async (id) => {
+                if (!window.confirm('Delete this event?')) return;
+                try { await db.collection('calendar_events').doc(id).delete(); } catch(err) { alert("Delete failed: " + err.message); }
+            };
+
+            const handleSaveSettings = async (newSettings) => {
+                try { await db.collection('calendar_settings').doc('main_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
+            };
 
             const filteredEvents = useMemo(() => {
                 const now = new Date();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const endOfWeek = new Date(today);
-                endOfWeek.setDate(today.getDate() + 6);
-                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
+                const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 6);
                 return events.filter(event => {
-                    const titleMatch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
-                    if (!titleMatch) return false;
-
+                    if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
                     const eventStart = new Date(event.startDateTime);
                     eventStart.setHours(0,0,0,0);
-                    
-                    switch(dateFilter) {
-                        case 'today': return eventStart.getTime() === today.getTime();
-                        case 'week': return eventStart >= today && eventStart <= endOfWeek;
-                        case 'month': return eventStart.getMonth() === today.getMonth() && eventStart.getFullYear() === today.getFullYear();
-                        default: return true;
-                    }
+                    if (dateFilter === 'today') return eventStart.getTime() === today.getTime();
+                    if (dateFilter === 'week') return eventStart >= today && eventStart <= endOfWeek;
+                    if (dateFilter === 'future') return eventStart >= today;
+                    return true;
                 });
             }, [events, searchTerm, dateFilter]);
 
+            // --- RENDER ---
+            if (isLoading) return <div className="h-screen flex items-center justify-center text-gray-500">Loading Database...</div>;
 
-            if (isLoading) return <div className="text-center p-10">Loading Admin...</div>;
             return (
-                <div className="container mx-auto p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-3xl font-bold">Calendar Admin: {TARGET_VENUE}</h1>
-                        <div>
-                             <button onClick={() => setIsSettingsOpen(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold mr-4 hover:bg-gray-700">Settings</button>
-                             <button onClick={() => openModal()} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">Create New Event</button>
+                <div className="min-h-screen bg-gray-50 pb-20">
+                    <header className="bg-white shadow-sm border-b border-gray-200">
+                        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 text-white p-2 rounded-lg"><Icons.Settings size={20} /></div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-900 leading-none">Calendar Admin</h1>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{TARGET_VENUE}</span>
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${dbStatus.includes('Error') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>{dbStatus}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"><Icons.Settings size={16} /> Configuration</button>
+                                <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-sm font-medium"><Icons.LogOut size={16} /> Logout</button>
+                            </div>
                         </div>
-                    </div>
-                     <div className="mb-4 flex flex-col md:flex-row gap-4">
-                        <input type="text" placeholder="Search by title..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-1/3 p-2 border rounded-lg" />
-                        <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="w-full md:w-auto p-2 border rounded-lg bg-white">
-                            <option value="all">All Time</option>
-                            <option value="today">Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month">This Month</option>
-                        </select>
-                    </div>
-                    {error && <p className="text-red-500 bg-red-100 p-3 rounded-lg mb-4">{error}</p>}
-                    <EventList events={filteredEvents} onEdit={openModal} onDelete={handleDeleteEvent} />
-                    {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings} />}
-                    {isSettingsOpen && <SettingsModal settings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
+                    </header>
+
+                    <main className="container mx-auto px-4 py-8">
+                        {/* ALERT: MISSING SETTINGS */}
+                        {!settings && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 flex flex-col items-center justify-center text-center">
+                                <Icons.AlertTriangle className="text-yellow-600 mb-2" size={32} />
+                                <h3 className="text-lg font-bold text-yellow-800">Configuration Not Found</h3>
+                                <p className="text-yellow-700 mb-4 max-w-md">Your database is connected, but the 'main_config' file is missing in the 'calendar_settings' collection.</p>
+                                <button onClick={initializeDatabase} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2"><Icons.Database size={18} /> Initialize Database Settings</button>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+                            <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                                <div className="relative">
+                                    <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <input type="text" placeholder="Search events..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64" />
+                                </div>
+                                <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                    <option value="all">All Events</option>
+                                    <option value="future">Upcoming</option>
+                                    <option value="today">Today Only</option>
+                                    <option value="week">Next 7 Days</option>
+                                </select>
+                            </div>
+                            <button onClick={() => openModal()} className="w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm"><Icons.Plus size={18} /> New Event</button>
+                        </div>
+
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                            <th className="px-6 py-4">Event Details</th>
+                                            <th className="px-6 py-4">Time</th>
+                                            <th className="px-6 py-4">Zone Allocation</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filteredEvents.length === 0 ? (
+                                            <tr><td colSpan="4" className="px-6 py-12 text-center text-gray-500">No events found matching your filters.</td></tr>
+                                        ) : (
+                                            filteredEvents.map(event => (
+                                                <tr key={event.id} className="hover:bg-gray-50 transition-colors group">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-1.5 h-12 rounded-full flex-shrink-0" style={{ backgroundColor: settings?.eventTypes?.[event.type] || '#ccc' }}></div>
+                                                            <div>
+                                                                <div className="font-bold text-gray-900 flex items-center gap-2">{event.title} {event.recurrence && <Icons.Repeat size={14} className="text-blue-500" />}</div>
+                                                                <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 mt-1">{event.type}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                                                        <div className="font-medium text-gray-900">{event.startDateTime.toLocaleDateString()}</div>
+                                                        <div>{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-wrap gap-1 max-w-xs">
+                                                            {Array.isArray(event.zone) && event.zone.slice(0, 3).map(z => <span key={z} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded border border-gray-200">{z}</span>)}
+                                                            {Array.isArray(event.zone) && event.zone.length > 3 && <span className="text-xs text-gray-500 self-center pl-1">+{event.zone.length - 3} more</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => openModal(event)} className="p-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded transition-colors"><Icons.Edit size={18} /></button>
+                                                            <button onClick={() => handleDeleteEvent(event.id)} className="p-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded transition-colors"><Icons.Trash size={18} /></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+
+                    {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings || CRAC_DEFAULTS} />}
+                    {isSettingsOpen && <SettingsModal settings={settings || CRAC_DEFAULTS} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />}
                 </div>
             );
         };
-        
-        const EventList = ({ events, onEdit, onDelete }) => (
-            <div className="bg-white shadow-md rounded-lg overflow-x-auto">
-                <table className="min-w-full leading-normal">
-                    <thead><tr>
-                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Title / Type</th>
-                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Time</th>
-                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Zones</th>
-                        <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
-                    </tr></thead>
-                    <tbody>{events.map(event => <EventRow key={event.id} event={event} onEdit={onEdit} onDelete={onDelete} />)}</tbody>
-                </table>
-            </div>
-        );
 
-        const EventRow = ({ event, onEdit, onDelete }) => (
-            <tr>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    <div className="flex items-center">
-                        {event.recurrence && <span title="Recurring Event" className="mr-2">🔁</span>}
-                        <div>
-                            <p className="text-gray-900 font-bold whitespace-no-wrap">{event.title}</p>
-                            <p className="text-gray-600 whitespace-no-wrap">{event.type}</p>
-                        </div>
-                    </div>
-                </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 whitespace-no-wrap">{event.startDateTime.toLocaleString()}</p><p className="text-gray-600 whitespace-no-wrap">to {event.endDateTime.toLocaleString()}</p></td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p className="text-gray-900 whitespace-no-wrap max-w-xs truncate">{Array.isArray(event.zone) ? event.zone.join(', ') : ''}</p></td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right"><button onClick={() => onEdit(event)} className="text-blue-600 hover:text-blue-900 mr-2">Edit</button><button onClick={() => onDelete(event.id)} className="text-red-600 hover:text-red-900">Delete</button></td>
-            </tr>
-        );
-        
         const EventForm = ({ event, onSave, onClose, settings }) => {
-            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: 'Class', recurrence: null, venue: TARGET_VENUE });
+            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: '', recurrence: null });
             const [startDateTime, setStartDateTime] = useState('');
             const [endDateTime, setEndDateTime] = useState('');
-            
+
             const toLocalISOString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
             const toLocalDateString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
-            
+
             useEffect(() => {
                 if (event) {
-                    const initialFormData = {
-                        title: event.title, description: event.description, zone: event.zone, type: event.type, venue: event.venue || TARGET_VENUE,
+                    setFormData({
+                        title: event.title, description: event.description || '', zone: Array.isArray(event.zone) ? event.zone : [], type: event.type,
                         recurrence: event.recurrence ? { ...event.recurrence } : null
-                    };
-                    if (event.recurrence && event.recurrence.endDate) {
-                        const endDate = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
-                        initialFormData.recurrence.endDate = toLocalDateString(endDate);
-                    }
-                    setFormData(initialFormData);
+                    });
                     setStartDateTime(toLocalISOString(event.startDateTime));
                     setEndDateTime(event.recurrence ? '' : toLocalISOString(event.endDateTime));
+                    if (event.recurrence?.endDate) {
+                        const ed = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
+                        setFormData(prev => ({...prev, recurrence: {...prev.recurrence, endDate: toLocalDateString(ed)}}));
+                    }
                 } else {
-                    const now = new Date(); now.setMinutes(0); const end = new Date(now); end.setHours(now.getHours() + 1);
+                    const now = new Date(); now.setMinutes(0); now.setSeconds(0); const end = new Date(now); end.setHours(now.getHours() + 1);
                     setStartDateTime(toLocalISOString(now)); setEndDateTime(toLocalISOString(end));
                 }
             }, [event]);
-
-            const handleZoneChange = (e, zoneId, children = []) => {
-                const isChecked = e.target.checked; let newZones = new Set(formData.zone);
-                if (isChecked) { newZones.add(zoneId); children.forEach(c => newZones.add(c.id)); } 
-                else { newZones.delete(zoneId); children.forEach(c => newZones.delete(c.id)); }
-                setFormData(prev => ({ ...prev, zone: Array.from(newZones) }));
-            };
-
-            const handleChildZoneChange = (e, childId, parentId) => {
-                const isChecked = e.target.checked; let newZones = new Set(formData.zone);
-                if(isChecked) newZones.add(childId); else newZones.delete(childId);
-                const parentZone = settings.zones.find(z => z.id === parentId);
-                const allChildrenSelected = parentZone.children.every(c => newZones.has(c.id));
-                if (allChildrenSelected) newZones.add(parentId); else newZones.delete(parentId);
-                setFormData(prev => ({ ...prev, zone: Array.from(newZones) }));
-            };
-            
-            const handleRecurrenceChange = (field, value) => {
-                setFormData(prev => ({ ...prev, recurrence: { ...(prev.recurrence || { frequency: 'weekly', days: [] }), [field]: value } }));
-            };
-            
-            const handleRecurrenceDayChange = (day) => {
-                const currentDays = formData.recurrence?.days || []; const newDays = new Set(currentDays);
-                if (newDays.has(day)) newDays.delete(day); else newDays.add(day);
-                handleRecurrenceChange('days', Array.from(newDays));
-            };
 
             const handleSubmit = (e) => {
                 e.preventDefault();
                 const sTime = new Date(startDateTime);
                 const finalData = { ...formData, startDateTime: sTime };
-                if (formData.recurrence) { finalData.endDateTime = sTime; } else { finalData.endDateTime = new Date(endDateTime); }
+                if (formData.recurrence) {
+                    finalData.endDateTime = sTime; 
+                    finalData.endDateTime = new Date(endDateTime);
+                    if (formData.recurrence.endDate) {
+                        const [y,m,d] = formData.recurrence.endDate.split('-').map(Number);
+                        finalData.recurrence.endDate = new Date(y, m-1, d);
+                    }
+                } else { finalData.endDateTime = new Date(endDateTime); }
                 onSave(finalData);
+            };
+
+            const handleZoneToggle = (zoneId) => {
+                const newZones = new Set(formData.zone);
+                if (newZones.has(zoneId)) newZones.delete(zoneId); else newZones.add(zoneId);
+                setFormData({...formData, zone: Array.from(newZones)});
             };
 
             const isRecurring = !!formData.recurrence;
 
             return (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-                        <div className="p-6 border-b"><h2 className="text-2xl font-bold">{event ? 'Edit Event' : 'Create New Event'}</h2></div>
-                        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto p-6 space-y-4">
-                            <div><label>Title</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2 border rounded-lg" required /></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label>Start Time</label><input type="datetime-local" value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
-                                {!isRecurring && (<div><label>End Time</label><input type="datetime-local" value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2 border rounded-lg" required={!isRecurring} /></div>)}
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-bold text-gray-900">{event ? 'Edit Event' : 'New Event'}</h2><button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button></div>
+                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label><input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g., Aqua Fitness Class" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label><input type="datetime-local" required value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">End Time {isRecurring && '(Daily)'}</label><input type="datetime-local" required value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"><option value="">Select Type</option>{Object.keys(settings?.eventTypes || {}).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label>Event Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border rounded-lg"><option disabled>Select Type</option>{Object.keys(settings?.eventTypes || {}).map(type => <option key={type} value={type}>{type}</option>)}</select></div>
-                                <div><label>Venue</label><select value={formData.venue} onChange={e => setFormData({...formData, venue: e.target.value})} className="w-full p-2 border rounded-lg bg-gray-200"><option value={TARGET_VENUE}>{TARGET_VENUE}</option></select></div>
-                            </div>
-                            <div className="space-y-2">
-                                <h4 className="font-semibold">Zones</h4>
-                                {settings?.zones?.map(zone => (
-                                    <div key={zone.id} className="p-3 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center"><input type="checkbox" id={`zone-${zone.id}`} checked={formData.zone.includes(zone.id)} onChange={e => handleZoneChange(e, zone.id, zone.children)} className="h-4 w-4 mr-2" /><label htmlFor={`zone-${zone.id}`} className="font-bold">{zone.id}</label></div>
-                                        {zone.children && zone.children.length > 0 && (<div className="grid grid-cols-2 md:grid-cols-4 gap-2 pl-6 pt-2">
-                                            {zone.children.map(child => <div key={child.id}><input type="checkbox" id={`zone-${child.id}`} checked={formData.zone.includes(child.id)} onChange={e => handleChildZoneChange(e, child.id, zone.id)} className="h-4 w-4 mr-2" /><label htmlFor={`zone-${child.id}`} className="text-sm">{child.id.split(' - ')[1]}</label></div>)}
-                                        </div>)}
-                                    </div>
-                                ))}
-                            </div>
-                            <div><label>Description</label><textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-2 border rounded-lg" rows="3"></textarea></div>
-                            <div className="space-y-3 pt-4 border-t">
-                                <div className="flex items-center">
-                                    <input type="checkbox" id="isRecurring" checked={isRecurring} onChange={(e) => setFormData(prev => ({...prev, recurrence: e.target.checked ? { frequency: 'weekly', days: [], endDate: '' } : null})) } className="h-4 w-4 mr-2" />
-                                    <label htmlFor="isRecurring" className="font-semibold text-lg">🔁 Recurring Event</label>
-                                </div>
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isRecurring} onChange={e => setFormData(p => ({...p, recurrence: e.target.checked ? { frequency: 'weekly', days: [], endDate: '' } : null}))} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" /><span className="font-semibold text-gray-700">Repeat Weekly</span></label>
                                 {isRecurring && (
-                                    <div className="p-4 bg-blue-50 rounded-lg space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div><label>Repeats</label><select value={formData.recurrence.frequency} onChange={e => handleRecurrenceChange('frequency', e.target.value)} className="w-full p-2 border rounded-lg"><option value="weekly">Weekly</option></select></div>
-                                            <div><label>Ends on</label><input type="date" value={formData.recurrence?.endDate || ''} onChange={e => handleRecurrenceChange('endDate', e.target.value)} className="w-full p-2 border rounded-lg" required={isRecurring} /></div>
-                                        </div>
-                                        <div>
-                                            <label className="block mb-2">On</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                                                    <button type="button" key={day} onClick={() => handleRecurrenceDayChange(day)} className={`px-3 py-1 rounded-full text-sm ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>{day.substring(0,3)}</button>
-                                                ))}
-                                            </div>
-                                        </div>
+                                    <div className="mt-4 pl-7 space-y-4">
+                                        <div><span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Repeat On</span><div className="flex flex-wrap gap-2">{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (<button type="button" key={day} onClick={() => { const d = formData.recurrence.days || []; const newD = d.includes(day) ? d.filter(x => x !== day) : [...d, day]; setFormData(p => ({...p, recurrence: {...p.recurrence, days: newD}})); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{day.slice(0,3)}</button>))}</div></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Ends On</label><input type="date" required value={formData.recurrence.endDate || ''} onChange={e => setFormData(p => ({...p, recurrence: {...p.recurrence, endDate: e.target.value}}))} className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                     </div>
                                 )}
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Allocated Zones</label>
+                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-200 max-h-48 overflow-y-auto bg-gray-50">
+                                    {settings.zones.length > 0 ? settings.zones.map(zone => (
+                                        <div key={zone.id} className="p-3">
+                                            <label className="flex items-center gap-2 font-medium text-gray-900 cursor-pointer"><input type="checkbox" checked={formData.zone.includes(zone.id)} onChange={() => handleZoneToggle(zone.id)} className="rounded text-blue-600 focus:ring-blue-500" />{zone.id}</label>
+                                            {zone.children && zone.children.length > 0 && (<div className="ml-6 mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">{zone.children.map(child => (<label key={child.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><input type="checkbox" checked={formData.zone.includes(child.id)} onChange={() => handleZoneToggle(child.id)} className="rounded text-blue-600 focus:ring-blue-500" />{child.id.replace(zone.id + ' - ', '')}</label>))}</div>)}
+                                        </div>
+                                    )) : <div className="p-4 text-center text-gray-500">No zones configured in settings.</div>}
+                                </div>
+                            </div>
+                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label><textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Additional details..."></textarea></div>
                         </form>
-                        <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
-                            <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
-                            <button onClick={handleSubmit} className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">{event ? 'Save Changes' : 'Save Event'}</button>
-                        </div>
+                        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-xl"><button onClick={onClose} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button><button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Event</button></div>
                     </div>
                 </div>
             );
         };
-        
+
         const SettingsModal = ({ settings, onSave, onClose }) => {
-            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); const [activeTab, setActiveTab] = useState('zones'); const handleSave = () => { onSave(localSettings); onClose(); };
-            return (<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col"><div className="p-4 border-b"><h2 className="text-2xl font-bold">Settings</h2></div><div className="flex-grow flex overflow-hidden"><nav className="w-1/4 bg-gray-50 p-4 border-r"><button onClick={() => setActiveTab('zones')} className={`block w-full text-left p-2 rounded-lg mb-2 ${activeTab === 'zones' ? 'bg-blue-100 text-blue-700' : ''}`}>Zones</button><button onClick={() => setActiveTab('eventTypes')} className={`block w-full text-left p-2 rounded-lg mb-2 ${activeTab === 'eventTypes' ? 'bg-blue-100 text-blue-700' : ''}`}>Event Types</button><button onClick={() => setActiveTab('hours')} className={`block w-full text-left p-2 rounded-lg ${activeTab === 'hours' ? 'bg-blue-100 text-blue-700' : ''}`}>Opening Hours</button></nav><main className="w-3/4 p-6 overflow-y-auto">{activeTab === 'zones' && <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />}{activeTab === 'eventTypes' && <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />}{activeTab === 'hours' && <HoursSettings settings={localSettings} setSettings={setLocalSettings} />}</main></div><div className="p-4 bg-gray-50 border-t flex justify-end gap-3"><button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">Save Changes</button></div></div></div>);
-        };
-        const ZoneSettings = ({ settings, setSettings }) => {
-            const [newParentZone, setNewParentZone] = useState(''); const [newChildZone, setNewChildZone] = useState({ parentId: '', name: '' }); const addParent = () => { if(!newParentZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newParentZone, children: []}]})); setNewParentZone(''); }; const addChild = () => { if(!newChildZone.parentId || !newChildZone.name) return; setSettings(s => ({...s, zones: s.zones.map(p => p.id === newChildZone.parentId ? {...p, children: [...p.children, {id: `${p.id} - ${newChildZone.name}`}]} : p)})); setNewChildZone({parentId: '', name: ''}); }; const deleteZone = (idToDelete) => { setSettings(s => ({ ...s, zones: s.zones.filter(p => p.id !== idToDelete).map(p => ({...p, children: p.children.filter(c => c.id !== idToDelete)})) })) };
-            return <div><h3 className="text-xl font-bold mb-4">Manage Zones</h3><div className="space-y-4">{settings.zones.map(p => (<div key={p.id} className="bg-gray-100 p-3 rounded-lg"><div className="flex justify-between items-center"><span className="font-semibold">{p.id}</span><button onClick={() => deleteZone(p.id)} className="text-red-500 text-xs">Delete</button></div><div className="pl-6 mt-2 space-y-1">{p.children?.map(c => (<div key={c.id} className="flex justify-between items-center"><span className="text-sm">{c.id}</span><button onClick={() => deleteZone(c.id)} className="text-red-500 text-xs">Delete</button></div>))}</div></div>))}</div><div className="mt-6 border-t pt-4 space-y-4"><div className="flex gap-2"><input value={newParentZone} onChange={e => setNewParentZone(e.target.value)} placeholder="New Parent Zone Name" className="flex-grow p-2 border rounded-lg"/><button onClick={addParent} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div><div className="flex gap-2"><select value={newChildZone.parentId} onChange={e => setNewChildZone({...newChildZone, parentId: e.target.value})} className="p-2 border rounded-lg"><option value="">Select Parent</option>{settings.zones.map(p=><option key={p.id} value={p.id}>{p.id}</option>)}</select><input value={newChildZone.name} onChange={e => setNewChildZone({...newChildZone, name: e.target.value})} placeholder="New Child Name (e.g. Lane 9)" className="flex-grow p-2 border rounded-lg" /><button onClick={addChild} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div></div>;
-        };
-        const EventTypeSettings = ({ settings, setSettings }) => {
-            const [name, setName] = useState(''); const [color, setColor] = useState('#000000'); const add = () => { if (!name) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [name]: color}})); setName(''); setColor('#000000'); }; const remove = (key) => { const newTypes = {...settings.eventTypes}; delete newTypes[key]; setSettings(s => ({...s, eventTypes: newTypes})); };
-            return <div><h3 className="text-xl font-bold mb-4">Manage Event Types</h3><div className="space-y-2">{Object.entries(settings.eventTypes).map(([key, val])=>(<div key={key} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded" style={{backgroundColor:val}}></div><span>{key}</span></div><button onClick={()=>remove(key)} className="text-red-500 text-xs">Delete</button></div>))}</div><div className="mt-6 border-t pt-4 flex gap-2"><input value={name} onChange={e=>setName(e.target.value)} placeholder="New Event Type" className="flex-grow p-2 border rounded-lg"/><input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-16 h-10 border rounded-lg" style={{padding: '0.2rem'}}/><button onClick={add} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Add</button></div></div>;
-        };
-        const HoursSettings = ({ settings, setSettings }) => {
-            const handleHourChange = (day, field, value) => { setSettings(s => ({...s, openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(value)} : h)})); };
-            return <div><h3 className="text-xl font-bold mb-4">Manage Opening Hours</h3><div className="space-y-2">{settings.openingHours.map(h=>(<div key={h.day} className="grid grid-cols-3 items-center gap-4 bg-gray-100 p-2 rounded-lg"><span className="font-semibold">{h.day}</span><div><label className="text-xs">Open</label><select value={h.open} onChange={e => handleHourChange(h.day, 'open', e.target.value)} className="w-full p-2 border rounded-lg">{Array.from({length:24},(_,i)=><option key={i} value={i}>{`${i}:00`}</option>)}</select></div><div><label className="text-xs">Close</label><select value={h.close} onChange={e => handleHourChange(h.day, 'close', e.target.value)} className="w-full p-2 border rounded-lg">{Array.from({length:24},(_,i)=><option key={i} value={i}>{`${i}:00`}</option>)}</select></div></div>))}</div></div>;
+            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); 
+            const [activeTab, setActiveTab] = useState('zones'); 
+            const handleSave = () => { onSave(localSettings); onClose(); };
+            const Tabs = { zones: <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />, eventTypes: <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />, hours: <HoursSettings settings={localSettings} setSettings={setLocalSettings} /> };
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+                        <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-bold text-gray-900">System Configuration</h2><button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button></div>
+                        <div className="flex flex-1 overflow-hidden">
+                            <aside className="w-64 bg-gray-50 border-r p-4 space-y-1">
+                                {['zones', 'eventTypes', 'hours'].map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}>{tab === 'zones' ? 'Zone Management' : tab === 'eventTypes' ? 'Event Types' : 'Opening Hours'}</button>)}
+                            </aside>
+                            <main className="flex-1 overflow-y-auto p-6">{Tabs[activeTab]}</main>
+                        </div>
+                        <div className="p-6 border-t flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors">Cancel</button><button onClick={handleSave} className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Configuration</button></div>
+                    </div>
+                </div>
+            );
         };
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const ZoneSettings = ({ settings, setSettings }) => {
+            const [newZone, setNewZone] = useState('');
+            const [editingId, setEditingId] = useState(null);
+            const [tempName, setTempName] = useState('');
+
+            const add = () => { if(!newZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newZone, children: []}]})); setNewZone(''); };
+            const remove = (id) => { setSettings(s => ({...s, zones: s.zones.filter(z => z.id !== id)})); };
+            
+            const startEdit = (id) => { setEditingId(id); setTempName(id); };
+            const saveEdit = (oldId) => {
+                if (!tempName) return;
+                setSettings(s => ({
+                    ...s, 
+                    zones: s.zones.map(z => z.id === oldId ? {...z, id: tempName} : z)
+                }));
+                setEditingId(null);
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Facility Zones</h3>
+                        <p className="text-sm text-gray-500 mb-4">WARNING: Renaming a zone will not update past events associated with the old name.</p>
+                        <div className="space-y-3">
+                            {settings.zones.map(z => (
+                                <div key={z.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                                    {editingId === z.id ? (
+                                        <div className="flex gap-2 flex-1 mr-4">
+                                            <input value={tempName} onChange={e => setTempName(e.target.value)} className="flex-1 p-1 border rounded" />
+                                            <button onClick={() => saveEdit(z.id)} className="text-green-600"><Icons.Check size={18} /></button>
+                                            <button onClick={() => setEditingId(null)} className="text-gray-500"><Icons.X size={18} /></button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-medium text-gray-800">{z.id}</span>
+                                            <button onClick={() => startEdit(z.id)} className="text-gray-400 hover:text-blue-600"><Icons.Edit size={14} /></button>
+                                        </div>
+                                    )}
+                                    <button onClick={() => remove(z.id)} className="text-red-500 text-sm hover:underline">Remove</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex gap-3"><input value={newZone} onChange={e => setNewZone(e.target.value)} className="flex-1 p-2 border rounded-lg" placeholder="e.g., 25m Pool" /><button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Add Zone</button></div>
+                </div>
+            );
+        };
+
+        const EventTypeSettings = ({ settings, setSettings }) => {
+            const [newName, setNewName] = useState('');
+            const [newColor, setNewColor] = useState('#3B82F6');
+            const [editingKey, setEditingKey] = useState(null);
+            const [editName, setEditName] = useState('');
+            
+            const add = () => { if(!newName) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [newName]: newColor}})); setNewName(''); };
+            const remove = (key) => { const n = {...settings.eventTypes}; delete n[key]; setSettings(s => ({...s, eventTypes: n})); };
+            
+            const updateColor = (key, color) => { setSettings(s => ({...s, eventTypes: {...s.eventTypes, [key]: color}})); };
+            
+            const startRename = (key) => { setEditingKey(key); setEditName(key); };
+            const saveRename = (oldKey) => {
+                if (!editName) return;
+                const newTypes = {};
+                Object.keys(settings.eventTypes).forEach(k => {
+                    if (k === oldKey) newTypes[editName] = settings.eventTypes[oldKey];
+                    else newTypes[k] = settings.eventTypes[k];
+                });
+                setSettings(s => ({...s, eventTypes: newTypes}));
+                setEditingKey(null);
+            };
+
+            return (
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Event Types</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        {Object.entries(settings.eventTypes).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm">
+                                <input type="color" value={val} onChange={(e) => updateColor(key, e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" title="Change Color" />
+                                {editingKey === key ? (
+                                    <div className="flex gap-2 flex-1">
+                                        <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full text-sm border rounded px-1" />
+                                        <button onClick={() => saveRename(key)} className="text-green-600"><Icons.Check size={16} /></button>
+                                        <button onClick={() => setEditingKey(null)} className="text-gray-400"><Icons.X size={16} /></button>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex items-center gap-2">
+                                        <span className="font-medium">{key}</span>
+                                        <button onClick={() => startRename(key)} className="text-gray-300 hover:text-blue-600"><Icons.Edit size={12} /></button>
+                                    </div>
+                                )}
+                                <button onClick={() => remove(key)} className="text-red-400 hover:text-red-600"><Icons.Trash size={16} /></button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-3 items-center bg-gray-50 p-4 rounded-lg"><input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New Type Name" className="flex-1 p-2 border rounded-lg" /><input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="h-10 w-14 rounded cursor-pointer border-0" /><button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Add</button></div>
+                </div>
+            );
+        };
+
+        const HoursSettings = ({ settings, setSettings }) => {
+            const updateHour = (day, field, val) => {
+                setSettings(s => ({
+                    ...s,
+                    openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(val)} : h)
+                }));
+            };
+            return (
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Opening Hours</h3>
+                    <div className="space-y-2">
+                        {settings.openingHours?.length > 0 ? settings.openingHours.map(h => (
+                            <div key={h.day} className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                                <span className="font-medium w-32">{h.day}</span>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 uppercase">Open</span>
+                                        <select value={h.open} onChange={e => updateHour(h.day, 'open', e.target.value)} className="border rounded p-1 text-sm">
+                                            {Array.from({length: 24}, (_, i) => <option key={i} value={i}>{i}:00</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 uppercase">Close</span>
+                                        <select value={h.close} onChange={e => updateHour(h.day, 'close', e.target.value)} className="border rounded p-1 text-sm">
+                                            {Array.from({length: 24}, (_, i) => <option key={i} value={i}>{i}:00</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )) : <div className="text-gray-500 italic">No opening hours configured.</div>}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
-
