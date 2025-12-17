@@ -4,45 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRAC Zone Availability</title>
+    
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w.org/2000/svg' viewBox='0 0 100 100'><path fill='%23007bff' d='M0 50 Q 25 25, 50 50 T 100 50 V 100 H 0 Z' /></svg>">
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+    
+    <!-- Font Family -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar for better aesthetics */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Animation utilities */
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    <!-- Root Element for React -->
     <div id="root"></div>
 
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <!-- React & ReactDOM (CDN) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel for JSX compilation in browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
+    <!-- Firebase SDKs (Compat version for easier HTML embedding) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+    <!-- Main Application Script -->
     <script type="text/babel">
-        // --- CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
-  authDomain: "osf---availability-roster.firebaseapp.com",
-  projectId: "osf---availability-roster",
-  storageBucket: "osf---availability-roster.firebasestorage.app",
-  messagingSenderId: "1069751236100",
-  appId: "1:1069751236100:web:2832210ad7e9ed50e86751",
-  measurementId: "G-K5F1SSNK5H"
-};
-        // ---------------------
+
+        // --- ICONS (Inline SVGs to remove external dependencies) ---
+        const Icons = {
+            ChevronLeft: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
+            ),
+            ChevronRight: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+            ),
+            Calendar: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            ),
+            Clock: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ),
+            MapPin: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            ),
+            Info: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            ),
+            X: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>
+            )
+        };
 
         const { useState, useEffect, useMemo } = React;
-        let db;
-        try {
-            if (firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-        } catch(e) { console.error("Firebase init failed", e); }
 
+        // --- FALLBACK CONFIGURATION ---
+        // These are used initially or if the DB settings fail to load.
+        // This ensures the calendar always looks correct immediately.
+        const DEFAULT_SETTINGS = {
+            zones: [
+                { id: '50m Pool', children: [{ id: 'Lane 1' }, { id: 'Lane 2' }, { id: 'Lane 3' }, { id: 'Lane 4' }, { id: 'Lane 5' }, { id: 'Lane 6' }, { id: 'Lane 7' }, { id: 'Lane 8' }] },
+                { id: 'LTS Pool', children: [] },
+                { id: 'Splash Park', children: [] },
+                { id: 'Multi-Purpose Room', children: [] }
+            ],
+            eventTypes: {
+                'Learn to Swim': '#3B82F6', 
+                'Aqua Fitness': '#10B981',  
+                'Public Swim': '#F59E0B',   
+                'School Carnival': '#EF4444', 
+                'Lane Hire': '#8B5CF6'      
+            }
+        };
+
+        // --- FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+            authDomain: "osf---availability-roster.firebaseapp.com",
+            projectId: "osf---availability-roster",
+            storageBucket: "osf---availability-roster.firebasestorage.app",
+            messagingSenderId: "1069751236100",
+            appId: "1:1069751236100:web:2832210ad7e9ed50e86751",
+            measurementId: "G-K5F1SSNK5H"
+        };
+
+        let db, auth;
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (e) {
+            console.error("Firebase Initialization Error:", e);
+        }
+
+        // --- MAIN APP COMPONENT ---
         const App = () => {
+            const [user, setUser] = useState(null);
             const [events, setEvents] = useState([]);
-            const [settings, setSettings] = useState(null);
+            // Initialize with default settings so the UI renders immediately
+            const [settings, setSettings] = useState(DEFAULT_SETTINGS); 
             const [isLoading, setIsLoading] = useState(true);
             const [error, setError] = useState(null);
             const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -50,38 +127,67 @@ const firebaseConfig = {
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
 
+            // 1. Auth (Anonymous Login for Website Visitors)
             useEffect(() => {
-                if (!db) { setError("Calendar could not be loaded."); setIsLoading(false); return; }
-                let settingsLoaded = false, eventsLoaded = false;
-                const checkLoading = () => { if(settingsLoaded && eventsLoaded) setIsLoading(false); }
+                const initAuth = async () => {
+                    try {
+                        await auth.signInAnonymously();
+                    } catch (err) {
+                        console.error("Auth Error:", err);
+                        setError("Could not connect to CRAC schedule service.");
+                        setIsLoading(false);
+                    }
+                };
+                initAuth();
+                return auth.onAuthStateChanged(u => setUser(u));
+            }, []);
 
-                const unsubSettings = db.collection('calendar_settings').doc('main_config').onSnapshot(doc => {
-                    if (doc.exists) setSettings(doc.data());
-                    else setError("Calendar configuration is missing.");
-                    settingsLoaded = true; checkLoading();
-                }, err => setError(`Failed to load configuration: ${err.message}`));
+            // 2. Fetch Settings (Zones/Colors) from YOUR Database
+            useEffect(() => {
+                if (!db) return;
+                // Connecting to your existing settings collection
+                const settingsUnsub = db.collection('calendar_settings').doc('main_config')
+                    .onSnapshot(doc => {
+                        if (doc.exists) {
+                            // Merge with defaults to be safe
+                            setSettings(prev => ({ ...prev, ...doc.data() }));
+                        }
+                    }, err => {
+                        console.warn("Using default settings (DB config not found):", err);
+                    });
+                return () => settingsUnsub();
+            }, []);
 
-                const unsubEvents = db.collection('calendar_events').onSnapshot(snapshot => {
-                    const fetchedEvents = snapshot.docs.map(doc => {
+            // 3. Fetch Events from YOUR Database
+            useEffect(() => {
+                if (!user || !db) return;
+
+                const eventsUnsub = db.collection('calendar_events').onSnapshot(snapshot => {
+                    const fetched = snapshot.docs.map(doc => {
                         const data = doc.data();
-                        return { 
-                            id: doc.id, 
-                            ...data, 
-                            startDateTime: data.startDateTime.toDate(), 
-                            endDateTime: data.endDateTime.toDate(),
+                        return {
+                            id: doc.id,
+                            ...data,
+                            // Safe Date Conversion
+                            startDateTime: data.startDateTime?.toDate ? data.startDateTime.toDate() : new Date(data.startDateTime),
+                            endDateTime: data.endDateTime?.toDate ? data.endDateTime.toDate() : new Date(data.endDateTime),
                             recurrence: data.recurrence ? {
                                 ...data.recurrence,
-                                endDate: data.recurrence.endDate.toDate()
+                                endDate: data.recurrence.endDate?.toDate ? data.recurrence.endDate.toDate() : new Date(data.recurrence.endDate)
                             } : null
                         };
                     });
-                    setEvents(fetchedEvents);
-                    eventsLoaded = true; checkLoading();
-                }, err => setError(`Failed to load events: ${err.message}`));
-                
-                return () => { unsubEvents(); unsubSettings(); };
-            }, []);
+                    setEvents(fetched);
+                    setIsLoading(false);
+                }, err => {
+                    console.error("Data Fetch Error:", err);
+                    setError("Failed to load schedule.");
+                    setIsLoading(false);
+                });
+                return () => eventsUnsub();
+            }, [user]);
 
+            // 4. Logic: Recurrence Expansion
             const expandedEvents = useMemo(() => {
                 const allOccurrences = [];
                 events.forEach(event => {
@@ -90,7 +196,6 @@ const firebaseConfig = {
                         current.setHours(0,0,0,0);
                         const endDate = new Date(event.recurrence.endDate);
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
-                        
                         const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
 
                         while(current <= endDate) {
@@ -99,7 +204,7 @@ const firebaseConfig = {
                                 const newStart = new Date(current);
                                 newStart.setHours(startTime.h, startTime.m, 0, 0);
                                 const newEnd = new Date(newStart.getTime() + duration);
-
+                                
                                 allOccurrences.push({
                                     ...event,
                                     id: `${event.id}-${current.toISOString()}`,
@@ -117,185 +222,140 @@ const firebaseConfig = {
                 return allOccurrences;
             }, [events]);
 
-
-            const ALL_ZONES_FLAT = useMemo(() => {
-                if (!settings?.zones) return ['All Zones'];
-                const zones = ['All Zones'];
-                settings.zones.forEach(zone => { zones.push(zone.id); if (zone.children) zone.children.forEach(child => zones.push(child.id)); });
-                return zones;
+            // 5. Logic: Filtering
+            const allZonesFlat = useMemo(() => {
+                const z = ['All Zones'];
+                if (settings && settings.zones) {
+                    settings.zones.forEach(zone => {
+                        z.push(zone.id);
+                        if(zone.children) zone.children.forEach(c => z.push(c.id));
+                    });
+                }
+                return z;
             }, [settings]);
-            
+
             const filteredEvents = useMemo(() => {
-                if (!expandedEvents || !settings?.zones) return [];
                 if (zoneFilter === 'All Zones') return expandedEvents;
                 const parentZone = settings.zones.find(z => z.id === zoneFilter);
-                const childZoneIds = parentZone?.children?.map(c => c.id) || [];
-                return expandedEvents.filter(e => e.zone && e.zone.some(z => z === zoneFilter || childZoneIds.includes(z)));
+                const childIds = parentZone?.children?.map(c => c.id) || [];
+                
+                return expandedEvents.filter(e => {
+                    if (!e.zone) return false;
+                    const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                    return eZones.some(z => z === zoneFilter || childIds.includes(z));
+                });
             }, [expandedEvents, zoneFilter, settings]);
 
             const eventsByDate = useMemo(() => {
                 const acc = {};
-                filteredEvents.forEach(event => {
-                    let current = new Date(event.startDateTime);
-                    current.setHours(0, 0, 0, 0); 
-                    const end = new Date(event.endDateTime);
-                    end.setHours(0,0,0,0);
-                    while (current <= end) {
-                        const key = current.toDateString();
-                        if (!acc[key]) acc[key] = [];
-                        acc[key].push(event);
-                        current.setDate(current.getDate() + 1);
-                    }
+                filteredEvents.forEach(e => {
+                    const key = e.startDateTime.toDateString();
+                    if(!acc[key]) acc[key] = [];
+                    acc[key].push(e);
                 });
                 return acc;
             }, [filteredEvents]);
-            
+
             const selectedDayEvents = useMemo(() => eventsByDate[selectedDay.toDateString()] || [], [eventsByDate, selectedDay]);
 
-            if (isLoading || !settings) return <div className="text-center p-10">Loading calendar...</div>;
-
-            const changeMonth = (offset) => { setCurrentMonth(prev => { const d = new Date(prev); d.setMonth(prev.getMonth() + offset); return d; }); };
-
-            const EventModal = ({ event, onClose, eventTypes, allZonesConfig }) => {
-                if (!event) return null;
-                const formatTime = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                const processedZones = useMemo(() => {
-                    if (!event.zone || !allZonesConfig) return [];
-                    
-                    let zonesToShow = new Set();
-                    const eventZonesSet = new Set(event.zone);
-
-                    allZonesConfig.forEach(parentZone => {
-                        if (eventZonesSet.has(parentZone.id)) { zonesToShow.add(parentZone.id); }
-                        if (parentZone.children) {
-                            const childIds = parentZone.children.map(c => c.id);
-                            const allChildrenSelected = childIds.every(cId => eventZonesSet.has(cId));
-                            if (allChildrenSelected && childIds.length > 0) {
-                                zonesToShow.add(parentZone.id);
-                                childIds.forEach(cId => zonesToShow.delete(cId));
-                            } else {
-                                childIds.forEach(cId => { if (eventZonesSet.has(cId)) { zonesToShow.add(cId); } });
-                            }
-                        }
-                    });
-                    return Array.from(zonesToShow);
-                }, [event.zone, allZonesConfig]);
-
-                return (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-                        <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-                            <div className="p-6">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <span className="px-3 py-1 text-xs font-bold rounded-full text-white uppercase" style={{ backgroundColor: eventTypes[event.type] || '#6b7280' }}>{event.type}</span>
-                                        <h3 className="text-2xl font-bold mt-2">{event.title}</h3>
-                                    </div>
-                                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                                </div>
-                                <div className="mt-6 border-t pt-6 text-gray-700 space-y-5">
-                                    <div className="flex items-start">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 mr-4 mt-1 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                        <div>
-                                            <p className="font-semibold text-gray-800">Time</p>
-                                            <p className="text-gray-600">{formatTime(event.startDateTime)} - {formatTime(event.endDateTime)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start">
-                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 mr-4 mt-1 flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                        <div>
-                                            <p className="font-semibold text-gray-800">Zone(s)</p>
-                                            <ul className="list-disc list-inside text-gray-600">
-                                                {processedZones.map(zone => <li key={zone}>{zone}</li>)}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    {event.description && (
-                                        <div className="flex items-start">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 mr-4 mt-1 flex-shrink-0"><line x1="17" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="17" y1="18" x2="3" y2="18" /></svg>
-                                            <div>
-                                                <p className="font-semibold text-gray-800">Details</p>
-                                                <p className="text-gray-600">{event.description}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
+            // 6. Actions
+            const changeMonth = (offset) => {
+                setCurrentMonth(prev => {
+                    const d = new Date(prev);
+                    d.setMonth(prev.getMonth() + offset);
+                    return d;
+                });
             };
 
+            if (isLoading) return (
+                <div className="flex items-center justify-center h-screen bg-gray-50">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-gray-500 font-medium">Loading Clarence Regional Aquatic Centre Schedule...</p>
+                    </div>
+                </div>
+            );
+
             return (
-                <div className="container mx-auto p-4 max-w-6xl">
-                    <Header currentMonth={currentMonth} changeMonth={changeMonth} zoneFilter={zoneFilter} setZoneFilter={setZoneFilter} allZones={ALL_ZONES_FLAT} />
-                    {error && <p className="text-red-600 my-4">{error}</p>}
-                    <div className="flex flex-col lg:grid lg:grid-cols-3 lg:gap-8">
-                        <div className="lg:col-span-2 mb-8 lg:mb-0">
-                             <CalendarPanel 
-                                currentMonth={currentMonth} 
-                                eventsByDate={eventsByDate} 
-                                selectedDay={selectedDay}
-                                onDayClick={setSelectedDay}
-                            />
+                <div className="container mx-auto p-4 max-w-7xl">
+                    {/* Header */}
+                    <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <h1 className="text-2xl font-bold text-gray-900 hidden md:block">Zone Availability</h1>
+                            
+                            <div className="flex items-center gap-4 bg-gray-100 p-1 rounded-lg">
+                                <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-white rounded-md text-gray-600 transition-colors"><Icons.ChevronLeft /></button>
+                                <h2 className="text-lg font-bold min-w-[200px] text-center">{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</h2>
+                                <button onClick={() => changeMonth(1)} className="p-2 hover:bg-white rounded-md text-gray-600 transition-colors"><Icons.ChevronRight /></button>
+                            </div>
+
+                            <select value={zoneFilter} onChange={e => setZoneFilter(e.target.value)} className="block w-full md:w-48 rounded-md border-gray-300 shadow-sm border p-2 bg-white focus:ring-blue-500 focus:border-blue-500">
+                                {allZonesFlat.map(z => <option key={z} value={z}>{z}</option>)}
+                            </select>
                         </div>
-                        <div className="lg:col-span-1">
-                            <DailyAgendaPanel 
-                                selectedDay={selectedDay}
-                                events={selectedDayEvents}
-                                onEventClick={setSelectedEvent}
-                                eventTypes={settings.eventTypes}
-                            />
+                        
+                        {error && <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg flex items-center gap-2"><Icons.Info size={18} /> {error}</div>}
+                    </div>
+
+                    {/* Content Grid */}
+                    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-8">
+                        <div className="lg:col-span-8 mb-8 lg:mb-0">
+                            <CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} />
+                        </div>
+                        <div className="lg:col-span-4">
+                            <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} />
                         </div>
                     </div>
+
                     {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} eventTypes={settings.eventTypes} allZonesConfig={settings.zones} />}
                 </div>
             );
         };
 
-        const Header = ({ currentMonth, changeMonth, zoneFilter, setZoneFilter, allZones }) => {
-            return (
-                 <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-gray-200 text-gray-500">&lt; SEPTEMBER</button>
-                        <h2 className="text-3xl font-bold text-center w-64">{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</h2>
-                        <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-gray-200 text-gray-500">NOVEMBER &gt;</button>
-                    </div>
-                    <div className="flex items-center gap-4 mt-4 md:mt-0">
-                        <select id="zoneFilter" value={zoneFilter} onChange={e => setZoneFilter(e.target.value)} className="bg-white rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                            {allZones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                        </select>
-                    </div>
-                </div>
-            );
-        };
+        // --- SUB-COMPONENTS ---
         
         const CalendarPanel = ({ currentMonth, eventsByDate, onDayClick, selectedDay }) => {
             const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-            const startDate = new Date(start);
-            startDate.setDate(start.getDate() - start.getDay());
-            const endDate = new Date(end);
-            endDate.setDate(end.getDate() + (6 - end.getDay()));
+            const startDate = new Date(start); startDate.setDate(start.getDate() - start.getDay());
+            const endDate = new Date(end); endDate.setDate(end.getDate() + (6 - end.getDay()));
 
             const days = [];
             let d = new Date(startDate);
-            while (d <= endDate) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
+            while(d <= endDate) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
 
             return (
-                <div className="bg-white rounded-lg shadow p-4">
-                    <div className="grid grid-cols-7 text-center font-bold text-gray-500 text-sm">
-                        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => <div key={day} className="py-2">{day}</div>)}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                            <div key={day} className="py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{day}</div>
+                        ))}
                     </div>
-                    <div className="grid grid-cols-7">
+                    <div className="grid grid-cols-7 bg-gray-200 gap-px border-b border-gray-200">
                         {days.map(day => {
                             const isSelected = day.toDateString() === selectedDay.toDateString();
                             const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                            const hasEvents = (eventsByDate[day.toDateString()] || []).length > 0;
+                            const isToday = day.toDateString() === new Date().toDateString();
+                            const dayEvents = eventsByDate[day.toDateString()] || [];
+                            const hasEvents = dayEvents.length > 0;
+                            const densityClass = dayEvents.length > 5 ? 'bg-blue-500' : dayEvents.length > 2 ? 'bg-blue-400' : 'bg-blue-300';
+
                             return (
-                                <div key={day.toISOString()} onClick={() => onDayClick(day)} className={`h-20 flex flex-col items-center p-2 border border-transparent cursor-pointer ${isSelected ? 'bg-gray-800 text-white rounded-lg' : 'hover:bg-gray-100'}`}>
-                                    <span className={`text-sm font-semibold ${isCurrentMonth ? 'text-gray-700' : 'text-gray-400'} ${isSelected && 'text-white'}`}>{day.getDate()}</span>
-                                    {hasEvents && <div className={`w-2 h-2 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-gray-400'}`}></div>}
+                                <div key={day.toISOString()} onClick={() => onDayClick(day)} className={`min-h-[100px] bg-white hover:bg-gray-50 cursor-pointer p-2 flex flex-col justify-between transition-colors ${!isCurrentMonth ? 'bg-gray-50/50' : ''} ${isSelected ? 'ring-2 ring-inset ring-blue-500 z-10' : ''}`}>
+                                    <div className="flex justify-between items-start">
+                                        <span className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-gray-700' : 'text-gray-400'}`}>
+                                            {day.getDate()}
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 space-y-1">
+                                        {hasEvents && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {dayEvents.slice(0, 4).map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full ${densityClass}`}></div>)}
+                                                {dayEvents.length > 4 && <span className="text-[10px] text-gray-400 leading-none">+</span>}
+                                            </div>
+                                        )}
+                                        {hasEvents && <p className="text-[10px] text-gray-500 font-medium hidden md:block">{dayEvents.length} events</p>}
+                                    </div>
                                 </div>
                             );
                         })}
@@ -303,38 +363,127 @@ const firebaseConfig = {
                 </div>
             );
         };
-        
+
         const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes }) => {
             const formatTime = (date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const sortedEvents = [...events].sort((a,b) => a.startDateTime - b.startDateTime);
+
             return (
-                <div className="h-full">
-                     <h3 className="text-lg font-bold mb-4">
-                        EVENTS FOR <span className="border-b-2 border-gray-800 pb-1">{selectedDay.toLocaleDateString('en-GB', { day: 'numeric' }).toUpperCase()}TH {selectedDay.toLocaleDateString('en-GB', { month: 'long' }).toUpperCase()}</span>
-                    </h3>
-                    <div className="space-y-4 overflow-y-auto" style={{maxHeight: '70vh'}}>
-                        {events.length > 0 ? (
-                            events.sort((a,b) => a.startDateTime - b.startDateTime).map(event => (
-                                <div key={event.id} onClick={() => onEventClick(event)} className="p-4 rounded-lg cursor-pointer bg-white shadow">
-                                    <p className="font-semibold" style={{ color: eventTypes[event.type] || '#1F2937' }}>{event.title}</p>
-                                    <div className="text-sm text-gray-500 flex items-center gap-2 mt-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                        <span>{formatTime(event.startDateTime)} - {formatTime(event.endDateTime)}</span>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden max-h-[600px] lg:max-h-[800px]">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                            <Icons.Calendar className="text-blue-600" size={18} />
+                            <span>{selectedDay.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 pl-6">{events.length} {events.length === 1 ? 'event' : 'events'} scheduled</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                        {sortedEvents.length > 0 ? (
+                            sortedEvents.map(event => (
+                                <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer bg-white">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-1.5 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: eventTypes[event.type] || '#9CA3AF' }}></div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-gray-900 truncate pr-2 group-hover:text-blue-700 transition-colors">{event.title}</p>
+                                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                                <Icons.Clock size={12} />
+                                                <span>{formatTime(event.startDateTime)} - {formatTime(event.endDateTime)}</span>
+                                            </div>
+                                            {event.zone && (
+                                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                                    <Icons.MapPin size={12} />
+                                                    <span className="truncate">{Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center text-gray-500 pt-16 h-full flex flex-col items-center justify-center bg-white rounded-lg shadow">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 mb-4"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                <p>No scheduled events for this day.</p>
+                            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-400">
+                                <div className="bg-gray-100 p-4 rounded-full mb-3"><Icons.Calendar size={32} className="text-gray-300" /></div>
+                                <p className="font-medium text-gray-500">No events scheduled</p>
                             </div>
                         )}
                     </div>
                 </div>
             );
         };
-        
-        ReactDOM.render(<App />, document.getElementById('root'));
+
+        const EventModal = ({ event, onClose, eventTypes, allZonesConfig }) => {
+            if (!event) return null;
+            const formatTime = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const processedZones = useMemo(() => {
+                const eventZones = Array.isArray(event.zone) ? event.zone : [event.zone];
+                if (!eventZones || !allZonesConfig) return eventZones;
+                let zonesToShow = new Set();
+                const eventZonesSet = new Set(eventZones);
+                allZonesConfig.forEach(parentZone => {
+                    if (eventZonesSet.has(parentZone.id)) { zonesToShow.add(parentZone.id); }
+                    if (parentZone.children && parentZone.children.length > 0) {
+                        const childIds = parentZone.children.map(c => c.id);
+                        const allChildrenSelected = childIds.every(cId => eventZonesSet.has(cId));
+                        if (allChildrenSelected) {
+                            zonesToShow.add(parentZone.id);
+                            childIds.forEach(cId => zonesToShow.delete(cId));
+                        } else {
+                            childIds.forEach(cId => { if (eventZonesSet.has(cId)) { zonesToShow.add(cId); } });
+                        }
+                    }
+                });
+                return Array.from(zonesToShow);
+            }, [event.zone, allZonesConfig]);
+
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full text-white uppercase tracking-wide mb-2" style={{ backgroundColor: eventTypes[event.type] || '#6b7280' }}>{event.type}</span>
+                                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{event.title}</h3>
+                                </div>
+                                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"><Icons.X size={24} /></button>
+                            </div>
+                            <div className="space-y-4 pt-2">
+                                <div className="flex items-start gap-3">
+                                    <Icons.Clock className="text-gray-400 mt-0.5 flex-shrink-0" size={18} />
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Time</p>
+                                        <p className="text-gray-800 font-medium">{formatTime(event.startDateTime)} - {formatTime(event.endDateTime)}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <Icons.MapPin className="text-gray-400 mt-0.5 flex-shrink-0" size={18} />
+                                    <div>
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Zone(s)</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {processedZones.map(zone => <span key={zone} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-sm border border-gray-200">{zone}</span>)}
+                                        </div>
+                                    </div>
+                                </div>
+                                {event.description && (
+                                    <div className="flex items-start gap-3">
+                                        <Icons.Info className="text-gray-400 mt-0.5 flex-shrink-0" size={18} />
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Details</p>
+                                            <p className="text-gray-700 text-sm leading-relaxed">{event.description}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 text-right">
+                            <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Close</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
-
