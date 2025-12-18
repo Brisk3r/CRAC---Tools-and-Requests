@@ -58,16 +58,16 @@
         const CRAC_DEFAULTS = { 
             zones: [ 
                 { id: '50m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
-                { id: 'LTS Pool', children: [] }, 
-                { id: 'Splash Park', children: [] }, 
-                { id: 'Multi-Purpose Room', children: [] } 
+                { id: '25m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
+                { id: 'Program Pool', children: Array.from({length: 3}, (_, i) => ({id: `Lane ${i+1}`})) }, 
+                { id: 'Splash Pad', children: [] }, 
+                { id: 'Community Room', children: [] } 
             ], 
             eventTypes: { 
-                'Learn to Swim': '#3B82F6', 
+                'Closure': '#3B82F6', 
                 'Aqua Fitness': '#10B981', 
-                'Public Swim': '#F59E0B', 
-                'School Carnival': '#EF4444', 
-                'Lane Hire': '#8B5CF6' 
+                'Carnival': '#F59E0B', 
+                'Maintenance': '#EF4444', 
             },
             openingHours: [ 
                 {day: 'Monday', open: 5, close: 19}, {day: 'Tuesday', open: 5, close: 19}, 
