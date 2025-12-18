@@ -57,9 +57,9 @@
         // --- DEFAULTS (Only used when initializing DB) ---
         const CRAC_DEFAULTS = { 
             zones: [ 
-                { id: '50m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
-                { id: '25m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
-                { id: 'Program Pool', children: Array.from({length: 3}, (_, i) => ({id: `Zone ${i+1}`})) }, 
+                { id: '50m Pool', children: Array.from({length: 8}, (_, i) => ({id: `50m Lane ${i+1}`})) }, 
+                { id: '25m Pool', children: Array.from({length: 8}, (_, i) => ({id: `25m Lane ${i+1}`})) }, 
+                { id: 'Program Pool', children: Array.from({length: 3}, (_, i) => ({id: `Zones ${i+1}`})) }, 
                 { id: 'Splash Pad', children: [] }, 
                 { id: 'Community Room', children: [] } 
             ], 
