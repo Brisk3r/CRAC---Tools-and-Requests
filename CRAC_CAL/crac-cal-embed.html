@@ -84,6 +84,13 @@
 
         const { useState, useEffect, useMemo } = React;
 
+        // --- HELPER: TIMEZONE HANDLING ---
+        const getGraftonDate = () => {
+            const now = new Date();
+            const graftonString = now.toLocaleString("en-US", {timeZone: "Australia/Sydney"});
+            return new Date(graftonString);
+        };
+
         // --- FALLBACK CONFIGURATION ---
         const DEFAULT_SETTINGS = {
             zones: [
@@ -128,8 +135,11 @@
             const [settings, setSettings] = useState(DEFAULT_SETTINGS); 
             const [isLoading, setIsLoading] = useState(true);
             const [error, setError] = useState(null);
-            const [currentMonth, setCurrentMonth] = useState(new Date());
-            const [selectedDay, setSelectedDay] = useState(new Date());
+            
+            // Initialize dates with Grafton Time
+            const [currentMonth, setCurrentMonth] = useState(getGraftonDate());
+            const [selectedDay, setSelectedDay] = useState(getGraftonDate());
+            
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
 
@@ -225,7 +235,7 @@
                 return allOccurrences;
             }, [events]);
 
-            // 5. Logic: Improved Filtering (Bidirectional)
+            // 5. Logic: Filtering
             const allZonesFlat = useMemo(() => {
                 const z = ['All Zones'];
                 if (settings && settings.zones) {
@@ -240,7 +250,6 @@
             const filteredEvents = useMemo(() => {
                 if (zoneFilter === 'All Zones') return expandedEvents;
 
-                // Determine filter relationship (Parent or Child?)
                 const parentZone = settings.zones.find(z => z.id === zoneFilter);
                 
                 let childZone = null;
@@ -257,15 +266,12 @@
 
                 const relevantIds = [];
                 if (parentZone) {
-                    // Selected a Parent: Show events for Parent + ALL Children (e.g. Lane bookings should show up for "50m Pool" view)
                     relevantIds.push(parentZone.id);
                     if (parentZone.children) parentZone.children.forEach(c => relevantIds.push(c.id));
                 } else if (childZone) {
-                    // Selected a Child: Show events for Child + Parent (e.g. Whole pool booking blocks "Lane 1")
                     relevantIds.push(childZone.id);
                     if (parentOfChild) relevantIds.push(parentOfChild.id);
                 } else {
-                    // Fallback
                     relevantIds.push(zoneFilter);
                 }
                 
@@ -288,14 +294,18 @@
 
             const selectedDayEvents = useMemo(() => eventsByDate[selectedDay.toDateString()] || [], [eventsByDate, selectedDay]);
 
-            // 6. ZONE BREAKDOWN CALCULATION (Unfiltered for Dashboard)
-            // We use expandedEvents (unfiltered) here so the top dashboard always shows TRUE availability for the day
+            // 6. ZONE BREAKDOWN CALCULATION (Real-time & Future Aware)
             const dayEventsForForecast = useMemo(() => {
                 return expandedEvents.filter(e => e.startDateTime.toDateString() === selectedDay.toDateString());
             }, [expandedEvents, selectedDay]);
 
             const zoneForecast = useMemo(() => {
                 if (!settings || !settings.zones) return [];
+
+                // Check if the selected day is "Today" in Grafton
+                const graftonNow = getGraftonDate();
+                const isToday = selectedDay.toDateString() === graftonNow.toDateString();
+                const nowTs = new Date().getTime(); // Current absolute time for comparisons
 
                 return settings.zones.map(zone => {
                     const hasChildren = zone.children && zone.children.length > 0;
@@ -312,7 +322,7 @@
                     });
 
                     if (relevantEvents.length === 0) {
-                        return { name: zone.id, total: totalCapacity, minFree: totalCapacity, status: 'Excellent' };
+                        return { name: zone.id, total: totalCapacity, status: 'Excellent', timeInfo: '' };
                     }
 
                     const timePoints = new Set();
@@ -322,11 +332,20 @@
                     });
                     const sortedPoints = Array.from(timePoints).sort((a,b) => a-b);
 
-                    let maxUsed = 0;
+                    let maxUsedDay = 0;
+                    let maxUsedFuture = 0;
+                    let currentUsed = 0;
+                    const busyIntervals = [];
+                    let currentBusyStart = null;
 
+                    // Calculate max usage across intervals
                     for (let i = 0; i < sortedPoints.length - 1; i++) {
-                        const checkTime = sortedPoints[i] + 1;
+                        const start = sortedPoints[i];
+                        const end = sortedPoints[i+1];
+                        const checkTime = (start + end) / 2;
+                        
                         const activeEvents = relevantEvents.filter(e => e.startDateTime.getTime() <= checkTime && e.endDateTime.getTime() > checkTime);
+                        
                         const unitsUsed = new Set();
                         activeEvents.forEach(e => {
                             const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
@@ -337,19 +356,99 @@
                                 eZones.forEach(z => { if (relevantIds.includes(z) && z !== zone.id) unitsUsed.add(z); });
                             }
                         });
-                        if (unitsUsed.size > maxUsed) maxUsed = unitsUsed.size;
+                        
+                        const usedCount = unitsUsed.size;
+                        
+                        // Track Max Usage stats
+                        if (usedCount > maxUsedDay) maxUsedDay = usedCount;
+                        if (start >= nowTs && usedCount > maxUsedFuture) maxUsedFuture = usedCount;
+
+                        // Identify Busy Intervals (Use simple logic: < 50% free)
+                        const freeCount = totalCapacity - usedCount;
+                        const isBusy = freeCount < (totalCapacity * 0.5);
+
+                        if (isBusy) {
+                            if (currentBusyStart === null) currentBusyStart = start;
+                        } else {
+                            if (currentBusyStart !== null) {
+                                busyIntervals.push({ start: currentBusyStart, end: start });
+                                currentBusyStart = null;
+                            }
+                        }
+                    }
+                    if (currentBusyStart !== null) {
+                        busyIntervals.push({ start: currentBusyStart, end: sortedPoints[sortedPoints.length - 1] });
                     }
 
-                    const minFree = Math.max(0, totalCapacity - maxUsed);
+                    // REAL-TIME CHECK (If Today)
+                    if (isToday) {
+                        const activeNow = relevantEvents.filter(e => {
+                            return e.startDateTime.getTime() <= nowTs && e.endDateTime.getTime() > nowTs;
+                        });
+                        const unitsUsedNow = new Set();
+                        activeNow.forEach(e => {
+                            const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                            if (eZones.includes(zone.id)) {
+                                if (hasChildren) zone.children.forEach(c => unitsUsedNow.add(c.id));
+                                else unitsUsedNow.add(zone.id);
+                            } else {
+                                eZones.forEach(z => { if (relevantIds.includes(z) && z !== zone.id) unitsUsedNow.add(z); });
+                            }
+                        });
+                        currentUsed = unitsUsedNow.size;
+                    }
+
+                    const minFreeDay = Math.max(0, totalCapacity - maxUsedDay);
+                    const minFreeFuture = Math.max(0, totalCapacity - maxUsedFuture);
+                    const freeNow = Math.max(0, totalCapacity - currentUsed);
                     
                     let status = 'Good';
-                    if (minFree === 0) status = 'Busy';
-                    else if (minFree >= totalCapacity * 0.5) status = 'Excellent';
-                    else status = 'Limited';
+                    let statusLabel = '';
+                    let subLabel = '';
+                    let timeInfo = '';
 
-                    return { name: zone.id, total: totalCapacity, minFree: minFree, status: status };
+                    // Generate Time String (Filter out past intervals if today)
+                    const relevantIntervals = isToday 
+                        ? busyIntervals.filter(iv => iv.end > nowTs) 
+                        : busyIntervals;
+
+                    if (relevantIntervals.length > 0) {
+                        const formatTime = (ts) => new Date(ts).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}).toLowerCase().replace(' ', '');
+                        const timesStr = relevantIntervals.map(interval => `${formatTime(interval.start)} - ${formatTime(interval.end)}`).join(', ');
+                        timeInfo = `Booked: ${timesStr}`;
+                    }
+
+                    if (isToday) {
+                        // Priority: Current Status
+                        if (freeNow === 0) { status = 'Booked'; statusLabel = 'Currently Full'; }
+                        else if (freeNow < totalCapacity * 0.5) { status = 'Limited'; statusLabel = 'Limited Space Now'; }
+                        else { status = 'Excellent'; statusLabel = 'Plenty of Space'; }
+                        
+                        // Context about FUTURE
+                        if (minFreeFuture === 0 && freeNow > 0) subLabel = 'Will be full later';
+                        else if (minFreeFuture < freeNow) subLabel = 'Capacity drops later';
+                        else subLabel = 'Open rest of day';
+                        
+                    } else {
+                        // Future Day Logic
+                        if (minFreeDay === 0) { status = 'Booked'; statusLabel = 'Fully Booked'; }
+                        else if (minFreeDay < totalCapacity * 0.5) { status = 'Limited'; statusLabel = 'Limited Spots'; }
+                        else { status = 'Excellent'; statusLabel = 'Plenty of Space'; }
+                        subLabel = relevantIntervals.length > 0 ? 'Check times below' : 'Free all day';
+                    }
+
+                    return { 
+                        name: zone.id, 
+                        total: totalCapacity, 
+                        minFree: isToday ? freeNow : minFreeDay, 
+                        status: status,
+                        label: statusLabel,
+                        subLabel: subLabel,
+                        timeInfo: timeInfo,
+                        isToday: isToday
+                    };
                 });
-            }, [dayEventsForForecast, settings]);
+            }, [dayEventsForForecast, settings, selectedDay]);
 
 
             const changeMonth = (offset) => {
@@ -422,29 +521,38 @@
                     <div className="flex items-center justify-center gap-2 mb-3">
                         <Icons.Waves className="text-blue-600" size={20} />
                         <h3 className="font-bold text-gray-900">
-                            Forecast for {selectedDay.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            Availability for {selectedDay.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </h3>
                     </div>
                     <div className="flex flex-wrap justify-center gap-3">
                         {displayZones.map(zone => {
                             let badgeClass = "bg-gray-100 text-gray-600 border-gray-200";
-                            let statusText = "Busy";
                             
                             if (zone.status === 'Excellent') {
                                 badgeClass = "bg-green-50 text-green-700 border-green-200";
-                                statusText = "Plenty of Space";
                             } else if (zone.status === 'Limited') {
                                 badgeClass = "bg-orange-50 text-orange-700 border-orange-200";
-                                statusText = "Limited Spots";
                             }
 
                             return (
-                                <div key={zone.name} className={`p-3 rounded-lg border flex flex-col justify-between ${badgeClass} transition-all w-full sm:w-64`}>
-                                    <div className="font-semibold text-sm truncate" title={zone.name}>{zone.name}</div>
-                                    <div className="flex justify-between items-end mt-1">
-                                        <span className="text-xs font-medium uppercase tracking-wide opacity-90">{statusText}</span>
-                                        <span className="text-xs font-bold">{zone.minFree} free</span>
+                                <div key={zone.name} className={`p-3 rounded-lg border flex flex-col justify-start ${badgeClass} transition-all w-full sm:w-64 min-h-[100px]`}>
+                                    {/* Header */}
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="font-semibold text-sm truncate pr-2" title={zone.name}>{zone.name}</div>
+                                        {zone.isToday && <span className="text-[10px] font-bold uppercase bg-white/50 px-1.5 py-0.5 rounded">Live</span>}
                                     </div>
+                                    
+                                    {/* Status (Fixed at top) */}
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold uppercase tracking-wide opacity-90">{zone.label}</span>
+                                        <span className="text-xs mt-0.5 opacity-80">{zone.subLabel}</span>
+                                    </div>
+
+                                    {/* Spacer pushes TimeInfo to bottom */}
+                                    <div className="flex-grow"></div> 
+
+                                    {/* TimeInfo (Bottom) */}
+                                    {zone.timeInfo && <span className="text-[10px] mt-2 font-medium bg-white/40 px-1.5 py-0.5 rounded w-fit block">{zone.timeInfo}</span>}
                                 </div>
                             );
                         })}
