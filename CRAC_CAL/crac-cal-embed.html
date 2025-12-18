@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRAC Zone Availability</title>
+    <title>CRAC Availability</title>
     
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,6 +26,19 @@
         /* Animation utilities */
         .fade-in { animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* Gentle Wave Loading Animation */
+        @keyframes wave-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+        .wave-path {
+            animation: wave-bob 1.5s infinite ease-in-out;
+            transform-origin: center;
+        }
+        .wave-path:nth-child(1) { animation-delay: 0s; }
+        .wave-path:nth-child(2) { animation-delay: 0.15s; }
+        .wave-path:nth-child(3) { animation-delay: 0.3s; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased">
@@ -460,11 +473,16 @@
             };
 
             if (isLoading) return (
-                <div className="flex items-center justify-center h-screen bg-gray-50">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-500 font-medium">Loading Clarence Regional Aquatic Centre Schedule...</p>
+                <div className="flex items-center justify-center h-screen bg-gray-50 flex-col">
+                    <div className="flex gap-1 justify-center items-center h-16 mb-2">
+                        {/* REPLACED SPINNER WITH WAVES SVG ANIMATION */}
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                            <path className="wave-path" d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                            <path className="wave-path" d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                            <path className="wave-path" d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                        </svg>
                     </div>
+                    <p className="text-gray-500 font-medium">Loading Clarence Regional Aquatic Centre Schedule...</p>
                 </div>
             );
 
