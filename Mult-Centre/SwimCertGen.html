@@ -208,13 +208,15 @@
                     {/* Header - Compacted margin */}
                     <div className={`flex justify-between items-start mb-4 h-24`}>
                     <div className="flex flex-col items-start gap-2 max-w-[60%]">
-                        {/* Logo Image */}
-                        <div className={`relative ${isCRAC ? 'h-20' : 'h-24'} flex items-center`}>
-                        <img 
-                            src={theme.logoUrl} 
-                            alt={`${theme.name} Logo`} 
-                            className="h-full w-auto object-contain"
-                        />
+                        {/* Logo Container Bubble (White Zone) */}
+                        <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 inline-block">
+                             <div className={`relative ${isCRAC ? 'h-16' : 'h-20'} flex items-center`}>
+                                <img 
+                                    src={theme.logoUrl} 
+                                    alt={`${theme.name} Logo`} 
+                                    className="h-full w-auto object-contain"
+                                />
+                            </div>
                         </div>
                         <p className={`text-xl font-medium mt-1 pl-1 ${isCRAC ? 'text-cyan-600 uppercase tracking-widest' : 'text-sky-600 italic'}`}>
                             {theme.subhead}
@@ -238,7 +240,7 @@
                             </p>
                             
                             {isBlankMode ? (
-                                <div className="w-3/4 mx-auto border-b-2 border-gray-300 h-16 mt-2"></div>
+                                <div className={`w-3/4 mx-auto border-b-4 h-16 mt-2 ${isCRAC ? 'border-cyan-500' : 'border-yellow-400'}`}></div>
                             ) : (
                                 <h2 className={`text-5xl font-bold mb-1 pb-1 inline-block px-12 ${isCRAC ? 'text-slate-800 border-b-4 border-cyan-500 font-sans' : 'text-sky-600 border-b-4 border-yellow-400 font-serif'}`}>
                                     {data.studentName || "Student Name"}
