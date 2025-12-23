@@ -6,9 +6,11 @@ const CertificateGenerator = () => {
   const [isBlankMode, setIsBlankMode] = useState(false);
   
   // Data derived from "Yamba LTS and squad breakdown skills and levels.pdf"
+  // Images provided by user 24/12/2025
   const curriculum = {
     "Starfish": {
       mascot: "Starfish",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/5ee9a3ee-0acb-4ee1-a763-2106b66dcc51/Starfish.png?showarchived=true",
       age: "6-18 months",
       skills: [
         "Build water confidence",
@@ -19,6 +21,7 @@ const CertificateGenerator = () => {
     },
     "Seahorses": {
       mascot: "Seahorses",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/9b2dd944-9729-4992-9c0a-8b201a697569/Seahorse.png?showarchived=true",
       age: "18 months - 3 years",
       skills: [
         "Build water confidence",
@@ -30,6 +33,7 @@ const CertificateGenerator = () => {
     "Crabs": {
       mascot: "Crabs",
       label: "Crabs (Level 1)",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/67c46a95-c2a5-418c-a9c2-68b2bc6fb65c/Crab.png?showarchived=true",
       age: "2-3 years",
       skills: [
         "Safe entries and exits",
@@ -41,6 +45,7 @@ const CertificateGenerator = () => {
     },
     "Octopus": {
       mascot: "Octopus",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/96e630e5-4781-4cbd-911b-90bdaefa1aef/Octopus.png?showarchived=true",
       age: "3-5 years",
       skills: [
         "Safe entries and exits",
@@ -52,6 +57,7 @@ const CertificateGenerator = () => {
     },
     "Turtle": {
       mascot: "Turtle",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/f36439aa-eacf-4734-b9d5-b193c8ca3c1f/Turtle.png?showarchived=true",
       skills: [
         "Safe pool entries and exits",
         "Independent float",
@@ -62,6 +68,7 @@ const CertificateGenerator = () => {
     },
     "Seal": {
       mascot: "Seal",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/2ebaa479-7ea5-4f9c-942e-06d687edac6b/Seal.png?showarchived=true",
       skills: [
         "Strong correct kick",
         "Side breathing (bubble, bubble, breathe)",
@@ -72,6 +79,7 @@ const CertificateGenerator = () => {
     },
     "Frog": {
       mascot: "Frog",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/ce97510c-8b31-4975-9a49-d315519a8c6b/Frog.png?showarchived=true",
       skills: [
         "Bilateral breathing freestyle (15m)",
         "Strong backstroke kick",
@@ -82,6 +90,7 @@ const CertificateGenerator = () => {
     },
     "Otters": {
       mascot: "Otters",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/fad639a4-802e-4c54-853c-ab89fccf862e/Otter.png?showarchived=true",
       skills: [
         "Increase student stamina",
         "Correct freestyle bilateral breathing (20m)",
@@ -92,6 +101,7 @@ const CertificateGenerator = () => {
     },
     "Stingray": {
       mascot: "Stingray",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/4d411fbf-43af-4ec7-8854-4a7067382ca5/Stingray.png?showarchived=true",
       skills: [
         "Increase student stamina",
         "Correct freestyle bilateral breathing (25m)",
@@ -102,6 +112,7 @@ const CertificateGenerator = () => {
     },
     "Sharks": {
       mascot: "Sharks",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/3e882375-a54c-4ecc-a2f1-c67c697e4e8b/Shark.png?showarchived=true",
       skills: [
         "Correct technique - bilateral freestyle (50m)",
         "Correct backstroke technique (50m)",
@@ -112,6 +123,7 @@ const CertificateGenerator = () => {
     },
     "Dolphins": {
       mascot: "Dolphins",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/e1068812-c61e-44e3-80b5-a76d0d843e74/Dolphin.png?showarchived=true",
       skills: [
         "Correct technique - bilateral freestyle (75m)",
         "Correct backstroke technique (75m)",
@@ -122,6 +134,7 @@ const CertificateGenerator = () => {
     },
     "Marlin": {
       mascot: "Marlin",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/47ac8eb4-09ac-49fd-8df4-d98d8a91b3bc/Marlin.png?showarchived=true",
       skills: [
         "Correct technique - bilateral freestyle (100m)",
         "Correct backstroke technique (100m)",
@@ -133,6 +146,7 @@ const CertificateGenerator = () => {
     "Orcas": {
       mascot: "Orcas",
       label: "Orcas (Mini Squad)",
+      imgUrl: "https://clarencevalley.admin.opencities.com/files/e4eeee4c-4129-427c-9f6d-76eb510e562c/Orcas.png?showarchived=true",
       skills: [
         "Introduction to squad training",
         "Distances up to 200m",
@@ -386,19 +400,36 @@ const CertificateGenerator = () => {
   );
 };
 
-// Gold Seal Component
-const GoldSeal = ({ mascotName }) => (
-  <div className="relative w-32 h-32 flex items-center justify-center">
-    {/* Outer serrated edge simulated with border style or multiple divs - using a simple strong border for stability */}
-    <div className="absolute inset-0 bg-yellow-400 rounded-full shadow-lg border-4 border-yellow-600 box-border"></div>
-    <div className="absolute inset-2 bg-yellow-300 rounded-full border-2 border-yellow-500 flex items-center justify-center text-center p-2 shadow-inner">
-      <div className="flex flex-col items-center justify-center transform -rotate-12">
-        <span className="text-xs font-bold text-yellow-700 uppercase tracking-widest">Completed</span>
-        <span className="text-xl font-black text-yellow-800 uppercase tracking-wide leading-none my-1 drop-shadow-sm" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.5)' }}>
-          {mascotName}
-        </span>
-        <span className="text-xs font-bold text-yellow-700 uppercase tracking-widest">Level</span>
-      </div>
+// Gold Seal Component with Embossed Image Effect
+const GoldSeal = ({ mascotName, imgUrl }) => (
+  <div className="relative w-36 h-36 flex items-center justify-center">
+    
+    {/* Outer Seal Structure */}
+    <div className="absolute inset-0 bg-yellow-400 rounded-full shadow-lg border-4 border-yellow-600 box-border z-0"></div>
+    <div className="absolute inset-2 bg-yellow-300 rounded-full border-2 border-yellow-500 flex items-center justify-center text-center p-2 shadow-inner z-10 overflow-hidden">
+        
+        {/* Embossed Mascot Image Background */}
+        {imgUrl && (
+            <img 
+                src={imgUrl} 
+                alt="mascot watermark"
+                className="absolute w-24 h-24 object-contain opacity-80"
+                style={{ 
+                    filter: 'sepia(0.3) saturate(0.8) contrast(1.1) drop-shadow(1px 1px 0px rgba(255,255,255,0.4)) drop-shadow(-1px -1px 0px rgba(0,0,0,0.1))',
+                    mixBlendMode: 'multiply' 
+                }}
+                crossOrigin="anonymous"
+            />
+        )}
+
+        {/* Text Overlay */}
+        <div className="relative z-20 flex flex-col items-center justify-center transform -rotate-12 drop-shadow-md">
+            <span className="text-xs font-bold text-yellow-800 uppercase tracking-widest bg-yellow-300 bg-opacity-60 px-2 rounded-sm">Completed</span>
+            <span className="text-xl font-black text-yellow-900 uppercase tracking-wide leading-none my-1" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.6)' }}>
+                {mascotName}
+            </span>
+            <span className="text-xs font-bold text-yellow-800 uppercase tracking-widest bg-yellow-300 bg-opacity-60 px-2 rounded-sm">Level</span>
+        </div>
     </div>
   </div>
 );
@@ -489,7 +520,7 @@ const CertificateContent = ({ theme, data, levelData, isBlankMode }) => {
                     
                     {/* Gold Seal with Mascot Embossment */}
                     <div className="transform hover:scale-105 transition-transform duration-300">
-                        <GoldSeal mascotName={levelData.mascot} />
+                        <GoldSeal mascotName={levelData.mascot} imgUrl={levelData.imgUrl} />
                     </div>
                 </div>
 
