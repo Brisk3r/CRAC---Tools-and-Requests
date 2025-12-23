@@ -1,0 +1,575 @@
+import React, { useState, useEffect } from 'react';
+import { Printer, User, Award, Calendar, PenTool, MapPin, Waves, Sun, CheckSquare, Square, ToggleLeft, ToggleRight } from 'lucide-react';
+
+const CertificateGenerator = () => {
+  const [facility, setFacility] = useState('YCP'); // Default to YCP as requested
+  const [isBlankMode, setIsBlankMode] = useState(false);
+  
+  // Data derived from "Yamba LTS and squad breakdown skills and levels.pdf"
+  const curriculum = {
+    "Starfish": {
+      mascot: "Starfish",
+      age: "6-18 months",
+      skills: [
+        "Build water confidence",
+        "Safe entries and exits",
+        "Breath control & bubbles",
+        "Submersions"
+      ]
+    },
+    "Seahorses": {
+      mascot: "Seahorses",
+      age: "18 months - 3 years",
+      skills: [
+        "Build water confidence",
+        "Safe entries and exits",
+        "Breath control & bubbles",
+        "Submersions"
+      ]
+    },
+    "Crabs": {
+      mascot: "Crabs",
+      label: "Crabs (Level 1)",
+      age: "2-3 years",
+      skills: [
+        "Safe entries and exits",
+        "Float with aid",
+        "Breath control & bubbles",
+        "Sculling",
+        "Water safety awareness"
+      ]
+    },
+    "Octopus": {
+      mascot: "Octopus",
+      age: "3-5 years",
+      skills: [
+        "Safe entries and exits",
+        "Submersion & opening eyes underwater",
+        "Streamline torpedo",
+        "Dog paddle independently (3-5m)",
+        "Independent float"
+      ]
+    },
+    "Turtle": {
+      mascot: "Turtle",
+      skills: [
+        "Safe pool entries and exits",
+        "Independent float",
+        "Strong kick on back (3-5m)",
+        "Streamline torpedo",
+        "4 Freestyle arms in streamline position"
+      ]
+    },
+    "Seal": {
+      mascot: "Seal",
+      skills: [
+        "Strong correct kick",
+        "Side breathing (bubble, bubble, breathe)",
+        "Freestyle streamline position (5-7m)",
+        "Backstroke arms (5-7m)",
+        "Safe pool entries and exits"
+      ]
+    },
+    "Frog": {
+      mascot: "Frog",
+      skills: [
+        "Bilateral breathing freestyle (15m)",
+        "Strong backstroke kick",
+        "Backstroke arms",
+        "Breaststroke kick",
+        "Safe pool entries and exits"
+      ]
+    },
+    "Otters": {
+      mascot: "Otters",
+      skills: [
+        "Increase student stamina",
+        "Correct freestyle bilateral breathing (20m)",
+        "Correct backstroke (strong kick & body position)",
+        "Breaststroke kick",
+        "Safe pool entries and exits"
+      ]
+    },
+    "Stingray": {
+      mascot: "Stingray",
+      skills: [
+        "Increase student stamina",
+        "Correct freestyle bilateral breathing (25m)",
+        "Correct backstroke (strong kick & body position)",
+        "Breaststroke kick",
+        "Safe pool entries and exits"
+      ]
+    },
+    "Sharks": {
+      mascot: "Sharks",
+      skills: [
+        "Correct technique - bilateral freestyle (50m)",
+        "Correct backstroke technique (50m)",
+        "Correct breaststroke timing & coordination (50m)",
+        "Introduction to starts, turns, and finishes",
+        "Introduction to Butterfly kick"
+      ]
+    },
+    "Dolphins": {
+      mascot: "Dolphins",
+      skills: [
+        "Correct technique - bilateral freestyle (75m)",
+        "Correct backstroke technique (75m)",
+        "Correct breaststroke timing & coordination (75m)",
+        "Butterfly kick and stroke drills",
+        "Starts, turns, and finishes"
+      ]
+    },
+    "Marlin": {
+      mascot: "Marlin",
+      skills: [
+        "Correct technique - bilateral freestyle (100m)",
+        "Correct backstroke technique (100m)",
+        "Correct breaststroke timing & coordination (100m)",
+        "Complete Butterfly stroke",
+        "Starts, turns, and finishes"
+      ]
+    },
+    "Orcas": {
+      mascot: "Orcas",
+      label: "Orcas (Mini Squad)",
+      skills: [
+        "Introduction to squad training",
+        "Distances up to 200m",
+        "Endurance building",
+        "Advanced stroke correction"
+      ]
+    }
+  };
+
+  const [formData, setFormData] = useState({
+    studentName: '',
+    levelKey: 'Octopus', // Default selection
+    date: new Date().toISOString().split('T')[0],
+    instructor: '',
+    comment: 'Great work achieving your fitness goals!',
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const themes = {
+    CRAC: {
+      name: "Clarence Regional Aquatic Centre",
+      subhead: "The Clarence Valley's Premier Aquatic Facility",
+      logoUrl: "https://clarencevalley.admin.opencities.com/files/7e5544c3-9b09-40bf-be11-70d0dbd36b19/CRAC-Large-Wordmark.png?showarchived=true",
+      colors: {
+        primary: "bg-slate-900",
+        secondary: "bg-cyan-600",
+        accent: "text-cyan-600",
+        border: "border-slate-900",
+        background: "bg-white",
+        watermark: "opacity-5"
+      },
+      address: "Cnr Oliver & Turf St, Grafton NSW 2460",
+      style: "modern"
+    },
+    YCP: {
+      name: "Yamba Community Pool",
+      subhead: "Your Local Friendly Community Haven",
+      logoUrl: "https://clarencevalley.admin.opencities.com/files/984e134f-954b-4dcf-9f46-626273df7b29/YCP-Wordmark-Full-Horizontal.png?showarchived=true",
+      colors: {
+        primary: "bg-sky-500",
+        secondary: "bg-yellow-400",
+        accent: "text-sky-600",
+        border: "border-sky-500",
+        background: "bg-orange-50",
+        watermark: "opacity-10"
+      },
+      address: "Angourie Rd, Yamba NSW 2464",
+      style: "friendly"
+    }
+  };
+
+  const currentTheme = themes[facility];
+  const currentLevelData = curriculum[formData.levelKey];
+
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans print:bg-white">
+      {/* Navigation / Control Panel - Hidden when printing */}
+      <div className="print:hidden">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Award className="w-6 h-6 text-indigo-600" />
+              Certificate Generator
+            </h1>
+            <div className="flex gap-2">
+               <button 
+                onClick={() => setFacility('CRAC')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  facility === 'CRAC' 
+                    ? 'bg-slate-900 text-white shadow-md' 
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                Clarence Regional
+              </button>
+              <button 
+                onClick={() => setFacility('YCP')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  facility === 'YCP' 
+                    ? 'bg-sky-500 text-white shadow-md' 
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                Yamba Community
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* Input Form */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                
+                {/* Mode Toggle */}
+                <div className="mb-6 bg-indigo-50 p-4 rounded-lg flex items-center justify-between">
+                    <div>
+                        <span className="block text-sm font-bold text-indigo-900">Blank Certificate Mode</span>
+                        <span className="text-xs text-indigo-700">For hand-written names & checkboxes</span>
+                    </div>
+                    <button 
+                        onClick={() => setIsBlankMode(!isBlankMode)}
+                        className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                    >
+                        {isBlankMode ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
+                    </button>
+                </div>
+
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <PenTool className="w-5 h-5 text-gray-500" />
+                  Details
+                </h2>
+                
+                <div className="space-y-4">
+                  
+                  {/* Level Selection Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Level / Program</label>
+                    <div className="relative">
+                        <Award className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                        <select
+                            name="levelKey"
+                            value={formData.levelKey}
+                            onChange={handleInputChange}
+                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2 bg-white"
+                        >
+                            {Object.keys(curriculum).map((key) => (
+                                <option key={key} value={key}>
+                                    {curriculum[key].label || key}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                  </div>
+
+                  {/* Student Name (Disabled in Blank Mode) */}
+                  <div className={isBlankMode ? 'opacity-50 pointer-events-none' : ''}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                      <input
+                        type="text"
+                        name="studentName"
+                        value={formData.studentName}
+                        onChange={handleInputChange}
+                        placeholder="e.g. Sarah Smith"
+                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`grid grid-cols-2 gap-4 ${isBlankMode ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleInputChange}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+                      <input
+                        type="text"
+                        name="instructor"
+                        value={formData.instructor}
+                        onChange={handleInputChange}
+                        placeholder="Instructor Name"
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                      />
+                    </div>
+                  </div>
+
+                  <div className={isBlankMode ? 'opacity-50 pointer-events-none' : ''}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Encouraging Note</label>
+                    <textarea
+                      name="comment"
+                      rows="2"
+                      value={formData.comment}
+                      onChange={handleInputChange}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <button
+                    onClick={handlePrint}
+                    className="w-full flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors shadow-sm"
+                  >
+                    <Printer className="w-5 h-5" />
+                    Print Certificate
+                  </button>
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    Tip: Set layout to "Landscape" and disable "Headers and footers" in print settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview Area */}
+            <div className="lg:col-span-8">
+              <div className="bg-gray-200 p-4 rounded-xl border border-gray-300 overflow-auto">
+                {/* Scale wrapper for preview */}
+                <div className="bg-white shadow-xl mx-auto origin-top transform transition-transform duration-200" 
+                     style={{ width: '1056px', height: '816px', transform: 'scale(0.65)', transformOrigin: 'top left', marginBottom: '-30%' }}>
+                     <CertificateContent theme={currentTheme} data={formData} levelData={currentLevelData} isBlankMode={isBlankMode} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* Print View - Only visible when printing */}
+      <div className="hidden print:block print:w-full print:h-screen">
+         <div className="w-[1122px] h-[794px] mx-auto overflow-hidden">
+            <CertificateContent theme={currentTheme} data={formData} levelData={currentLevelData} isBlankMode={isBlankMode} />
+         </div>
+      </div>
+
+      <style>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Gold Seal Component
+const GoldSeal = ({ mascotName }) => (
+  <div className="relative w-32 h-32 flex items-center justify-center">
+    {/* Outer serrated edge simulated with border style or multiple divs - using a simple strong border for stability */}
+    <div className="absolute inset-0 bg-yellow-400 rounded-full shadow-lg border-4 border-yellow-600 box-border"></div>
+    <div className="absolute inset-2 bg-yellow-300 rounded-full border-2 border-yellow-500 flex items-center justify-center text-center p-2 shadow-inner">
+      <div className="flex flex-col items-center justify-center transform -rotate-12">
+        <span className="text-xs font-bold text-yellow-700 uppercase tracking-widest">Completed</span>
+        <span className="text-xl font-black text-yellow-800 uppercase tracking-wide leading-none my-1 drop-shadow-sm" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.5)' }}>
+          {mascotName}
+        </span>
+        <span className="text-xs font-bold text-yellow-700 uppercase tracking-widest">Level</span>
+      </div>
+    </div>
+  </div>
+);
+
+// The Actual Certificate Design
+const CertificateContent = ({ theme, data, levelData, isBlankMode }) => {
+  const isCRAC = theme.style === 'modern';
+
+  return (
+    <div className={`relative w-full h-full flex flex-col ${theme.colors.background}`}>
+      
+      {/* Background Decorative Elements */}
+      {isCRAC ? (
+        // CRAC Background
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-[400px] h-[816px] bg-slate-100 transform -skew-x-12 translate-x-32" />
+          <div className="absolute top-0 right-0 w-[200px] h-[816px] bg-slate-900 transform -skew-x-12 translate-x-32 opacity-10" />
+          <div className="absolute bottom-0 left-0 w-full h-4 bg-cyan-600" />
+          <div className="absolute bottom-4 left-0 w-full h-12 bg-slate-900" />
+        </div>
+      ) : (
+        // YCP Background
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 h-32 bg-sky-500" style={{ borderRadius: '0 0 50% 50% / 0 0 20% 20%' }}></div>
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-yellow-400 opacity-80" style={{ clipPath: 'polygon(0 20%, 100% 0, 100% 100%, 0% 100%)' }}></div>
+           {/* Sun rays */}
+           <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-200 rounded-full opacity-20 transform translate-x-1/3 -translate-y-1/3" />
+        </div>
+      )}
+
+      {/* Main Content Container */}
+      <div className="relative z-10 flex-1 flex flex-col p-12">
+        
+        {/* Header */}
+        <div className={`flex justify-between items-start mb-6`}>
+          <div className="flex flex-col items-start gap-2 max-w-[60%]">
+            {/* Logo Image */}
+            <div className={`relative ${isCRAC ? 'h-24' : 'h-28'} flex items-center`}>
+               <img 
+                 src={theme.logoUrl} 
+                 alt={`${theme.name} Logo`} 
+                 className="h-full w-auto object-contain"
+                 crossOrigin="anonymous"
+               />
+            </div>
+            <p className={`text-xl font-medium mt-2 pl-1 ${isCRAC ? 'text-cyan-600 uppercase tracking-widest' : 'text-sky-600 italic'}`}>
+                {theme.subhead}
+            </p>
+          </div>
+          <div className="text-right opacity-60 mt-2">
+             <div className="flex flex-col items-end">
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Provided by</span>
+                <span className="font-bold text-gray-700">Clarence Valley Council</span>
+             </div>
+          </div>
+        </div>
+
+        {/* Body Content */}
+        <div className="flex-1 flex flex-col items-center w-full">
+            
+            {/* Top Section: Student Name */}
+            <div className="w-full text-center mb-8">
+                <p className={`text-xl text-gray-500 font-medium mb-2 uppercase tracking-widest`}>
+                This certifies that
+                </p>
+                
+                {isBlankMode ? (
+                    <div className="w-3/4 mx-auto border-b-2 border-gray-300 h-16 mt-4"></div>
+                ) : (
+                    <h2 className={`text-5xl font-bold mb-2 pb-2 inline-block px-12 ${isCRAC ? 'text-slate-800 border-b-4 border-cyan-500 font-sans' : 'text-sky-600 border-b-4 border-yellow-400 font-serif'}`}>
+                        {data.studentName || "Student Name"}
+                    </h2>
+                )}
+            </div>
+
+            {/* Middle Section: Level & Skills */}
+            <div className="w-full grid grid-cols-12 gap-8 mb-4 flex-1">
+                
+                {/* Left: Level Title & Description */}
+                <div className="col-span-4 flex flex-col items-center justify-center text-center">
+                    <p className="text-xl text-gray-600 mb-2">Has successfully completed</p>
+                    <h3 className={`text-4xl font-bold mb-4 ${theme.colors.accent}`}>
+                        {levelData.label || levelData.mascot}
+                    </h3>
+                    <p className="text-gray-500 text-sm mb-6">
+                        in our Learn to Swim Program
+                    </p>
+                    
+                    {/* Gold Seal with Mascot Embossment */}
+                    <div className="transform hover:scale-105 transition-transform duration-300">
+                        <GoldSeal mascotName={levelData.mascot} />
+                    </div>
+                </div>
+
+                {/* Right: Skills List */}
+                <div className={`col-span-8 p-6 rounded-xl border ${isCRAC ? 'bg-slate-50 border-slate-200' : 'bg-white border-yellow-200 shadow-sm'}`}>
+                    <h4 className={`font-bold uppercase tracking-wide mb-4 border-b pb-2 ${isCRAC ? 'text-slate-800 border-slate-300' : 'text-sky-700 border-yellow-200'}`}>
+                        Skills Achieved
+                    </h4>
+                    <ul className="grid grid-cols-1 gap-3">
+                        {levelData.skills.map((skill, index) => (
+                            <li key={index} className="flex items-start gap-3">
+                                <div className={`mt-1 flex-shrink-0 ${isCRAC ? 'text-cyan-600' : 'text-yellow-500'}`}>
+                                    {isBlankMode ? (
+                                        <Square className="w-5 h-5" />
+                                    ) : (
+                                        <CheckSquare className="w-5 h-5" />
+                                    )}
+                                </div>
+                                <span className={`text-lg leading-snug ${isCRAC ? 'text-slate-700' : 'text-gray-600'}`}>
+                                    {skill}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+
+            {/* Optional Comment Section (Only shows if filled and not blank mode) */}
+            {!isBlankMode && data.comment && (
+                <div className="w-3/4 text-center mb-8">
+                     <p className={`text-lg italic font-medium ${isCRAC ? 'text-slate-600' : 'text-sky-800'}`}>
+                        "{data.comment}"
+                    </p>
+                </div>
+            )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4 pt-4 flex justify-between items-end border-t border-gray-100">
+          
+          {/* Instructor Signature */}
+          <div className="text-left w-1/3">
+            <p className="text-sm text-gray-400 uppercase tracking-widest font-bold mb-2">Instructor</p>
+            {isBlankMode ? (
+                 <div className={`h-12 border-b-2 ${isCRAC ? 'border-slate-300' : 'border-sky-300'}`}></div>
+            ) : (
+                <div className={`h-12 border-b-2 flex items-end ${isCRAC ? 'border-slate-300' : 'border-sky-300'}`}>
+                    <span className={`text-2xl font-signature font-medium ${isCRAC ? 'text-slate-800' : 'text-sky-700'}`}>
+                        {data.instructor}
+                    </span>
+                </div>
+            )}
+          </div>
+
+          {/* Date */}
+          <div className="text-right w-1/3">
+             <p className="text-sm text-gray-400 uppercase tracking-widest font-bold mb-2">Date</p>
+             {isBlankMode ? (
+                 <div className={`h-12 border-b-2 ${isCRAC ? 'border-slate-300' : 'border-sky-300'}`}></div>
+             ) : (
+                <div className={`h-12 border-b-2 flex items-end justify-end ${isCRAC ? 'border-slate-300' : 'border-sky-300'}`}>
+                <span className="text-xl text-gray-600">
+                    {new Date(data.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+                </div>
+             )}
+          </div>
+        </div>
+
+        {/* Bottom Address Bar */}
+        <div className={`absolute bottom-6 left-0 right-0 text-center flex justify-center items-center gap-2 text-sm ${isCRAC ? 'text-white' : 'text-sky-800'}`}>
+           <MapPin className="w-4 h-4" />
+           <span>{theme.address}</span>
+           <span className="mx-2">|</span>
+           <span>www.clarence.nsw.gov.au</span>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default CertificateGenerator;
