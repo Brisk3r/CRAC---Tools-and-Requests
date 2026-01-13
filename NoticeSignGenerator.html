@@ -21,24 +21,30 @@
         /* Styles for the A4 preview pane on screen */
         #previewPane {
             width: 210mm;
-            min-height: 297mm;
-            max-height: 297mm; /* Enforce max height */
+            height: 297mm; /* Fixed height for consistency */
             padding: 20mm;
             box-sizing: border-box;
             box-shadow: 0 0 15px rgba(0,0,0,0.15);
             margin-left: auto;
             margin-right: auto;
-            border: 2px solid #ccc; /* Default border */
             transition: all 0.3s;
-            position: relative; /* For absolute positioning of QR if needed */
+            position: relative;
+            background-color: white;
+            overflow: hidden; /* Ensure content doesn't spill out visually */
         }
 
         #previewPane.overflowing {
-            border-color: #ef4444; /* Red border for overflow */
+             /* Visual cue only for screen */
+            box-shadow: 0 0 0 4px #ef4444;
         }
 
         /* Border Styles */
-        .sign-border-none { border: 1px solid #e5e7eb !important; }
+        /* Screen-only default border */
+        .sign-border-none { 
+            border: 1px solid #e5e7eb; 
+        }
+        
+        /* Printable Borders - Forced !important to override any defaults */
         .sign-border-red { border: 15mm solid #dc2626 !important; }
         .sign-border-blue { border: 15mm solid #2563eb !important; }
         .sign-border-hazard {
@@ -76,36 +82,50 @@
         
         /* Styles for printing */
         @media print {
-            body {
+            @page {
+                size: A4 portrait;
+                margin: 0; /* Critical: tells printer driver to use 0 margin */
+            }
+            
+            body, html {
                 margin: 0;
                 padding: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                width: 210mm;
+                height: 297mm;
+                background-color: white;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                overflow: hidden; /* Hide any browser-injected debris */
             }
+
             /* Hide all elements with the 'no-print' class */
             .no-print {
                 display: none !important;
             }
-            /* Ensure the preview pane takes up the entire page when printing */
+
+            /* Force the preview pane to fit the page exactly */
             #previewPane {
-                width: 100%;
-                height: 100vh;
-                margin: 0;
-                padding: 20mm;
-                /* Borders are handled by classes, but we override the default container border */
-                box-shadow: none;
-                display: flex;
-                flex-direction: column;
+                width: 210mm !important;
+                height: 296mm !important; /* 1mm shorter to prevent 'page 2' overflow */
+                margin: 0 !important;
+                padding: 20mm !important;
+                box-shadow: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                border-radius: 0;
             }
             
+            /* Remove the grey screen border in print, but KEEP colored borders */
+            .sign-border-none {
+                border: none !important;
+            }
+
             /* Adjust padding when thick borders are present to prevent content squish */
             .sign-border-red, .sign-border-blue, .sign-border-hazard {
                 padding: 10mm !important;
-            }
-
-            @page {
-                size: A4;
-                margin: 0;
             }
         }
     </style>
