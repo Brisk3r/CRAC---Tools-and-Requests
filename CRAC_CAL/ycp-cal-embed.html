@@ -163,7 +163,7 @@ const firebaseConfig = {
                         await auth.signInAnonymously();
                     } catch (err) {
                         console.error("Auth Error:", err);
-                        setError("Could not connect to CRAC schedule service.");
+                        setError("Could not connect to YCP schedule service.");
                         setIsLoading(false);
                     }
                 };
