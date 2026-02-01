@@ -1,5 +1,3 @@
-// firebaseConfig.js
-
 /**
  * Firebase Configuration Object
  * * To obtain these values:
@@ -12,23 +10,23 @@
 export const firebaseConfig = {
   // The API key for your Firebase project (safe to expose in client-side code, 
   // but ensure you set up 'API Restrictions' in Google Cloud Console)
-  apiKey: "YOUR_API_KEY_HERE",
+  apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
 
   // The domain for Firebase Auth redirects
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  authDomain: "opsf---comms-task-tracker.firebaseapp.com",
 
   // Your unique project identifier
-  projectId: "YOUR_PROJECT_ID",
+  projectId: "opsf---comms-task-tracker",
 
   // The storage bucket for files (if you use Firebase Storage)
-  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+  storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
 
   // Used for Firebase Cloud Messaging
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  messagingSenderId: "489224390639",
 
   // Unique identifier for this specific app within the project
-  appId: "YOUR_APP_ID",
+  appId: "1:489224390639:web:54b9f2772aaef86d32581a",
 
   // (Optional) For Google Analytics
-  measurementId: "G-YOUR_MEASUREMENT_ID"
+  measurementId: "G-PE0JBKHX9W"
 };
