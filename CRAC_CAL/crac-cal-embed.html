@@ -122,6 +122,7 @@
         };
 
         // --- FIREBASE INITIALIZATION ---
+        // Retaining your specific project configuration to ensure connection to existing data
         const firebaseConfig = {
             apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
             authDomain: "osf---availability-roster.firebaseapp.com",
@@ -521,12 +522,28 @@
                         <div className="lg:col-span-8 mb-8 lg:mb-0">
                             <CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} />
                         </div>
-                        <div className="lg:col-span-4">
+                        
+                        {/* DESKTOP AGENDA: Absolute positioning to match height of Calendar */}
+                        <div className="hidden lg:block lg:col-span-4 relative">
+                            <div className="absolute inset-0 pb-2"> {/* pb-2 avoids clipping bottom shadow */}
+                                <DailyAgendaPanel 
+                                    selectedDay={selectedDay} 
+                                    events={selectedDayEvents} 
+                                    onEventClick={setSelectedEvent} 
+                                    eventTypes={settings.eventTypes}
+                                    className="h-full"
+                                />
+                            </div>
+                        </div>
+
+                        {/* MOBILE AGENDA: Natural height with reasonable default */}
+                        <div className="lg:hidden">
                             <DailyAgendaPanel 
                                 selectedDay={selectedDay} 
                                 events={selectedDayEvents} 
                                 onEventClick={setSelectedEvent} 
                                 eventTypes={settings.eventTypes}
+                                className="h-[500px]"
                             />
                         </div>
                     </div>
@@ -639,12 +656,12 @@
             );
         };
 
-        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes }) => {
+        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, className = "" }) => {
             const formatTime = (date) => date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             const sortedEvents = [...events].sort((a,b) => a.startDateTime - b.startDateTime);
 
             return (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden max-h-[600px] lg:max-h-[800px]">
+                <div className={`bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden ${className}`}>
                     <div className="p-4 border-b border-gray-100 bg-gray-50">
                         <h3 className="font-bold text-gray-900 flex items-center gap-2">
                             <Icons.Calendar className="text-blue-600" size={18} />
@@ -655,7 +672,7 @@
                         </p>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar overscroll-contain">
                         {sortedEvents.length > 0 ? (
                             sortedEvents.map(event => (
                                 <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer bg-white">
