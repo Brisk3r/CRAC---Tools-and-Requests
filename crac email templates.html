@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aquatic Centre Email Generator</title>
+    <!-- Tailwind CSS for UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom Styles for the Email Preview to ensure it looks right when copied to Outlook */
+        .email-content {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+        }
+        .email-content p {
+            margin-bottom: 1em;
+        }
+        .email-content ul {
+            margin-bottom: 1em;
+            padding-left: 20px;
+        }
+        .email-content li {
+            margin-bottom: 0.5em;
+        }
+        .email-content a {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        
+        /* UI Transition utilities */
+        .transition-colors { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+
+    <!-- Navbar -->
+    <nav id="navbar" class="bg-blue-800 text-white p-4 shadow-md transition-colors duration-500">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-water text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide">Email Generator</h1>
+            </div>
+            <div class="text-sm opacity-90 hidden sm:block">Clarence Valley Council</div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT PANEL: Controls -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Facility Switcher -->
+            <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Select Facility</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setFacility('CRAC')" id="btn-crac" class="p-3 rounded border-2 border-blue-700 bg-blue-700 text-white font-bold text-sm transition-all hover:opacity-90">
+                        CRAC
+                    </button>
+                    <button onclick="setFacility('YCP')" id="btn-ycp" class="p-3 rounded border-2 border-slate-200 text-slate-600 font-bold text-sm hover:border-teal-600 hover:text-teal-600 transition-all">
+                        YCP
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuration Form -->
+            <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Email Template</label>
+                    <div class="relative">
+                        <select id="templateSelect" onchange="updateForm()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none">
+                            <option value="classCancel">Class Cancellation (Urgent)</option>
+                            <option value="lateFee">Outstanding Balance / Late Fee</option>
+                            <option value="ltsReenrol">LTS Re-enrolment</option>
+                            <option value="directDebit">Direct Debit Failure</option>
+                            <option value="generalInfo">General Announcement</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-3 top-3.5 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Customer First Name</label>
+                    <input type="text" id="custName" placeholder="e.g. Sarah" oninput="renderEmail()" class="w-full p-2.5 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <!-- Dynamic Inputs Area -->
+                <div id="dynamicInputs" class="space-y-4 border-t pt-4 border-slate-100">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <button onclick="copyToClipboard()" id="copyBtn" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition-all flex items-center justify-center gap-2">
+                <i class="fa-regular fa-copy"></i> Copy Email to Clipboard
+            </button>
+            <div id="toast" class="hidden text-center text-sm font-semibold text-green-700 bg-green-100 p-2 rounded mt-2">
+                Email copied! Ready to paste into Outlook.
+            </div>
+
+        </div>
+
+        <!-- RIGHT PANEL: Preview -->
+        <div class="lg:col-span-8">
+            <div class="bg-white rounded-lg shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
+                <!-- Mock Email Header -->
+                <div class="bg-slate-50 border-b border-slate-200 p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase w-16">To:</span>
+                        <span class="text-sm text-slate-800 bg-white px-2 py-0.5 border rounded" id="previewTo">Customer Email</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase w-16">Subject:</span>
+                        <span class="text-sm font-semibold text-slate-900" id="previewSubject">Subject Line...</span>
+                    </div>
+                </div>
+
+                <!-- Email Body (The part that gets copied) -->
+                <div class="p-8 overflow-y-auto bg-white flex-grow relative">
+                    <!-- Copy Target Wrapper -->
+                    <div id="emailRenderTarget" class="email-content outline-none" contenteditable="true">
+                        <!-- Content rendered here -->
+                    </div>
+                    
+                    <!-- Watermark -->
+                    <div class="absolute bottom-4 right-4 text-slate-100 text-6xl font-bold opacity-20 pointer-events-none select-none z-0">
+                        PREVIEW
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- DATA & CONFIG ---
+        const config = {
+            CRAC: {
+                id: 'CRAC',
+                name: "Clarence Regional Aquatic Centre",
+                shortName: "CRAC",
+                themeColor: "#1e40af", // blue-800
+                address: "Corner of Oliver and Turf St, Grafton NSW 2460",
+                phone: "(02) 6642 0000",
+                roleDesc: "regional, modern, state-of-the-art facility",
+                btnClass: "bg-blue-700 border-blue-700 text-white",
+                portalUrl: "https://clarenceaquatic.perfectgym.com.au/clientportal2/#/Login",
+                websiteUrl: "https://www.clarence.nsw.gov.au/Sports-and-recreation/Aquatic-centres/Clarence-Regional-Aquatic-Centre"
+            },
+            YCP: {
+                id: 'YCP',
+                name: "Yamba Community Pool",
+                shortName: "YCP",
+                themeColor: "#0d9488", // teal-600
+                address: "78 Angourie Rd, Yamba NSW 2464",
+                phone: "(02) 6646 1750",
+                roleDesc: "local, welcoming, friendly community haven",
+                btnClass: "bg-teal-600 border-teal-600 text-white",
+                portalUrl: "https://clarenceaquatic.perfectgym.com.au/clientportal2/#/Login",
+                websiteUrl: "https://www.clarence.nsw.gov.au/Sports-and-recreation/Aquatic-centres/Yamba-Community-Pool"
+            }
+        };
+
+        let currentFacility = config.CRAC;
+
+        // Helper to format text area content into list items
+        function formatList(textInput) {
+            if (!textInput || textInput.includes('<span')) return '<ul><li>No charges listed</li></ul>';
+            
+            const lines = textInput.split('\n').filter(line => line.trim() !== '');
+            const listItems = lines.map(line => `<li>${line}</li>`).join('');
+            return `<ul>${listItems}</ul>`;
+        }
+
+        const templates = {
+            classCancel: {
+                fields: [
+                    {id: 'className', label: 'Class/Program Name', placeholder: 'e.g. Aqua Fitness / 4pm Shark', type: 'text'},
+                    {id: 'date', label: 'Date of Cancellation', placeholder: 'e.g. this afternoon, Tuesday 25th', type: 'text'},
+                    {id: 'reason', label: 'Reason', placeholder: 'e.g. storm activity / urgent maintenance', type: 'text'}
+                ],
+                subject: (d) => `Update regarding your ${d.className || 'Class'} session`,
+                body: (d, fac) => `
+                    <p>Hi ${d.custName},</p>
+                    <p>We are writing to let you know that due to <strong>${d.reason}</strong>, we have had to cancel the <strong>${d.className}</strong> session scheduled for <strong>${d.date}</strong>.</p>
+                    <p>We apologise for this disruption to your routine. Your safety and enjoyment are our top priorities at our ${fac.roleDesc}, and we want to ensure every visit meets our high standards.</p>
+                    <p><strong>Next Steps:</strong></p>
+                    <ul>
+                        <li>A credit for this session has been applied to your account automatically.</li>
+                        <li>You are welcome to book a makeup lesson or join us for a casual swim at another time.</li>
+                    </ul>
+                    <p>Thank you for your understanding, and we look forward to seeing you back in the water soon.</p>
+                `
+            },
+            lateFee: {
+                fields: [
+                    {
+                        id: 'charges', 
+                        label: 'List of Charges (One per line)', 
+                        placeholder: 'e.g.\nTom - Term 3 LTS: $24.50\nSarah - Squad Fees: $40.00', 
+                        type: 'textarea'
+                    },
+                    {id: 'dueDate', label: 'Due Date', placeholder: 'e.g. Friday 12th Aug', type: 'text'}
+                ],
+                subject: (d) => `Account Update: Outstanding Balance`,
+                body: (d, fac) => `
+                    <p>Hi ${d.custName},</p>
+                    <p>We hope you have been enjoying your visits to the ${fac.name}.</p>
+                    <p>This is a friendly reminder that we have outstanding items on your account:</p>
+                    
+                    ${formatList(d.charges)}
+
+                    <p>To ensure your access to the facility continues without interruption, please arrange payment by <strong>${d.dueDate}</strong>. You can do this easily by visiting us at the <strong>front counter</strong> or online via the <a href="${fac.portalUrl}">Client Portal</a>.</p>
+                    <p>If you have already attended to this, please disregard this email.</p>
+                    <p>We are here to help you achieve your fitness goals, so if you have any questions about these charges, please don't hesitate to ask.</p>
+                `
+            },
+            directDebit: {
+                fields: [
+                    {id: 'date', label: 'Date of Failed Payment', placeholder: 'e.g. 15th August', type: 'text'}
+                ],
+                subject: (d) => `Action Required: Direct Debit Payment`,
+                body: (d, fac) => `
+                    <p>Hi ${d.custName},</p>
+                    <p>We are writing to inform you that we were unable to process your direct debit payment on <strong>${d.date}</strong>.</p>
+                    <p>This can happen for a variety of reasons, such as an expired card or insufficient funds at the time of processing.</p>
+                    <p><strong>Please update your payment details via the <a href="${fac.portalUrl}">Client Portal</a> or settle the balance at the front counter on your next visit.</strong></p>
+                    <p>We value you as a member of our community and want to ensure your access remains seamless. If you need assistance updating your details, our team is happy to help.</p>
+                `
+            },
+            ltsReenrol: {
+                fields: [
+                    {id: 'termName', label: 'Term/Season Name', placeholder: 'e.g. Term 4 / Summer Season', type: 'text'},
+                    {id: 'cutoffDate', label: 'Priority Cut-off Date', placeholder: 'e.g. 24th September', type: 'text'}
+                ],
+                subject: (d) => `Priority Booking: ${d.termName || 'Upcoming Term'} Learn to Swim`,
+                body: (d, fac) => `
+                    <p>Hi ${d.custName},</p>
+                    <p>It has been fantastic seeing the progress made in the pool recently! 🏊‍♀️</p>
+                    <p><strong>${d.termName}</strong> is approaching fast, and we want to ensure you secure your preferred time slot for the <strong>Learn to Swim</strong> program.</p>
+                    <p><strong>Why re-enrol early?</strong></p>
+                    <ul>
+                        <li>Secure your current instructor and time.</li>
+                        <li>Avoid the rush when booking opens to the general public.</li>
+                        <li>Ensure consistency in your swimming development.</li>
+                    </ul>
+                    <p>Please confirm your spot by <strong>${d.cutoffDate}</strong> to retain your current booking.</p>
+                    <p>We can't wait to continue this journey with you.</p>
+                `
+            },
+            generalInfo: {
+                fields: [
+                    {id: 'topic', label: 'Announcement Topic', placeholder: 'e.g. Holiday Opening Hours', type: 'text'},
+                    {id: 'details', label: 'Key Details', placeholder: 'e.g. We will be closed Xmas day...', type: 'textarea'}
+                ],
+                subject: (d) => `Announcement: ${d.topic || 'Update'}`,
+                body: (d, fac) => `
+                    <p>Hi ${d.custName},</p>
+                    <p>We have an update regarding <strong>${d.topic}</strong> at the ${fac.name}.</p>
+                    <p>${d.details}</p>
+                    <p>We are committed to providing a safe, professional, and ${fac.id === 'CRAC' ? 'premier' : 'welcoming'} environment for all our visitors.</p>
+                    <p>See you by the pool! ☀️</p>
+                `
+            }
+        };
+
+        // --- UI LOGIC ---
+
+        function setFacility(facId) {
+            currentFacility = config[facId];
+            
+            // Update Navbar Color
+            const navbar = document.getElementById('navbar');
+            navbar.className = `p-4 shadow-md transition-colors duration-500 text-white ${facId === 'CRAC' ? 'bg-blue-800' : 'bg-teal-700'}`;
+            
+            // Update Buttons
+            const btnCrac = document.getElementById('btn-crac');
+            const btnYcp = document.getElementById('btn-ycp');
+            
+            if(facId === 'CRAC') {
+                btnCrac.className = "p-3 rounded border-2 border-blue-700 bg-blue-700 text-white font-bold text-sm transition-all";
+                btnYcp.className = "p-3 rounded border-2 border-slate-200 text-slate-600 font-bold text-sm hover:border-teal-600 hover:text-teal-600 transition-all bg-white";
+            } else {
+                btnCrac.className = "p-3 rounded border-2 border-slate-200 text-slate-600 font-bold text-sm hover:border-blue-700 hover:text-blue-700 transition-all bg-white";
+                btnYcp.className = "p-3 rounded border-2 border-teal-600 bg-teal-600 text-white font-bold text-sm transition-all";
+            }
+
+            renderEmail();
+        }
+
+        function updateForm() {
+            const templateKey = document.getElementById('templateSelect').value;
+            const template = templates[templateKey];
+            const container = document.getElementById('dynamicInputs');
+            
+            container.innerHTML = ''; // Clear existing
+            
+            template.fields.forEach(field => {
+                const div = document.createElement('div');
+                const label = `<label class="block text-sm font-semibold text-slate-700 mb-1">${field.label}</label>`;
+                
+                let inputHtml = '';
+                if (field.type === 'textarea') {
+                     inputHtml = `<textarea id="${field.id}" placeholder="${field.placeholder}" oninput="renderEmail()" rows="4"
+                        class="w-full p-2.5 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>`;
+                } else {
+                     inputHtml = `<input type="text" id="${field.id}" placeholder="${field.placeholder}" oninput="renderEmail()" 
+                        class="w-full p-2.5 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">`;
+                }
+
+                div.innerHTML = label + inputHtml;
+                container.appendChild(div);
+            });
+
+            renderEmail();
+        }
+
+        function getFormData() {
+            const data = {
+                custName: document.getElementById('custName').value || '{Name}'
+            };
+            
+            // Get dynamic fields
+            const inputs = document.getElementById('dynamicInputs').querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                if(input.tagName.toLowerCase() === 'textarea') {
+                     // For textareas, keep the raw value, the template handles the fallback
+                     data[input.id] = input.value;
+                } else {
+                    const placeholderText = input.placeholder.split('e.g. ')[1] || '...';
+                    data[input.id] = input.value || `<span style="background-color: #fffbeb; padding: 0 4px; border: 1px dashed #ccc;">${placeholderText}</span>`;
+                }
+            });
+
+            return data;
+        }
+
+        function renderEmail() {
+            const templateKey = document.getElementById('templateSelect').value;
+            const template = templates[templateKey];
+            const data = getFormData();
+            
+            // Update Subject Line Preview
+            const subject = template.subject(data).replace(/<[^>]*>?/gm, ''); // Strip HTML from subject
+            document.getElementById('previewSubject').textContent = subject;
+
+            // Generate Body
+            const bodyContent = template.body(data, currentFacility);
+
+            // Generate Footer
+            const footer = `
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eeeeee; font-size: 0.9em; color: #666666;">
+                    <p style="margin-bottom: 5px; color: ${currentFacility.themeColor}; font-weight: bold;">Customer Service Team</p>
+                    <p style="margin: 0;">${currentFacility.name}</p>
+                    <p style="margin: 0; margin-bottom: 10px;">Clarence Valley Council</p>
+                    
+                    <p style="font-size: 12px; color: #888888; margin-top: 10px;">
+                        📍 ${currentFacility.address}<br>
+                        📞 ${currentFacility.phone}<br>
+                        🌐 <a href="${currentFacility.websiteUrl}" style="color:#666; text-decoration:none;">www.clarence.nsw.gov.au</a>
+                    </p>
+                </div>
+            `;
+
+            // Combine
+            const fullHtml = `
+                <div style="font-size: 20px; font-weight: bold; color: ${currentFacility.themeColor}; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                    ${currentFacility.name}
+                </div>
+                ${bodyContent}
+                ${footer}
+            `;
+
+            document.getElementById('emailRenderTarget').innerHTML = fullHtml;
+        }
+
+        function copyToClipboard() {
+            const emailElement = document.getElementById('emailRenderTarget');
+            const range = document.createRange();
+            const selection = window.getSelection();
+            
+            selection.removeAllRanges();
+            range.selectNodeContents(emailElement);
+            selection.addRange(range);
+            
+            try {
+                document.execCommand('copy');
+                
+                // UI Feedback
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.innerHTML;
+                const toast = document.getElementById('toast');
+                
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                btn.classList.add('bg-slate-700');
+                
+                toast.classList.remove('hidden');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.remove('bg-slate-700');
+                    toast.classList.add('hidden');
+                }, 2000);
+
+            } catch (err) {
+                alert('Could not copy automatically. Please select the text and press Ctrl+C.');
+            }
+            
+            selection.removeAllRanges();
+        }
+
+        // Initialize
+        updateForm(); // Setup initial dynamic fields and render
+
+    </script>
+</body>
+</html>
