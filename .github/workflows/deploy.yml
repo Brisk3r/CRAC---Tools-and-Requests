@@ -24,17 +24,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- FIXED STEP: Safely create config file ---
-      # This uses 'cat' with a heredoc (EOF), which handles quotes inside your secret correctly.
-      - name: Create Config File
+      # --- FIXED STEP: Create Config File (Robust Method) ---
+      # 1. mkdir -p js: Ensures the folder exists
+      # 2. printf: Safely writes the secret (even with quotes) into the file
+      # 3. touch .nojekyll: Prevents GitHub from hiding files
+      - name: Create Config File & Disable Jekyll
         env: 
           CONFIG_CONTENT: ${{ secrets.TASK_TRACKER_FIREBASE_CONFIG }}
         run: |
           mkdir -p js
-          cat <<EOF > js/firebase-config-tasktracker.js
-          export const firebaseConfig = $CONFIG_CONTENT;
-          EOF
+          printf "export const firebaseConfig = %s;" "$CONFIG_CONTENT" > js/firebase-config-tasktracker.js
+          touch .nojekyll
           
+      # --- DEBUG STEP: Check if file exists ---
+      # This prints the file list to the Action logs so we can verify creation
+      - name: Verify File Creation
+        run: ls -R js/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
