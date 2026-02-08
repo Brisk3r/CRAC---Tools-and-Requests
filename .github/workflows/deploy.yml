@@ -1,26 +1,20 @@
 name: Deploy Task Tracker to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job NO BUILD MATRIX
   deploy:
     environment:
       name: github-pages
@@ -30,22 +24,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- FIXED STEP: Create the config file using Environment Variable ---
-      # This fixes the issue with quotes inside the secret breaking the file
+      # --- FIXED STEP: Safely create config file ---
+      # This uses 'cat' with a heredoc (EOF), which handles quotes inside your secret correctly.
       - name: Create Config File
         env: 
           CONFIG_CONTENT: ${{ secrets.TASK_TRACKER_FIREBASE_CONFIG }}
         run: |
           mkdir -p js
-          echo "$CONFIG_CONTENT" > js/firebase-config-tasktracker.js
-
+          cat <<EOF > js/firebase-config-tasktracker.js
+          export const firebaseConfig = $CONFIG_CONTENT;
+          EOF
+          
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository including index.html and the js folder
           path: '.'
 
       - name: Deploy to GitHub Pages
