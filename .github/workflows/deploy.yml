@@ -30,11 +30,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- NEW STEP: Create the config file from the SPECIFIC Secret ---
+      # --- FIXED STEP: Create the config file using Environment Variable ---
+      # This fixes the issue with quotes inside the secret breaking the file
       - name: Create Config File
+        env: 
+          CONFIG_CONTENT: ${{ secrets.TASK_TRACKER_FIREBASE_CONFIG }}
         run: |
           mkdir -p js
-          echo "${{ secrets.TASK_TRACKER_FIREBASE_CONFIG }}" > js/firebase-config-tasktracker.js
+          echo "$CONFIG_CONTENT" > js/firebase-config-tasktracker.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
