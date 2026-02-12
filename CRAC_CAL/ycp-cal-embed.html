@@ -105,12 +105,10 @@
         };
 
         // --- FALLBACK CONFIGURATION ---
+        // FIX: Kept only the 25m pool as requested for public display.
         const DEFAULT_SETTINGS = {
             zones: [
-                { id: '50m Pool', children: [{ id: 'Lane 1' }, { id: 'Lane 2' }, { id: 'Lane 3' }, { id: 'Lane 4' }, { id: 'Lane 5' }, { id: 'Lane 6' }, { id: 'Lane 7' }, { id: 'Lane 8' }] },
-                { id: 'LTS Pool', children: [] },
-                { id: 'Splash Park', children: [] },
-                { id: 'Multi-Purpose Room', children: [] }
+                { id: '25m Pool', children: [{ id: 'Lane 1' }, { id: 'Lane 2' }, { id: 'Lane 3' }, { id: 'Lane 4' }, { id: 'Lane 5' }, { id: 'Lane 6' }] }
             ],
             eventTypes: {
                 'Learn to Swim': '#3B82F6', 
@@ -122,15 +120,15 @@
         };
 
         // --- FIREBASE INITIALIZATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyBxkpSPfF9znD4T_tH-juzO5hkf44hWUb4",
-  authDomain: "synaipse-f45a9.firebaseapp.com",
-  projectId: "synaipse-f45a9",
-  storageBucket: "synaipse-f45a9.firebasestorage.app",
-  messagingSenderId: "1054773853865",
-  appId: "1:1054773853865:web:cd1c8acc5feac8071cb3b8",
-  measurementId: "G-39F6MJ4ZV6"
-};
+        const firebaseConfig = {
+          apiKey: "AIzaSyBxkpSPfF9znD4T_tH-juzO5hkf44hWUb4",
+          authDomain: "synaipse-f45a9.firebaseapp.com",
+          projectId: "synaipse-f45a9",
+          storageBucket: "synaipse-f45a9.firebasestorage.app",
+          messagingSenderId: "1054773853865",
+          appId: "1:1054773853865:web:cd1c8acc5feac8071cb3b8",
+          measurementId: "G-39F6MJ4ZV6"
+        };
 
         let db, auth;
         try {
@@ -334,7 +332,7 @@ const firebaseConfig = {
                         return eZones.some(z => relevantIds.includes(z));
                     });
 
-                    // NO EVENTS CASE - FIX: Ensure text is populated
+                    // NO EVENTS CASE
                     if (relevantEvents.length === 0) {
                         return { 
                             name: zone.id, 
