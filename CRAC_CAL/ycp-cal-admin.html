@@ -182,7 +182,7 @@
                                 2. Go to Google Cloud Console &gt; Credentials &gt; Key Restrictions &gt; Enable Identity Toolkit API.
                             </span>
                         );
-                    } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
+                    } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email' || err.code === 'auth/invalid-login-credentials') {
                         setError('Incorrect password or user not found.'); 
                     } else {
                         setError(`Connection error: ${err.message}`);
@@ -338,8 +338,55 @@
                 try { await db.collection(paths.settings).doc('main_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
             };
 
-            // --- FILTERING & PAGINATION LOGIC ---
-            const filteredEvents = useMemo(() => {
+            // --- RECURRENCE EXPANSION (For Calendar View) ---
+            const expandedEvents = useMemo(() => {
+                if (viewMode === 'list') return events; 
+                
+                const expanded = [];
+                const now = new Date();
+                const startRange = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const endRange = new Date(now.getFullYear(), now.getMonth() + 4, 0);
+
+                events.forEach(event => {
+                    if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) return;
+                    if (typeFilter !== 'all' && event.type !== typeFilter) return;
+                    if (zoneFilter !== 'all') {
+                        const zones = Array.isArray(event.zone) ? event.zone : [event.zone];
+                        if (!zones.some(z => z === zoneFilter)) return;
+                    }
+
+                    if (event.recurrence && event.recurrence.days) {
+                        let current = new Date(event.startDateTime);
+                        current.setHours(0,0,0,0);
+                        const endRecur = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
+                        const effectiveEnd = new Date(Math.min(endRecur.getTime(), endRange.getTime()));
+                        
+                        if (current < startRange) current = new Date(startRange);
+
+                        const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
+                        const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+
+                        while(current <= effectiveEnd) {
+                            const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
+                            if (event.recurrence.days.includes(dayName)) {
+                                const s = new Date(current); s.setHours(startTime.h, startTime.m, 0, 0);
+                                const e = new Date(s.getTime() + duration);
+                                expanded.push({ ...event, startDateTime: s, endDateTime: e, isInstance: true });
+                            }
+                            current.setDate(current.getDate() + 1);
+                        }
+                    } else {
+                        if (event.startDateTime >= startRange && event.startDateTime <= endRange) {
+                            expanded.push(event);
+                        }
+                    }
+                });
+                return expanded.sort((a,b) => a.startDateTime - b.startDateTime);
+            }, [events, viewMode, searchTerm, typeFilter, zoneFilter]);
+
+
+            // --- LIST VIEW FILTERING (Legacy logic for compatibility) ---
+            const filteredEventsList = useMemo(() => {
                 const now = new Date();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 6);
@@ -377,16 +424,16 @@
             const groupedEventsList = useMemo(() => {
                 const groups = {};
                 const startIndex = (currentPage - 1) * itemsPerPage;
-                const slicedEvents = filteredEvents.slice(startIndex, startIndex + itemsPerPage);
+                const slicedEvents = filteredEventsList.slice(startIndex, startIndex + itemsPerPage);
                 slicedEvents.forEach(event => {
                     const dateKey = event.startDateTime.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
                     if (!groups[dateKey]) groups[dateKey] = [];
                     groups[dateKey].push(event);
                 });
                 return groups;
-            }, [filteredEvents, currentPage]);
+            }, [filteredEventsList, currentPage]);
 
-            const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+            const totalPages = Math.ceil(filteredEventsList.length / itemsPerPage);
 
             const allZonesFlat = useMemo(() => {
                 const z = [];
