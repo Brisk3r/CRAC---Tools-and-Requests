@@ -6,343 +6,192 @@
     <title>Printable Sign Generator - Clarence Regional Aquatic Centre</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom styles for the application */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+        /* Custom styles */
+        body { font-family: 'Inter', sans-serif; }
+        
+        .font-condensed { font-family: 'Roboto Condensed', sans-serif; }
 
-        /* Styles for the A4 preview pane on screen */
+        /* A4 Preview Pane */
         #previewPane {
             width: 210mm;
-            height: 297mm; /* Fixed height for consistency */
-            padding: 20mm;
-            box-sizing: border-box;
-            box-shadow: 0 0 15px rgba(0,0,0,0.15);
-            margin-left: auto;
-            margin-right: auto;
-            transition: all 0.3s;
-            position: relative;
+            height: 297mm;
+            margin: 0 auto;
             background-color: white;
-            overflow: hidden; /* Ensure content doesn't spill out visually */
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
 
-        #previewPane.overflowing {
-             /* Visual cue only for screen */
-            box-shadow: 0 0 0 4px #ef4444;
-        }
+        /* Print Specifics */
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body, html { margin: 0; padding: 0; background: white; height: 100%; }
+            .no-print { display: none !important; }
+            
+            #previewPane {
+                width: 210mm !important;
+                height: 297mm !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: always;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
 
-        /* Border Styles */
-        /* Screen-only default border */
-        .sign-border-none { 
-            border: 1px solid #e5e7eb; 
-        }
-        
-        /* Printable Borders - Forced !important to override any defaults */
-        .sign-border-red { border: 15mm solid #dc2626 !important; }
-        .sign-border-blue { border: 15mm solid #2563eb !important; }
-        .sign-border-hazard {
-            border: 15mm solid #facc15 !important;
-            border-image: repeating-linear-gradient(
-                45deg,
-                #facc15,
-                #facc15 10px,
-                #000 10px,
-                #000 20px
-            ) 30 !important;
+            /* Ensure borders print correctly */
+            .border-print-force {
+                border: 15mm solid !important; 
+            }
         }
 
         /* Editor Styles */
         .rich-text-editor {
-            min-height: 150px;
-            max-height: 300px;
+            min-height: 120px;
+            max-height: 250px;
             overflow-y: auto;
         }
-        .rich-text-editor:focus {
-            outline: none;
-        }
-        .editor-toolbar button {
-            padding: 4px;
-            margin-right: 2px;
-            border-radius: 4px;
-        }
-        .editor-toolbar button:hover {
-            background-color: #e5e7eb;
-        }
-        .editor-toolbar button.active {
-            background-color: #dbeafe;
-            color: #1d4ed8;
-        }
+        .rich-text-editor:focus { outline: none; }
         
-        /* Styles for printing */
-        @media print {
-            @page {
-                size: A4 portrait;
-                margin: 0; /* Critical: tells printer driver to use 0 margin */
-            }
-            
-            body, html {
-                margin: 0;
-                padding: 0;
-                width: 210mm;
-                height: 297mm;
-                background-color: white;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                overflow: hidden; /* Hide any browser-injected debris */
-            }
-
-            /* Hide all elements with the 'no-print' class */
-            .no-print {
-                display: none !important;
-            }
-
-            /* Force the preview pane to fit the page exactly */
-            #previewPane {
-                width: 210mm !important;
-                height: 296mm !important; /* 1mm shorter to prevent 'page 2' overflow */
-                margin: 0 !important;
-                padding: 20mm !important;
-                box-shadow: none !important;
-                display: flex !important;
-                flex-direction: column !important;
-                position: absolute;
-                top: 0;
-                left: 0;
-                border-radius: 0;
-            }
-            
-            /* Remove the grey screen border in print, but KEEP colored borders */
-            .sign-border-none {
-                border: none !important;
-            }
-
-            /* Adjust padding when thick borders are present to prevent content squish */
-            .sign-border-red, .sign-border-blue, .sign-border-hazard {
-                padding: 10mm !important;
-            }
-        }
+        /* Custom Scrollbar for editor */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-slate-100 text-slate-800">
 
-<div class="container mx-auto p-4 sm:p-6 lg:p-8">
+<div class="container mx-auto p-4 lg:p-8 max-w-7xl">
     
-    <!-- Header Section - Hidden on Print -->
-    <div class="no-print mb-8 text-center">
-        <h1 class="text-4xl font-bold text-blue-700">A4 Printable Sign Generator</h1>
-        <p class="text-gray-600 mt-2">Fill in the details below to generate your sign. The preview will update automatically.</p>
+    <!-- Header -->
+    <div class="no-print mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Printable Sign Generator</h1>
+            <p class="text-slate-500 text-sm">Create standard compliant signage for CRAC & YCP</p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="saveCurrentState()" class="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition shadow-sm">
+                <i data-lucide="save" class="w-4 h-4"></i> Save Preset
+            </button>
+            <button onclick="printSign()" class="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md font-bold">
+                <i data-lucide="printer" class="w-4 h-4"></i> Print
+            </button>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Controls Panel -->
-        <div class="no-print bg-white p-6 rounded-lg shadow-md">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        
+        <!-- Controls Sidebar -->
+        <div class="no-print xl:col-span-5 space-y-6">
             
-            <!-- Templates Section -->
-            <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h2 class="text-lg font-bold mb-3 text-blue-800">Quick Templates</h2>
-                <div class="flex gap-2 flex-wrap">
-                    <button onclick="loadTemplate('closure')" class="bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded hover:bg-blue-100 transition text-sm font-medium">Pool Closure</button>
-                    <button onclick="loadTemplate('lanehire')" class="bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded hover:bg-blue-100 transition text-sm font-medium">Lane Hire</button>
-                    <button onclick="loadTemplate('cleaning')" class="bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded hover:bg-blue-100 transition text-sm font-medium">Cleaning / Hazard</button>
-                    <button onclick="loadTemplate('aquafit')" class="bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded hover:bg-blue-100 transition text-sm font-medium">Aqua Fitness</button>
+            <!-- Saved Presets Area -->
+            <div id="savedPresetsContainer" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">My Saved Signs</h3>
+                <div id="savedPresetsList" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Standard Templates -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Quick Templates</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="loadTemplate('crac_general')" class="text-xs bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 py-2 px-3 rounded transition">CRAC General</button>
+                    <button onclick="loadTemplate('ycp_friendly')" class="text-xs bg-slate-50 hover:bg-teal-50 text-slate-700 hover:text-teal-700 border border-slate-200 hover:border-teal-300 py-2 px-3 rounded transition">YCP Friendly</button>
+                    <button onclick="loadTemplate('danger_stop')" class="text-xs bg-slate-50 hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-200 hover:border-red-300 py-2 px-3 rounded transition">Danger/Stop</button>
+                    <button onclick="loadTemplate('cleaning')" class="text-xs bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-700 border border-slate-200 hover:border-yellow-300 py-2 px-3 rounded transition">Cleaning</button>
                 </div>
             </div>
 
-            <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-gray-700">Controls</h2>
-            
-            <div class="space-y-6">
-                
-                <!-- Border Style Control -->
-                <div>
-                    <label for="borderStyleSelector" class="block text-sm font-medium text-gray-700 mb-1">Page Border</label>
-                    <select id="borderStyleSelector" onchange="updatePreview()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="none" selected>None / Thin Grey</option>
-                        <option value="red">Solid Red (Safety/Closure)</option>
-                        <option value="hazard">Hazard Stripes (Warning)</option>
-                        <option value="blue">Solid Blue (Information)</option>
-                    </select>
-                </div>
+            <!-- Accordion Controls -->
+            <div class="space-y-4">
 
-                <!-- Logo Control -->
-                <div>
-                    <label for="signLogoSelector" class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-                    <select id="signLogoSelector" onchange="updatePreview()" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/98325202cc3f831a80e250d16d0c56168515c40a/CRAC%20Large%20Wordmark2.png" selected>Clarence Regional Aquatic Centre</option>
-                        <option value="https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/aec03b349e712519927321f47dade540f2b5bce9/YCP%20Wordmark%20-%20Full%20Horizontal.png">YCP Yamba Community Pool</option>
-                        <option value="">No Logo</option>
-                    </select>
-                </div>
-
-                <!-- Title Controls -->
-                <div>
-                    <label for="signTitleInput" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                    <input type="text" id="signTitleInput" oninput="updatePreview()" value="50m Olympic Pool Shut for Winter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                    <div class="mt-3 p-4 bg-gray-50 rounded-md border">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                            <div>
-                                <label for="titleFontFamily" class="block text-xs font-medium text-gray-600">Font</label>
-                                <select id="titleFontFamily" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="'Inter', sans-serif" selected>Inter</option>
-                                    <option value="Arial, sans-serif">Arial</option>
-                                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
-                                    <option value="Verdana, sans-serif">Verdana</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="titleFontSize" class="block text-xs font-medium text-gray-600">Size (px)</label>
-                                <input type="number" id="titleFontSize" value="48" min="10" max="100" oninput="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                            </div>
-                            <div>
-                                <label for="titleColor" class="block text-xs font-medium text-gray-600">Color</label>
-                                <input type="color" id="titleColor" value="#DC2626" oninput="updatePreview()" class="w-full h-10 mt-1 p-1 border-gray-300 rounded-md">
-                            </div>
-                            <div>
-                                <label for="titleFontWeight" class="block text-xs font-medium text-gray-600">Weight</label>
-                                <select id="titleFontWeight" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="400">Normal</option>
-                                    <option value="500">Medium</option>
-                                    <option value="700" selected>Bold</option>
-                                </select>
-                            </div>
+                <!-- Section 1: Sign Structure & Safety Header -->
+                <div class="bg-white p-5 rounded-xl shadow-md border-l-4 border-blue-500">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="layout-template" class="w-5 h-5 text-blue-500"></i> Structure & Type
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Sign Header Style</label>
+                            <select id="signType" onchange="handleSignTypeChange()" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="none">None (Standard Document)</option>
+                                <option value="danger">DANGER (Red)</option>
+                                <option value="warning">WARNING (Yellow)</option>
+                                <option value="notice">NOTICE (Blue)</option>
+                                <option value="information">INFORMATION (Green)</option>
+                                <option value="custom">CUSTOM...</option>
+                            </select>
                         </div>
-                        <div class="mt-2">
-                             <label for="titleTextAlign" class="block text-xs font-medium text-gray-600">Align</label>
-                             <select id="titleTextAlign" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                 <option value="left">Left</option>
-                                 <option value="center" selected>Center</option>
-                                 <option value="right">Right</option>
-                             </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Symbol Control -->
-                <div>
-                    <label for="signSymbolSelector" class="block text-sm font-medium text-gray-700 mb-1">Symbol</label>
-                    <div class="flex gap-2">
-                        <select id="signSymbolSelector" onchange="updatePreview()" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="" selected>No Symbol</option>
-                            <option value="arrow-left">Arrow Left</option>
-                            <option value="arrow-right">Arrow Right</option>
-                            <option value="arrow-up">Arrow Forward (Up)</option>
-                            <option value="camera">Camera</option>
-                            <option value="octagon-alert">Warning / Stop</option>
-                            <option value="ban">No Entry</option>
-                            <option value="info">Information</option>
-                            <option value="clock">Clock / Time</option>
-                            <option value="waves">Waves / Water</option>
-                            <option value="sparkles">Cleaning / Sparkles</option>
-                        </select>
-                        <input type="color" id="symbolColor" value="#DC2626" oninput="updatePreview()" class="w-12 h-10 p-1 border border-gray-300 rounded-md" title="Symbol Color">
-                    </div>
-                </div>
-
-                <!-- Content Controls (Rich Text) -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                    <div class="border border-gray-300 rounded-md shadow-sm bg-white overflow-hidden">
-                        <!-- Toolbar -->
-                        <div class="editor-toolbar bg-gray-50 border-b border-gray-200 p-2 flex gap-1">
-                            <button onclick="formatDoc('bold')" title="Bold" class="hover:bg-gray-200"><i data-lucide="bold" class="w-4 h-4"></i></button>
-                            <button onclick="formatDoc('italic')" title="Italic" class="hover:bg-gray-200"><i data-lucide="italic" class="w-4 h-4"></i></button>
-                            <button onclick="formatDoc('underline')" title="Underline" class="hover:bg-gray-200"><i data-lucide="underline" class="w-4 h-4"></i></button>
-                            <div class="w-px h-6 bg-gray-300 mx-1"></div>
-                            <button onclick="formatDoc('insertUnorderedList')" title="Bullet List" class="hover:bg-gray-200"><i data-lucide="list" class="w-4 h-4"></i></button>
-                            <button onclick="formatDoc('insertOrderedList')" title="Numbered List" class="hover:bg-gray-200"><i data-lucide="list-ordered" class="w-4 h-4"></i></button>
-                            <div class="w-px h-6 bg-gray-300 mx-1"></div>
-                            <button onclick="formatDoc('removeFormat')" title="Clear Formatting" class="hover:bg-gray-200"><i data-lucide="eraser" class="w-4 h-4"></i></button>
-                        </div>
-                        <!-- Editable Area -->
-                        <div id="signContentInput" contenteditable="true" class="rich-text-editor p-3 focus:ring-2 focus:ring-blue-500 focus:ring-inset" oninput="updatePreview()">
-                            <p>As of Saturday, May 31st, the 50m Olympic Pool and surrounding areas are closed to the public.</p>
-                            <p><br></p>
-                            <p>We appreciate all of our dedicated swimmers who have enjoyed it this season and can't wait to welcome you all back in spring!</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-3 p-4 bg-gray-50 rounded-md border">
-                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                            <div>
-                                <label for="contentFontFamily" class="block text-xs font-medium text-gray-600">Font</label>
-                                <select id="contentFontFamily" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="'Inter', sans-serif" selected>Inter</option>
-                                    <option value="Arial, sans-serif">Arial</option>
-                                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
-                                    <option value="Verdana, sans-serif">Verdana</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="contentFontSize" class="block text-xs font-medium text-gray-600">Size (px)</label>
-                                <input type="number" id="contentFontSize" value="24" min="8" max="72" oninput="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                            </div>
-                            <div>
-                                <label for="contentTextAlign" class="block text-xs font-medium text-gray-600">Global Align</label>
-                                <select id="contentTextAlign" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="left">Left</option>
-                                    <option value="center" selected>Center</option>
-                                    <option value="right">Right</option>
-                                </select>
-                            </div>
+                        
+                        <!-- Header Customization Controls (Hidden if None) -->
+                        <div id="headerCustomControls" class="hidden p-3 bg-slate-50 rounded border border-slate-200 grid grid-cols-3 gap-2">
+                             <div class="col-span-2">
+                                <label class="block text-xs text-slate-500 mb-1">Header Text</label>
+                                <input type="text" id="headerTextInput" oninput="updatePreview()" class="w-full p-1 text-sm border border-slate-300 rounded uppercase font-bold" placeholder="HEADER TEXT">
+                             </div>
                              <div>
-                                <label for="contentColumns" class="block text-xs font-medium text-gray-600">Layout</label>
-                                <select id="contentColumns" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="1" selected>Single Column</option>
-                                    <option value="2">Two Columns</option>
+                                <label class="block text-xs text-slate-500 mb-1">Color</label>
+                                <input type="color" id="headerColorInput" oninput="updatePreview()" class="w-full h-8 p-0 border rounded cursor-pointer">
+                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Page Border</label>
+                                <select id="borderStyle" onchange="updatePreview()" class="w-full p-2 border border-slate-300 rounded text-sm">
+                                    <option value="none">None</option>
+                                    <option value="thin">Thin Grey</option>
+                                    <option value="thick-red">Thick Red</option>
+                                    <option value="thick-blue">Thick Blue</option>
+                                    <option value="hazard">Hazard Stripes</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Background Color</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="bgColor" value="#ffffff" oninput="updatePreview()" class="h-9 w-12 cursor-pointer border rounded">
+                                    <span class="text-xs text-slate-400">Content BG</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Image Upload -->
-                <div>
-                    <label for="signImageInput" class="block text-sm font-medium text-gray-700 mb-1">Image (optional)</label>
-                    <input type="file" id="signImageInput" accept="image/*" onchange="handleImage(event)" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                </div>
+                <!-- Section 2: Branding & Title -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="type" class="w-5 h-5 text-slate-500"></i> Branding & Title
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Logo</label>
+                            <select id="logoSelect" onchange="updatePreview()" class="w-full p-2 border border-slate-300 rounded text-sm mb-2">
+                                <option value="crac">Clarence Regional Aquatic Centre</option>
+                                <option value="ycp">YCP Yamba Community Pool</option>
+                                <option value="none">No Logo</option>
+                            </select>
+                        </div>
 
-                <!-- QR Code Control -->
-                <div>
-                    <label for="qrCodeInput" class="block text-sm font-medium text-gray-700 mb-1">QR Code URL (optional)</label>
-                    <input type="text" id="qrCodeInput" oninput="updatePreview()" placeholder="https://..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                    <p class="text-xs text-gray-500 mt-1">Enter a website address to generate a scannable code.</p>
-                </div>
-
-                <!-- Footer Controls -->
-                <div>
-                    <label for="signFooterInput" class="block text-sm font-medium text-gray-700 mb-1">Footer</label>
-                    <input type="text" id="signFooterInput" oninput="updatePreview()" value="Clarence Regional Aquatic Centre" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                    <div class="mt-3 p-4 bg-gray-50 rounded-md border">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                            <div>
-                                <label for="footerFontFamily" class="block text-xs font-medium text-gray-600">Font</label>
-                                <select id="footerFontFamily" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="'Inter', sans-serif" selected>Inter</option>
-                                    <option value="Arial, sans-serif">Arial</option>
-                                    <option value="'Helvetica Neue', Helvetica, Arial, sans-serif">Helvetica Neue</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="footerFontSize" class="block text-xs font-medium text-gray-600">Size (px)</label>
-                                <input type="number" id="footerFontSize" value="12" min="6" max="48" oninput="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                            </div>
-                            <div>
-                                <label for="footerFontWeight" class="block text-xs font-medium text-gray-600">Weight</label>
-                                <select id="footerFontWeight" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
-                                    <option value="400" selected>Normal</option>
-                                    <option value="500">Medium</option>
-                                    <option value="700">Bold</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="footerTextAlign" class="block text-xs font-medium text-gray-600">Align</label>
-                                <select id="footerTextAlign" onchange="updatePreview()" class="w-full mt-1 p-2 text-sm border-gray-300 rounded-md">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Main Headline</label>
+                            <!-- UPDATED: Textarea to allow multi-line headlines -->
+                            <textarea id="headlineInput" oninput="updatePreview()" rows="2" class="w-full p-2 border border-slate-300 rounded font-bold text-lg leading-tight" placeholder="Enter headline here... (Press Enter for new line)">Pool Closure</textarea>
+                            
+                            <!-- Headline Styles -->
+                            <div class="flex gap-2 mt-2">
+                                <input type="color" id="headlineColor" value="#1e293b" oninput="updatePreview()" class="h-8 w-8 rounded cursor-pointer border">
+                                <input type="number" id="headlineSize" value="48" oninput="updatePreview()" class="w-16 p-1 text-sm border rounded text-center" title="Font Size">
+                                <select id="headlineAlign" onchange="updatePreview()" class="text-sm border rounded p-1 flex-grow">
                                     <option value="left">Left</option>
                                     <option value="center" selected>Center</option>
                                     <option value="right">Right</option>
@@ -351,286 +200,566 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Print Button -->
-            <div class="mt-8 text-center">
-                <button onclick="printSign()" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
-                    Print Sign
-                </button>
+                <!-- Section 3: Visuals (Icon & Image) -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="image" class="w-5 h-5 text-slate-500"></i> Visuals
+                    </h2>
+
+                    <div class="space-y-4">
+                        <!-- Icon Control -->
+                        <div class="border-b border-slate-100 pb-4">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Central Icon / Symbol</label>
+                            <div class="flex gap-2 mb-2">
+                                <select id="iconSelect" onchange="handleIconSelect()" class="flex-grow p-2 border border-slate-300 rounded text-sm">
+                                    <option value="none">No Icon</option>
+                                    <option value="ban">Prohibited (Ban)</option>
+                                    <option value="triangle-alert">Warning (Triangle)</option>
+                                    <option value="info">Info (Circle)</option>
+                                    <option value="clock">Time / Clock</option>
+                                    <option value="waves">Waves / Swim</option>
+                                    <option value="sparkles">Cleaning</option>
+                                    <option value="custom">Upload Custom Icon...</option>
+                                </select>
+                                <input type="color" id="iconColor" value="#ef4444" oninput="updatePreview()" class="h-9 w-10 p-0 border-0 rounded cursor-pointer">
+                            </div>
+                            <input type="file" id="customIconUpload" accept="image/*" onchange="handleCustomIcon(event)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+                        </div>
+
+                        <!-- Main Image Control -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Main Image (Optional)</label>
+                            <input type="file" id="mainImageUpload" accept="image/*" onchange="handleMainImage(event)" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 mb-2">
+                            
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Image Position</label>
+                            <select id="imagePosition" onchange="updatePreview()" class="w-full p-2 border border-slate-300 rounded text-sm">
+                                <option value="top">Above Text</option>
+                                <option value="bottom">Below Text</option>
+                                <option value="hidden">Hidden</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Content Body -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-5 h-5 text-slate-500"></i> Message Body
+                    </h2>
+                    
+                    <div class="mb-2 flex gap-1 bg-slate-50 p-1 rounded border border-slate-200">
+                        <button onclick="formatDoc('bold')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="bold" class="w-4 h-4"></i></button>
+                        <button onclick="formatDoc('italic')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="italic" class="w-4 h-4"></i></button>
+                        <button onclick="formatDoc('underline')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="underline" class="w-4 h-4"></i></button>
+                        <div class="w-px h-6 bg-slate-300 mx-1"></div>
+                        <button onclick="formatDoc('insertUnorderedList')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="list" class="w-4 h-4"></i></button>
+                        <button onclick="formatDoc('removeFormat')" class="p-1 hover:bg-slate-200 rounded ml-auto"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <div id="contentEditor" contenteditable="true" class="rich-text-editor p-3 border border-slate-300 rounded bg-white text-slate-700 mb-3" oninput="updatePreview()">
+                        The 50m Pool is closed for winter maintenance.
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-slate-500">Font Size (px)</label>
+                            <input type="number" id="contentSize" value="28" oninput="updatePreview()" class="w-full border rounded p-1">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500">Alignment</label>
+                            <select id="contentAlign" onchange="updatePreview()" class="w-full border rounded p-1">
+                                <option value="left">Left</option>
+                                <option value="center" selected>Center</option>
+                                <option value="justify">Justify</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Footer & QR -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="qr-code" class="w-5 h-5 text-slate-500"></i> Footer & Contact
+                    </h2>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Footer Text</label>
+                            <input type="text" id="footerText" oninput="updatePreview()" value="Clarence Regional Aquatic Centre" class="w-full p-2 border border-slate-300 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">QR Code URL (Leave empty to hide)</label>
+                            <input type="text" id="qrUrl" oninput="updatePreview()" placeholder="https://..." class="w-full p-2 border border-slate-300 rounded">
+                        </div>
+                        
+                        <!-- NEW QR Controls -->
+                        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                             <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">QR Position</label>
+                                <select id="qrPosition" onchange="updatePreview()" class="w-full p-1 text-sm border border-slate-300 rounded">
+                                    <option value="right" selected>Right</option>
+                                    <option value="left">Left</option>
+                                    <option value="center">Center</option>
+                                </select>
+                             </div>
+                             <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">QR Size</label>
+                                <input type="range" id="qrSize" oninput="updatePreview()" min="50" max="250" value="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Preview Panel -->
-        <div>
-             <h2 class="no-print text-2xl font-bold mb-4 text-center text-gray-700">Preview</h2>
-            <div id="previewPane" class="bg-white flex flex-col sign-border-none relative">
-                <img id="signLogoPreview" src="#" alt="Sign logo" class="hidden self-center mb-4 flex-shrink-0" style="max-width: 450px; max-height: 150px;" onerror="this.style.display='none';">
-                <div id="signTitlePreview" class="break-words font-bold mb-4 flex-shrink-0"></div>
-                <!-- Symbol Preview Container -->
-                <div id="signSymbolPreview" class="self-center my-4 flex-shrink-0"></div>
-                <img id="signImagePreview" src="#" alt="Sign image" class="hidden self-center my-4 flex-shrink-0" style="max-width: 100%; max-height: 200px;" onerror="this.style.display='none';">
-                <div id="signContentPreview" class="break-words flex-grow"></div>
+        <!-- Preview Area -->
+        <div class="xl:col-span-7 flex flex-col items-center">
+            <div id="previewPane" class="relative">
                 
-                <!-- Footer Container with Optional QR -->
-                <div class="mt-auto flex justify-between items-end border-t border-gray-200 pt-4 flex-shrink-0">
-                    <div id="signFooterPreview" class="break-words w-full"></div>
-                    <img id="qrCodePreview" class="hidden ml-4" src="#" alt="QR Code" style="width: 100px; height: 100px;">
+                <!-- Page Border Layer -->
+                <div id="previewBorder" class="absolute inset-0 pointer-events-none z-50"></div>
+
+                <!-- Safety Header (Optional) -->
+                <div id="safetyHeader" class="hidden w-full text-white text-center font-black uppercase tracking-widest flex items-center justify-center font-condensed z-40" style="height: 12%;">
+                    <div class="flex items-center justify-center gap-4 text-5xl">
+                        <span id="safetyHeaderText">DANGER</span>
+                    </div>
+                </div>
+
+                <!-- Main Content Container -->
+                <div id="previewContentContainer" class="flex-grow flex flex-col p-12 z-30 transition-colors duration-300">
+                    
+                    <!-- Top Logo -->
+                    <div class="flex justify-center mb-6 h-16 shrink-0">
+                        <img id="previewLogo" src="" class="h-full object-contain" onerror="this.style.display='none'">
+                    </div>
+
+                    <!-- Headline -->
+                    <div id="previewHeadline" class="font-bold mb-6 break-words leading-tight shrink-0"></div>
+
+                    <!-- Dynamic Content Area (Flex for positioning) -->
+                    <div class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden">
+                        
+                        <!-- Icon -->
+                        <div id="previewIcon" class="shrink-0 transition-all duration-300"></div>
+
+                        <!-- Image (Position Controlled via JS) -->
+                        <div id="previewImageContainer" class="hidden shrink-0">
+                            <img id="previewImage" src="" class="max-h-[300px] max-w-full object-contain shadow-sm rounded">
+                        </div>
+
+                        <!-- Body Text -->
+                        <div id="previewBody" class="w-full break-words"></div>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div id="footerContainer" class="mt-auto pt-8 border-t border-slate-300/50 flex justify-between items-end shrink-0">
+                        <div id="previewFooter" class="text-slate-600 font-medium"></div>
+                        <img id="previewQr" src="" class="hidden w-24 h-24 mix-blend-multiply">
+                    </div>
+
                 </div>
             </div>
-            <!-- Overflow Warning Message -->
-            <div id="overflow-warning" class="no-print text-center text-red-600 font-bold mt-2 hidden">
-                Warning: Content may print on more than one page. Try reducing font size or removing an element.
+            
+            <!-- Overflow Warning -->
+            <div id="overflowWarning" class="no-print hidden mt-4 bg-red-100 text-red-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <strong>Warning:</strong> Content is overflowing. Try reducing font size or image size.
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let imageDataUrl = null;
+    // State
+    let mainImageData = null;
+    let customIconData = null;
 
-    /**
-     * Handles the selection of an image file, converting it to a data URL for preview.
-     * @param {Event} event - The file input change event.
-     */
-    function handleImage(event) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            imageDataUrl = e.target.result;
-            updatePreview();
-        };
-        if (event.target.files && event.target.files[0]) {
-            reader.readAsDataURL(event.target.files[0]);
+    // Assets
+    const logos = {
+        crac: "https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/98325202cc3f831a80e250d16d0c56168515c40a/CRAC%20Large%20Wordmark2.png",
+        ycp: "https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/aec03b349e712519927321f47dade540f2b5bce9/YCP%20Wordmark%20-%20Full%20Horizontal.png",
+        none: ""
+    };
+
+    const safetyStyles = {
+        none: { bg: 'transparent', text: '', class: '', textCol: '#000000' },
+        danger: { bg: '#dc2626', text: 'DANGER', class: 'bg-red-600', textCol: '#ffffff' }, // Red
+        warning: { bg: '#eab308', text: 'WARNING', class: 'bg-yellow-500 text-black', textCol: '#000000' }, // Yellow
+        notice: { bg: '#2563eb', text: 'NOTICE', class: 'bg-blue-600', textCol: '#ffffff' }, // Blue
+        information: { bg: '#22c55e', text: 'INFORMATION', class: 'bg-green-500', textCol: '#ffffff' }, // Green
+        custom: { bg: '#000000', text: 'CUSTOM', class: 'bg-black', textCol: '#ffffff' }
+    };
+
+    // --- Core Functions ---
+
+    function handleSignTypeChange() {
+        const signType = document.getElementById('signType').value;
+        const controls = document.getElementById('headerCustomControls');
+        const textInput = document.getElementById('headerTextInput');
+        const colorInput = document.getElementById('headerColorInput');
+        
+        if (signType === 'none') {
+            controls.classList.add('hidden');
         } else {
-            imageDataUrl = null;
-            updatePreview();
+            controls.classList.remove('hidden');
+            // Pre-fill controls with defaults if not already modified or if switching types
+            // We use the safetyStyles map to get defaults
+            if (safetyStyles[signType]) {
+                textInput.value = safetyStyles[signType].text;
+                colorInput.value = safetyStyles[signType].bg;
+            }
         }
-    }
-    
-    /**
-     * Executes formatting commands for the rich text editor.
-     * @param {string} command - The command to execute (e.g., 'bold', 'italic').
-     * @param {string} value - Optional value for the command.
-     */
-    function formatDoc(command, value) {
-        document.execCommand(command, false, value);
-        // Ensure formatting persists by refocusing
-        const editor = document.getElementById('signContentInput');
-        editor.focus();
         updatePreview();
     }
 
-    /**
-     * Loads predefined template data into the form.
-     * @param {string} type - The type of template to load.
-     */
-    function loadTemplate(type) {
-        const templates = {
-            closure: {
-                title: "Pool Closed",
-                color: "#DC2626", // Red
-                symbol: "ban",
-                symbolColor: "#DC2626",
-                content: "<p>This facility is currently closed for maintenance.</p><p>We apologise for any inconvenience caused.</p>",
-                border: "red",
-                footer: "Clarence Regional Aquatic Centre"
-            },
-            lanehire: {
-                title: "Lane Hired",
-                color: "#2563EB", // Blue
-                symbol: "clock",
-                symbolColor: "#2563EB",
-                content: "<p>This lane is currently reserved for a private booking.</p><p>Please use alternative lanes.</p>",
-                border: "blue",
-                footer: "Clarence Regional Aquatic Centre"
-            },
-            cleaning: {
-                title: "Cleaning in Progress",
-                color: "#000000",
-                symbol: "sparkles",
-                symbolColor: "#FACC15", // Yellow
-                content: "<p><b>Caution:</b> Cleaning in progress.</p><p>Please watch your step and follow staff instructions.</p>",
-                border: "hazard",
-                footer: "Clarence Valley Council"
-            },
-            aquafit: {
-                title: "Aqua Fitness Class",
-                color: "#0D9488", // Teal
-                symbol: "waves",
-                symbolColor: "#0D9488",
-                content: "<p>An Aqua Fitness class is currently in session.</p><p>You are welcome to join, or please respect the space of participants.</p>",
-                border: "none",
-                footer: "Clarence Regional Aquatic Centre"
-            }
-        };
-
-        const t = templates[type];
-        if (t) {
-            document.getElementById('signTitleInput').value = t.title;
-            document.getElementById('titleColor').value = t.color;
-            document.getElementById('signSymbolSelector').value = t.symbol;
-            document.getElementById('symbolColor').value = t.symbolColor;
-            document.getElementById('signContentInput').innerHTML = t.content;
-            document.getElementById('borderStyleSelector').value = t.border;
-            document.getElementById('signFooterInput').value = t.footer;
+    function updatePreview() {
+        // 1. Safety Header
+        const signType = document.getElementById('signType').value;
+        const headerEl = document.getElementById('safetyHeader');
+        const headerTextEl = document.getElementById('safetyHeaderText');
+        
+        if (signType === 'none') {
+            headerEl.classList.add('hidden');
+        } else {
+            headerEl.classList.remove('hidden');
             
-            // Trigger icon update explicitly since we changed value programmatically
-            lucide.createIcons();
+            // Get values from custom controls
+            const customText = document.getElementById('headerTextInput').value;
+            const customColor = document.getElementById('headerColorInput').value;
+            
+            headerTextEl.innerText = customText || safetyStyles[signType].text;
+            headerEl.style.backgroundColor = customColor;
+            
+            // Auto-detect text color based on brightness (simple check)
+            if (customColor.toLowerCase() === '#eab308' || signType === 'warning') {
+                headerEl.style.color = 'black';
+            } else {
+                headerEl.style.color = 'white';
+            }
+        }
+
+        // 2. Borders
+        const borderStyle = document.getElementById('borderStyle').value;
+        const borderEl = document.getElementById('previewBorder');
+        borderEl.style.border = 'none'; // reset
+        borderEl.style.borderImage = 'none';
+
+        if (borderStyle === 'thin') borderEl.style.border = '1px solid #cbd5e1';
+        if (borderStyle === 'thick-red') borderEl.style.border = '15mm solid #dc2626';
+        if (borderStyle === 'thick-blue') borderEl.style.border = '15mm solid #2563eb';
+        if (borderStyle === 'hazard') {
+            borderEl.style.border = '15mm solid #facc15';
+            borderEl.style.borderImage = 'repeating-linear-gradient(45deg, #facc15, #facc15 15px, #000 15px, #000 30px) 60';
+        }
+        
+        // Add specific class for print forcing
+        if (borderStyle !== 'thin' && borderStyle !== 'none') {
+            borderEl.classList.add('border-print-force');
+        } else {
+            borderEl.classList.remove('border-print-force');
+        }
+
+        // 3. Background & Branding
+        document.getElementById('previewContentContainer').style.backgroundColor = document.getElementById('bgColor').value;
+        
+        const logoVal = document.getElementById('logoSelect').value;
+        const logoImg = document.getElementById('previewLogo');
+        if (logoVal !== 'none') {
+            logoImg.src = logos[logoVal];
+            logoImg.style.display = 'block';
+        } else {
+            logoImg.style.display = 'none';
+        }
+
+        // 4. Headline
+        const hl = document.getElementById('previewHeadline');
+        // UPDATED: Use innerHTML to allow breaks
+        hl.innerHTML = document.getElementById('headlineInput').value.replace(/\n/g, '<br>');
+        hl.style.color = document.getElementById('headlineColor').value;
+        hl.style.fontSize = document.getElementById('headlineSize').value + 'px';
+        hl.style.textAlign = document.getElementById('headlineAlign').value;
+
+        // 5. Icons
+        const iconVal = document.getElementById('iconSelect').value;
+        const iconContainer = document.getElementById('previewIcon');
+        iconContainer.innerHTML = '';
+        
+        if (iconVal === 'custom' && customIconData) {
+            const img = document.createElement('img');
+            img.src = customIconData;
+            img.style.height = '120px';
+            img.style.width = 'auto';
+            iconContainer.appendChild(img);
+        } else if (iconVal !== 'none' && iconVal !== 'custom') {
+            const i = document.createElement('i');
+            i.setAttribute('data-lucide', iconVal);
+            i.style.color = document.getElementById('iconColor').value;
+            iconContainer.appendChild(i);
+            lucide.createIcons({
+                attrs: { width: 120, height: 120, 'stroke-width': 1.5 }
+            });
+        }
+
+        // 6. Main Image
+        const imgContainer = document.getElementById('previewImageContainer');
+        const imgPos = document.getElementById('imagePosition').value;
+        const bodyText = document.getElementById('previewBody');
+        
+        if (mainImageData && imgPos !== 'hidden') {
+            document.getElementById('previewImage').src = mainImageData;
+            imgContainer.classList.remove('hidden');
+            // Logic to swap order
+            if (imgPos === 'top') {
+                imgContainer.parentNode.insertBefore(imgContainer, bodyText);
+            } else {
+                imgContainer.parentNode.insertBefore(bodyText, imgContainer);
+            }
+        } else {
+            imgContainer.classList.add('hidden');
+        }
+
+        // 7. Body Content
+        bodyText.innerHTML = document.getElementById('contentEditor').innerHTML;
+        bodyText.style.fontSize = document.getElementById('contentSize').value + 'px';
+        bodyText.style.textAlign = document.getElementById('contentAlign').value;
+
+        // 8. Footer & QR
+        const footerContainer = document.getElementById('footerContainer');
+        const footerText = document.getElementById('previewFooter');
+        const qrImg = document.getElementById('previewQr');
+        const footerTextVal = document.getElementById('footerText').value;
+        const qrUrl = document.getElementById('qrUrl').value;
+        const qrPos = document.getElementById('qrPosition').value;
+        const qrSize = document.getElementById('qrSize').value;
+
+        footerText.innerText = footerTextVal;
+        
+        // QR Logic
+        if (qrUrl.trim()) {
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+            qrImg.classList.remove('hidden');
+            qrImg.style.width = qrSize + 'px';
+            qrImg.style.height = qrSize + 'px';
+            
+            // Positioning Logic
+            footerContainer.className = 'mt-auto pt-8 border-t border-slate-300/50 flex shrink-0'; // Reset base classes
+            
+            if (qrPos === 'right') {
+                footerContainer.classList.add('justify-between', 'items-end', 'flex-row');
+                footerContainer.appendChild(footerText); // Ensure text is first
+                footerContainer.appendChild(qrImg); // QR second
+                footerText.style.textAlign = 'left';
+            } else if (qrPos === 'left') {
+                footerContainer.classList.add('justify-between', 'items-end', 'flex-row');
+                footerContainer.appendChild(qrImg); // QR first
+                footerContainer.appendChild(footerText); // Text second
+                footerText.style.textAlign = 'right';
+            } else if (qrPos === 'center') {
+                footerContainer.classList.add('flex-col', 'items-center', 'justify-center', 'gap-4');
+                footerContainer.appendChild(footerText);
+                footerContainer.appendChild(qrImg);
+                footerText.style.textAlign = 'center';
+            }
+
+        } else {
+            qrImg.classList.add('hidden');
+            // Reset footer alignment if no QR
+            footerContainer.className = 'mt-auto pt-8 border-t border-slate-300/50 flex justify-center items-end shrink-0';
+            footerContainer.appendChild(footerText); // Just text
+            footerText.style.textAlign = 'center';
+        }
+
+        checkOverflow();
+    }
+
+    // --- Logic Functions ---
+
+    function handleIconSelect() {
+        const val = document.getElementById('iconSelect').value;
+        const upload = document.getElementById('customIconUpload');
+        if (val === 'custom') {
+            upload.classList.remove('hidden');
+        } else {
+            upload.classList.add('hidden');
             updatePreview();
         }
     }
 
-    /**
-     * Triggers the browser's print dialog. 
-     * The @media print styles handle the formatting.
-     */
+    function handleCustomIcon(e) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            customIconData = e.target.result;
+            updatePreview();
+        };
+        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function handleMainImage(e) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            mainImageData = e.target.result;
+            updatePreview();
+        };
+        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function formatDoc(cmd) {
+        document.execCommand(cmd, false, null);
+        document.getElementById('contentEditor').focus();
+        updatePreview();
+    }
+
+    function checkOverflow() {
+        const pane = document.getElementById('previewPane');
+        // Simple check: is scrollHeight > offsetHeight?
+        if (pane.scrollHeight > pane.clientHeight + 2) { // +2 buffer
+            document.getElementById('overflowWarning').classList.remove('hidden');
+        } else {
+            document.getElementById('overflowWarning').classList.add('hidden');
+        }
+    }
+
     function printSign() {
         window.print();
     }
 
-    /**
-     * Checks if the content in the preview pane is overflowing and updates UI accordingly.
-     */
-    function checkLayoutOverflow() {
-        // Use a short timeout to allow the browser to render before we measure.
-        setTimeout(() => {
-            const previewPane = document.getElementById('previewPane');
-            const warningElement = document.getElementById('overflow-warning');
-            
-            // scrollHeight is the total height of content, clientHeight is the visible height of the box
-            if (previewPane.scrollHeight > previewPane.clientHeight) {
-                previewPane.classList.add('overflowing');
-                warningElement.classList.remove('hidden');
-            } else {
-                previewPane.classList.remove('overflowing');
-                warningElement.classList.add('hidden');
-            }
-        }, 50); // 50ms delay is usually enough for rendering
-    }
+    // --- Templates & Presets ---
 
-
-    /**
-     * Updates the entire preview pane based on the current values in the control inputs.
-     */
-    function updatePreview() {
-        // --- Logo ---
-        const logoPreview = document.getElementById('signLogoPreview');
-        const selectedLogoUrl = document.getElementById('signLogoSelector').value;
-        if (selectedLogoUrl) {
-            logoPreview.src = selectedLogoUrl;
-            logoPreview.style.display = 'block';
-        } else {
-            logoPreview.style.display = 'none';
+    const templates = {
+        crac_general: {
+            type: 'none', border: 'none', logo: 'crac', 
+            hlText: 'Pool Closure', hlColor: '#1e293b', hlSize: 48,
+            icon: 'ban', iconColor: '#dc2626', bg: '#ffffff',
+            body: 'The 50m Pool is closed for maintenance.',
+            footer: 'Clarence Regional Aquatic Centre'
+        },
+        ycp_friendly: {
+            type: 'none', border: 'thick-blue', logo: 'ycp',
+            hlText: 'Lane Reserved', hlColor: '#2563eb', hlSize: 42,
+            icon: 'clock', iconColor: '#2563eb', bg: '#eff6ff',
+            body: 'This lane is reserved for swim squad training.<br>Please use alternative lanes.',
+            footer: 'Yamba Community Pool'
+        },
+        danger_stop: {
+            type: 'danger', border: 'hazard', logo: 'none',
+            hlText: 'DO NOT ENTER', hlColor: '#000000', hlSize: 60,
+            icon: 'triangle-alert', iconColor: '#dc2626', bg: '#ffffff',
+            body: 'Chemical handling in progress.<br>Authorised Personnel Only.',
+            footer: 'Clarence Valley Council'
+        },
+        cleaning: {
+            type: 'warning', border: 'none', logo: 'crac',
+            hlText: 'Cleaning In Progress', hlColor: '#000000', hlSize: 42,
+            icon: 'sparkles', iconColor: '#eab308', bg: '#fefce8',
+            body: 'Floors may be slippery. Please watch your step.',
+            footer: 'Clarence Regional Aquatic Centre'
         }
+    };
 
-        // --- Border Style ---
-        const previewPane = document.getElementById('previewPane');
-        const borderStyle = document.getElementById('borderStyleSelector').value;
+    function loadTemplate(key) {
+        const t = templates[key];
+        document.getElementById('signType').value = t.type;
+        document.getElementById('borderStyle').value = t.border;
+        document.getElementById('logoSelect').value = t.logo;
+        document.getElementById('headlineInput').value = t.hlText;
+        document.getElementById('headlineColor').value = t.hlColor;
+        document.getElementById('headlineSize').value = t.hlSize;
+        document.getElementById('iconSelect').value = t.icon;
+        document.getElementById('iconColor').value = t.iconColor;
+        document.getElementById('bgColor').value = t.bg;
+        document.getElementById('contentEditor').innerHTML = t.body;
+        document.getElementById('footerText').value = t.footer;
         
-        // Remove all border classes first
-        previewPane.classList.remove('sign-border-none', 'sign-border-red', 'sign-border-blue', 'sign-border-hazard');
-        // Add the selected one
-        previewPane.classList.add('sign-border-' + borderStyle);
-
-
-        // --- Title ---
-        const titlePreview = document.getElementById('signTitlePreview');
-        titlePreview.textContent = document.getElementById('signTitleInput').value;
-        titlePreview.style.fontFamily = document.getElementById('titleFontFamily').value;
-        titlePreview.style.fontSize = document.getElementById('titleFontSize').value + 'px';
-        titlePreview.style.color = document.getElementById('titleColor').value;
-        titlePreview.style.textAlign = document.getElementById('titleTextAlign').value;
-        titlePreview.style.fontWeight = document.getElementById('titleFontWeight').value;
-
-        // --- Symbol (using Lucide) ---
-        const symbolPreview = document.getElementById('signSymbolPreview');
-        const selectedIconName = document.getElementById('signSymbolSelector').value;
-        const symbolColor = document.getElementById('symbolColor').value;
-        symbolPreview.innerHTML = ''; // Clear previous symbol
-        
-        if (selectedIconName) {
-            const iconElement = document.createElement('i');
-            iconElement.setAttribute('data-lucide', selectedIconName);
-            // Apply color directly to style
-            iconElement.style.color = symbolColor;
-            
-            symbolPreview.appendChild(iconElement);
-            lucide.createIcons({
-                attrs: {
-                    'stroke-width': 1.5,
-                    width: 100,
-                    height: 100,
-                },
-            });
-        }
-
-        // --- Content ---
-        const contentPreview = document.getElementById('signContentPreview');
-        // Get HTML directly from the contenteditable div
-        const editorContent = document.getElementById('signContentInput').innerHTML;
-        contentPreview.innerHTML = editorContent;
-        
-        contentPreview.style.fontFamily = document.getElementById('contentFontFamily').value;
-        contentPreview.style.fontSize = document.getElementById('contentFontSize').value + 'px';
-        contentPreview.style.textAlign = document.getElementById('contentTextAlign').value;
-        const columnLayout = document.getElementById('contentColumns').value;
-        contentPreview.style.columnCount = columnLayout;
-        contentPreview.style.columnGap = (columnLayout === '2') ? '40px' : 'normal';
-
-        // Fix list styles in preview that might be lost from Tailwind reset or editor defaults
-        const lists = contentPreview.querySelectorAll('ul, ol');
-        lists.forEach(list => {
-            if(list.tagName === 'UL') list.classList.add('list-disc', 'ml-8', 'mb-2');
-            if(list.tagName === 'OL') list.classList.add('list-decimal', 'ml-8', 'mb-2');
-        });
-        
-        // Ensure paragraphs have spacing
-        const paragraphs = contentPreview.querySelectorAll('p');
-        paragraphs.forEach(p => {
-             // Only add margin if it doesn't have it (though innerHTML usually keeps it clean)
-             p.classList.add('mb-4');
-        });
-
-        // --- Content Image ---
-        const imagePreview = document.getElementById('signImagePreview');
-        if (imageDataUrl) {
-            imagePreview.src = imageDataUrl;
-            imagePreview.style.display = 'block';
-        } else {
-            imagePreview.style.display = 'none';
-        }
-
-        // --- QR Code ---
-        const qrUrl = document.getElementById('qrCodeInput').value;
-        const qrPreview = document.getElementById('qrCodePreview');
-        if (qrUrl && qrUrl.trim() !== '') {
-            // Using a reliable public API for QR generation
-            qrPreview.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
-            qrPreview.style.display = 'block';
-            qrPreview.classList.remove('hidden');
-        } else {
-            qrPreview.style.display = 'none';
-        }
-
-        // --- Footer ---
-        const footerPreview = document.getElementById('signFooterPreview');
-        footerPreview.textContent = document.getElementById('signFooterInput').value;
-        footerPreview.style.fontFamily = document.getElementById('footerFontFamily').value;
-        footerPreview.style.fontSize = document.getElementById('footerFontSize').value + 'px';
-        footerPreview.style.textAlign = document.getElementById('footerTextAlign').value;
-        footerPreview.style.fontWeight = document.getElementById('footerFontWeight').value;
-
-        // --- Check for overflow ---
-        checkLayoutOverflow();
-    }
-
-    // --- Initial Setup ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initial call to render the preview when the page loads
+        handleIconSelect(); // Reset custom upload visibility
+        handleSignTypeChange(); // Ensure header controls update
         updatePreview();
-        // Initialise Lucide icons
+    }
+
+    // --- Local Storage (Save/Load) ---
+
+    function saveCurrentState() {
+        const name = prompt("Enter a name for this preset (e.g., 'Weekly Cleaning'):");
+        if (!name) return;
+
+        const state = {
+            headline: document.getElementById('headlineInput').value,
+            content: document.getElementById('contentEditor').innerHTML,
+            signType: document.getElementById('signType').value,
+            logo: document.getElementById('logoSelect').value,
+            // We only save the key configurations, not images (too big for localstorage usually)
+            footer: document.getElementById('footerText').value,
+            headerText: document.getElementById('headerTextInput').value,
+            headerColor: document.getElementById('headerColorInput').value
+        };
+
+        const saves = JSON.parse(localStorage.getItem('mySignPresets') || '{}');
+        saves[name] = state;
+        localStorage.setItem('mySignPresets', JSON.stringify(saves));
+        refreshSavedList();
+    }
+
+    function loadPreset(name) {
+        const saves = JSON.parse(localStorage.getItem('mySignPresets'));
+        if (saves && saves[name]) {
+            const s = saves[name];
+            document.getElementById('headlineInput').value = s.headline;
+            document.getElementById('contentEditor').innerHTML = s.content;
+            document.getElementById('signType').value = s.signType;
+            document.getElementById('logoSelect').value = s.logo;
+            document.getElementById('footerText').value = s.footer;
+            if(s.headerText) document.getElementById('headerTextInput').value = s.headerText;
+            if(s.headerColor) document.getElementById('headerColorInput').value = s.headerColor;
+            
+            handleSignTypeChange();
+            updatePreview();
+        }
+    }
+
+    function deletePreset(name) {
+        if(confirm('Delete preset: ' + name + '?')) {
+            const saves = JSON.parse(localStorage.getItem('mySignPresets'));
+            delete saves[name];
+            localStorage.setItem('mySignPresets', JSON.stringify(saves));
+            refreshSavedList();
+        }
+    }
+
+    function refreshSavedList() {
+        const container = document.getElementById('savedPresetsContainer');
+        const list = document.getElementById('savedPresetsList');
+        const saves = JSON.parse(localStorage.getItem('mySignPresets') || '{}');
+        
+        list.innerHTML = '';
+        const keys = Object.keys(saves);
+        
+        if (keys.length > 0) {
+            container.classList.remove('hidden');
+            keys.forEach(k => {
+                const badge = document.createElement('div');
+                badge.className = "flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200";
+                badge.innerHTML = `
+                    <span class="cursor-pointer font-medium mr-2" onclick="loadPreset('${k}')">${k}</span>
+                    <button onclick="deletePreset('${k}')" class="text-blue-400 hover:text-red-500"><i data-lucide="x" class="w-3 h-3"></i></button>
+                `;
+                list.appendChild(badge);
+            });
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
+        refreshSavedList();
+        handleSignTypeChange(); // Initialize controls
+        updatePreview();
     });
+
 </script>
 
 </body>
