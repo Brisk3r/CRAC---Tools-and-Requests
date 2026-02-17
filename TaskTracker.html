@@ -29,21 +29,34 @@
         
         /* Kanban specific styles */
         .kanban-column { min-height: 400px; }
-        .timeline-scroll::-webkit-scrollbar { height: 8px; }
-        .timeline-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .timeline-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .timeline-scroll::-webkit-scrollbar { height: 10px; }
+        .timeline-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 6px; }
+        .timeline-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid #f1f5f9; }
+        .timeline-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* Modal Animation */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .modal-animate { animation: fadeIn 0.2s ease-out; }
 
-        /* Timeline Resize Handle */
+        /* Improved Resize Handles */
         .resize-handle {
-            position: absolute; top: 0; bottom: 0; width: 10px;
-            cursor: ew-resize; z-index: 10; display: flex; align-items: center; justify-content: center;
+            position: absolute; top: 0; bottom: 0; width: 20px; /* Wider hit target */
+            cursor: ew-resize; z-index: 20; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
         }
-        .resize-handle-left { left: -5px; }
-        .resize-handle-right { right: -5px; }
+        .resize-handle:hover { opacity: 1; background-color: rgba(255,255,255,0.1); }
+        .resize-handle::after {
+            content: ''; height: 16px; width: 4px; 
+            background-color: white; 
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .resize-handle-left { left: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+        .resize-handle-right { right: 0; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+        
+        /* Show handles when hovering the bar */
+        .task-bar:hover .resize-handle { opacity: 0.4; }
+        .task-bar .resize-handle:hover { opacity: 1; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -349,10 +362,10 @@
             );
         };
 
-        // --- Timeline View (Refactored for Light Mode) ---
+        // --- Improved Timeline View ---
         const TimelineView = ({ tasks, onEditTask, onSaveTask }) => {
             const [startDate, setStartDate] = useState(new Date());
-            const [resizingTask, setResizingTask] = useState(null);
+            const [dragState, setDragState] = useState(null); // { type, task, handle, startX, originalStart, originalEnd, hasMoved }
             const dayRef = useRef(null);
 
             const timeDiff = (d1, d2) => (new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24);
@@ -365,43 +378,71 @@
             
             const changeWeek = (offset) => setStartDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + (7 * offset)); return d; });
 
-            // ... Resizing Logic remains same, only styling changes below ...
-             const handleMouseDown = (e, task, handle) => {
+            const handleMouseDown = (e, task, type, handle = null) => {
                 e.stopPropagation(); e.preventDefault();
-                setResizingTask({ id: task.id, handle, startX: e.clientX, originalTask: task });
+                setDragState({ 
+                    type, task, handle, 
+                    startX: e.clientX, 
+                    originalStart: task.startDate, 
+                    originalEnd: task.dueDate,
+                    hasMoved: false 
+                });
             };
 
             useEffect(() => {
-                const handleMouseMove = (e) => {}; // Visual only
-                const handleMouseUp = (e) => {
-                    if (!resizingTask || !dayRef.current) return;
-                    const dayWidth = dayRef.current.offsetWidth;
-                    const dx = e.clientX - resizingTask.startX;
-                    const dayDelta = Math.round(dx / dayWidth);
-                    if (dayDelta === 0) { setResizingTask(null); return; }
-
-                    const { originalTask, handle } = resizingTask;
-                    const finalTask = { ...originalTask };
-
-                    if (handle === 'start') {
-                        const newDate = new Date(originalTask.startDate); newDate.setDate(newDate.getDate() + dayDelta);
-                        finalTask.startDate = newDate.toISOString().split('T')[0];
-                        if (new Date(finalTask.startDate) > new Date(finalTask.dueDate)) finalTask.startDate = originalTask.startDate;
-                    } else {
-                        const newDate = new Date(originalTask.dueDate); newDate.setDate(newDate.getDate() + dayDelta);
-                        finalTask.dueDate = newDate.toISOString().split('T')[0];
-                        if (new Date(finalTask.dueDate) < new Date(finalTask.startDate)) finalTask.dueDate = originalTask.dueDate;
-                    }
-                    onSaveTask(finalTask, false);
-                    setResizingTask(null);
+                const handleMouseMove = (e) => {
+                    if (!dragState) return;
+                    const dx = Math.abs(e.clientX - dragState.startX);
+                    if (dx > 5) setDragState(prev => ({ ...prev, hasMoved: true }));
                 };
+                
+                const handleMouseUp = (e) => {
+                    if (!dragState || !dayRef.current) return;
+                    const { task, type, handle, originalStart, originalEnd, hasMoved } = dragState;
+
+                    // If it was just a click (no significant move), interpret as Edit action
+                    if (!hasMoved && type === 'move') {
+                        onEditTask(task);
+                        setDragState(null);
+                        return;
+                    }
+
+                    const dayWidth = dayRef.current.offsetWidth;
+                    const dx = e.clientX - dragState.startX;
+                    const dayDelta = Math.round(dx / dayWidth);
+
+                    if (dayDelta === 0) { setDragState(null); return; }
+
+                    const finalTask = { ...task };
+
+                    if (type === 'move') {
+                        const newStart = new Date(originalStart); newStart.setDate(newStart.getDate() + dayDelta);
+                        const newEnd = new Date(originalEnd); newEnd.setDate(newEnd.getDate() + dayDelta);
+                        finalTask.startDate = newStart.toISOString().split('T')[0];
+                        finalTask.dueDate = newEnd.toISOString().split('T')[0];
+                    } else if (type === 'resize') {
+                        if (handle === 'start') {
+                            const newDate = new Date(originalStart); newDate.setDate(newDate.getDate() + dayDelta);
+                            finalTask.startDate = newDate.toISOString().split('T')[0];
+                            if (new Date(finalTask.startDate) > new Date(finalTask.dueDate)) finalTask.startDate = originalStart;
+                        } else {
+                            const newDate = new Date(originalEnd); newDate.setDate(newDate.getDate() + dayDelta);
+                            finalTask.dueDate = newDate.toISOString().split('T')[0];
+                            if (new Date(finalTask.dueDate) < new Date(finalTask.startDate)) finalTask.dueDate = originalEnd;
+                        }
+                    }
+                    
+                    onSaveTask(finalTask, false);
+                    setDragState(null);
+                };
+
                 window.addEventListener('mousemove', handleMouseMove); window.addEventListener('mouseup', handleMouseUp);
                 return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
-            }, [resizingTask]);
+            }, [dragState]);
 
             return (
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between mb-6">
+                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+                    <div className="flex items-center justify-between mb-6 flex-shrink-0">
                         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                             <i className="ph-bold ph-chart-bar text-orange-500"></i> Project Timeline
                         </h2>
@@ -412,39 +453,67 @@
                         </div>
                     </div>
                     
-                    <div className="overflow-x-auto timeline-scroll pb-4">
+                    <div className="overflow-x-auto timeline-scroll pb-4 flex-grow relative">
                         <div className="grid gap-y-1 min-w-[1200px]" style={{gridTemplateColumns: `200px repeat(${dates.length}, 1fr)`}}>
-                            <div className="sticky left-0 bg-white z-10 font-bold text-slate-400 text-xs p-2 border-r border-slate-200">TASK</div>
-                            {dates.map((date, i) => (
-                                <div key={i} ref={i === 0 ? dayRef : null} className={`text-center border-r border-slate-100 py-1 ${date.getDay() === 0 || date.getDay() === 6 ? 'bg-slate-50' : ''}`}>
-                                    <p className="text-[10px] text-slate-400 uppercase">{date.toLocaleDateString('en-AU', {weekday: 'short'})}</p>
-                                    <p className={`text-xs font-bold ${date.toDateString() === new Date().toDateString() ? 'text-orange-500' : 'text-slate-600'}`}>{date.getDate()}</p>
-                                </div>
-                            ))}
+                            
+                            {/* Sticky Header Row */}
+                            <div className="sticky left-0 bg-white z-20 font-bold text-slate-400 text-xs p-2 border-r border-slate-200 border-b shadow-sm flex items-center h-10 top-0">TASK</div>
+                            {dates.map((date, i) => {
+                                const isToday = date.toDateString() === new Date().toDateString();
+                                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                                return (
+                                    <div key={i} ref={i === 0 ? dayRef : null} 
+                                        className={`text-center border-r border-slate-100 border-b py-1 sticky top-0 z-10 h-10 ${isWeekend ? 'bg-slate-50/80' : 'bg-white'} ${isToday ? 'bg-orange-50' : ''}`}>
+                                        <p className="text-[10px] text-slate-400 uppercase leading-tight">{date.toLocaleDateString('en-AU', {weekday: 'short'})}</p>
+                                        <p className={`text-xs font-bold leading-tight ${isToday ? 'text-orange-600' : 'text-slate-600'}`}>{date.getDate()}</p>
+                                        
+                                        {/* Today Line Indicator */}
+                                        {isToday && (
+                                            <div className="absolute top-10 bottom-[-1000px] left-1/2 w-0.5 bg-blue-400 z-0 pointer-events-none opacity-50 transform -translate-x-1/2"></div>
+                                        )}
+                                    </div>
+                                );
+                            })}
 
+                            {/* Task Rows */}
                             {tasks.map((task, taskIndex) => {
                                 if (!task.startDate || !task.dueDate) return null;
                                 const taskStart = new Date(task.startDate); const taskEnd = new Date(task.dueDate);
                                 const gridColumnStart = Math.floor(timeDiff(taskStart, dates[0])) + 2;
                                 const duration = Math.max(1, Math.ceil(timeDiff(taskEnd, taskStart)) + 1);
+                                
+                                // Hide if out of view
                                 if (gridColumnStart > dates.length + 1 || (gridColumnStart + duration) < 2) return null;
                                 
                                 const statusColor = task.status === 'Completed' ? 'bg-green-500 border-green-600' : task.status === 'In Progress' ? 'bg-orange-500 border-orange-600' : 'bg-slate-400 border-slate-500';
 
                                 return (
                                     <React.Fragment key={task.id}>
-                                        <div className="sticky left-0 bg-white z-10 text-sm font-medium text-slate-600 p-2 pr-4 truncate border-r border-slate-200 border-t border-slate-50 flex items-center" style={{gridRow: taskIndex + 2}}>
+                                        <div className="sticky left-0 bg-white z-10 text-sm font-medium text-slate-600 p-2 pr-4 truncate border-r border-slate-200 border-b border-slate-50 flex items-center hover:bg-slate-50 transition-colors h-10 cursor-pointer" 
+                                             style={{gridRow: taskIndex + 2}}
+                                             onClick={() => onEditTask(task)}>
                                             {task.title}
                                         </div>
-                                        {dates.map((_, i) => <div key={i} className="border-r border-slate-50 border-t border-slate-50" style={{gridRow: taskIndex + 2}}></div>)}
                                         
-                                        <div onClick={() => onEditTask(task)} 
-                                            className={`h-8 mt-1 mx-0.5 rounded-md cursor-pointer flex items-center justify-between relative group ${statusColor} border shadow-sm hover:shadow-md hover:brightness-110 transition-all text-white`} 
-                                            style={{ gridColumn: `${Math.max(2, gridColumnStart)} / span ${duration}`, gridRow: taskIndex + 2 }}>
+                                        {/* Grid Background Cells */}
+                                        {dates.map((d, i) => {
+                                            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                                            return (
+                                                <div key={i} className={`border-r border-slate-100 border-b border-slate-50 h-10 ${isWeekend ? 'bg-slate-50/50' : ''}`} style={{gridRow: taskIndex + 2}}></div>
+                                            );
+                                        })}
+                                        
+                                        {/* Task Bar */}
+                                        <div className={`h-7 mt-1.5 mx-1 rounded-md flex items-center justify-between relative task-bar ${statusColor} border shadow-sm hover:shadow-md hover:brightness-110 transition-all text-white z-10`} 
+                                            style={{ gridColumn: `${Math.max(2, gridColumnStart)} / span ${duration}`, gridRow: taskIndex + 2, cursor: 'grab' }}
+                                            onMouseDown={(e) => handleMouseDown(e, task, 'move')}>
                                             
-                                            <div className="resize-handle resize-handle-left opacity-0 group-hover:opacity-100" onMouseDown={(e) => handleMouseDown(e, task, 'start')}></div>
-                                            <div className="px-2 w-full truncate text-xs font-semibold drop-shadow-sm">{task.title}</div>
-                                            <div className="resize-handle resize-handle-right opacity-0 group-hover:opacity-100" onMouseDown={(e) => handleMouseDown(e, task, 'end')}></div>
+                                            {/* Resize Handles */}
+                                            <div className="resize-handle resize-handle-left" onMouseDown={(e) => handleMouseDown(e, task, 'resize', 'start')}></div>
+                                            
+                                            <div className="px-3 w-full truncate text-xs font-bold drop-shadow-sm pointer-events-none select-none">{task.title}</div>
+                                            
+                                            <div className="resize-handle resize-handle-right" onMouseDown={(e) => handleMouseDown(e, task, 'resize', 'end')}></div>
                                         </div>
                                     </React.Fragment>
                                 );
