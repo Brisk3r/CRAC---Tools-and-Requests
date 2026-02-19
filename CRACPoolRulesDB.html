@@ -361,7 +361,12 @@
 
         function init() {
             if (GOOGLE_SHEET_URL) {
-                Papa.parse(GOOGLE_SHEET_URL, {
+                // CACHE BUSTER ADDITION
+                // We add a unique timestamp to the URL to force the browser to fetch a fresh copy
+                const separator = GOOGLE_SHEET_URL.includes('?') ? '&' : '?';
+                const bustCacheUrl = GOOGLE_SHEET_URL + separator + 't=' + new Date().getTime();
+
+                Papa.parse(bustCacheUrl, {
                     download: true,
                     header: true,
                     complete: function(results) {
