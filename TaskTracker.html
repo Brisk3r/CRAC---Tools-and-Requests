@@ -14,95 +14,66 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
     
+    <!-- Tailwind Configuration for Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        slate: { 750: '#2d3748', 850: '#1a202c', 950: '#0f172a' } // Custom dark shades
+                    }
+                }
+            }
+        }
+    </script>
+
     <!-- Firebase Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
         
-        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signOut, getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp };
+        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, signOut, getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch };
     </script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
         [x-cloak] { display: none !important; }
         
-        /* Kanban specific styles */
-        .kanban-column { min-height: 400px; }
-        .timeline-scroll::-webkit-scrollbar { height: 10px; }
-        .timeline-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 6px; }
-        .timeline-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid #f1f5f9; }
-        .timeline-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { height: 10px; width: 10px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* Modal Animation */
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .modal-animate { animation: fadeIn 0.2s ease-out; }
-
-        /* Improved Resize Handles */
-        .resize-handle {
-            position: absolute; top: 0; bottom: 0; width: 20px; /* Wider hit target */
-            cursor: ew-resize; z-index: 20; display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.2s;
-        }
-        .resize-handle:hover { opacity: 1; background-color: rgba(255,255,255,0.1); }
-        .resize-handle::after {
-            content: ''; height: 16px; width: 4px; 
-            background-color: white; 
-            border-radius: 2px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-        .resize-handle-left { left: 0; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
-        .resize-handle-right { right: 0; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
-        
-        /* Show handles when hovering the bar */
-        .task-bar:hover .resize-handle { opacity: 0.4; }
-        .task-bar .resize-handle:hover { opacity: 1; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.15s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
-
-    <!-- Standard Header with Back Button -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="index.html" class="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-medium">
-                <i class="ph-bold ph-arrow-left"></i>
-                <span>Back to Hub</span>
-            </a>
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-slate-700">Task Tracker</span>
-                <div class="bg-orange-500 text-white p-1.5 rounded-md">
-                    <i class="ph-bold ph-list-checks"></i>
-                </div>
-            </div>
-        </div>
-    </header>
+<body class="bg-slate-50 text-slate-800 transition-colors duration-300">
 
     <!-- React Root -->
-    <div id="root" class="flex-grow flex flex-col"></div>
-
-    <!-- Simple Footer -->
-    <footer class="py-6 text-center text-xs text-slate-400">
-        &copy; Clarence Valley Council - Operations Hub
-    </footer>
+    <div id="root" class="flex-grow flex flex-col min-h-screen"></div>
 
     <!-- App Logic -->
     <script type="text/babel" data-type="module" data-presets="react">
         const { useState, useEffect, useMemo, useRef } = React;
         
-        // --- Icons (Phosphor wrappers) ---
-        const IconWrapper = ({ className, children, onClick }) => <i className={`ph-bold ${className}`} onClick={onClick}>{children}</i>;
-
         // --- Styles & Maps ---
         const priorityMap = { 
-            High: { icon: "ph-caret-double-up", color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200', value: 3 }, 
-            Medium: { icon: "ph-equals", color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-200', value: 2 }, 
-            Low: { icon: "ph-caret-down", color: 'text-green-500', bg: 'bg-green-50', border: 'border-green-200', value: 1 } 
+            High: { icon: "ph-caret-double-up", color: 'text-red-500 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-200 dark:border-red-800', value: 3 }, 
+            Medium: { icon: "ph-equals", color: 'text-orange-500 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800', value: 2 }, 
+            Low: { icon: "ph-caret-down", color: 'text-green-500 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800', value: 1 } 
         };
         
         const statusMap = { 
-            'To Do': { borderTop: 'border-t-slate-400', badge: 'bg-slate-100 text-slate-600' }, 
-            'In Progress': { borderTop: 'border-t-orange-500', badge: 'bg-orange-100 text-orange-700' }, 
-            'Completed': { borderTop: 'border-t-green-500', badge: 'bg-green-100 text-green-700' } 
+            'To Do': { borderTop: 'border-t-slate-400', badge: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' }, 
+            'In Progress': { borderTop: 'border-t-orange-500', badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' }, 
+            'Completed': { borderTop: 'border-t-green-500', badge: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' } 
         };
 
         // --- Components ---
@@ -112,31 +83,31 @@
             const handleSubmit = (e) => { e.preventDefault(); if(name.trim()) onLogin(name.trim()); };
 
             return (
-                <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-                        <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-600 text-3xl">
-                            <i className="ph-bold ph-user-circle"></i>
+                <main className="flex-grow flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8 text-center max-w-sm w-full transition-all">
+                        <div className="bg-gradient-to-br from-orange-400 to-orange-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-500/20 text-white text-3xl">
+                            <i className="ph-bold ph-check-square-offset"></i>
                         </div>
-                        <h1 className="text-2xl font-bold text-slate-900 mb-2">Team Access</h1>
-                        <p className="text-slate-500 mb-8">Enter your name to view the task board.</p>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Ops Task Tracker</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm">Sign in to manage your workflow.</p>
 
                         {!isAuthReady ? (
-                            <div className="flex flex-col items-center justify-center py-4 gap-2">
+                            <div className="flex flex-col items-center justify-center py-4 gap-3">
                                 <i className="ph-duotone ph-spinner animate-spin text-2xl text-orange-500"></i>
-                                <span className="text-xs text-slate-400">Connecting to secure storage...</span>
+                                <span className="text-xs text-slate-400">Syncing...</span>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-4 text-left">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Your Name</label>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1.5 ml-1">Team Member Name</label>
                                     <input type="text" value={name} onChange={e => setName(e.target.value)} 
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all placeholder-slate-400"
                                         placeholder="e.g. Avi" autoFocus />
                                 </div>
-                                <button type="submit" className="w-full bg-orange-600 text-white font-semibold py-3 rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
-                                    Access Workspace
+                                <button type="submit" className="w-full bg-slate-900 dark:bg-orange-600 text-white font-bold py-3 rounded-xl hover:bg-slate-800 dark:hover:bg-orange-500 transition-all shadow-md hover:shadow-lg transform active:scale-95">
+                                    Enter Workspace
                                 </button>
-                                {error && <p className="text-xs text-red-500 text-center mt-2">{error}</p>}
+                                {error && <p className="text-xs text-red-500 text-center mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">{error}</p>}
                             </form>
                         )}
                     </div>
@@ -144,33 +115,40 @@
             );
         };
 
-        const TaskCard = ({ task, onEdit }) => {
-            const handleDragStart = (e) => { e.dataTransfer.setData('taskId', task.id); };
+        const TaskCard = ({ task, onEdit, onArchive }) => {
             const priority = priorityMap[task.priority] || priorityMap.Medium;
             const today = new Date(); today.setHours(0,0,0,0);
             const dueDate = new Date(task.dueDate);
             const isOverdue = dueDate < today;
             const isDueSoon = !isOverdue && (dueDate - today) / (1000 * 60 * 60 * 24) <= 3;
-            const dateColor = isOverdue ? 'text-red-600 font-semibold' : isDueSoon ? 'text-orange-600 font-medium' : 'text-slate-400';
+            const dateColor = isOverdue ? 'text-red-600 dark:text-red-400 font-semibold' : isDueSoon ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-slate-400 dark:text-slate-500';
 
             return (
-                <div draggable onDragStart={handleDragStart} onClick={() => onEdit(task)} 
-                    className="group bg-white p-4 rounded-lg shadow-sm border border-slate-200 hover:shadow-md hover:border-orange-300 cursor-grab active:cursor-grabbing transition-all relative">
+                <div onClick={() => onEdit(task)} 
+                    className="group bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md hover:border-orange-400 dark:hover:border-orange-500 cursor-pointer transition-all relative">
                     
-                    <div className="flex justify-between items-start mb-2">
-                        <p className="font-semibold text-slate-800 text-sm leading-tight pr-2">{task.title}</p>
+                    <div className="flex justify-between items-start mb-2.5">
+                        <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-snug pr-6">{task.title}</p>
+                        
+                        {/* Archive Button (Only visible on Completed tasks or via hover if implemented differently, here tailored for Completed context usually) */}
+                        {task.status === 'Completed' && (
+                            <button onClick={(e) => { e.stopPropagation(); onArchive(task); }} 
+                                className="absolute top-2 right-2 p-1.5 text-slate-300 hover:text-orange-500 dark:text-slate-600 dark:hover:text-orange-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors opacity-0 group-hover:opacity-100" title="Archive Task">
+                                <i className="ph-bold ph-archive"></i>
+                            </button>
+                        )}
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
                         {task.assignedTo && (
-                            <span className="text-[10px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full border border-slate-200 truncate max-w-[100px]">
+                            <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-2 py-1 rounded-md border border-slate-200 dark:border-slate-600 truncate max-w-[100px]">
                                 {task.assignedTo}
                             </span>
                         )}
                     </div>
 
-                    <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
-                        <div className={`flex items-center gap-1 font-medium ${priority.color}`}>
+                    <div className="flex justify-between items-center text-xs pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                        <div className={`flex items-center gap-1.5 font-bold ${priority.color}`}>
                             <i className={priority.icon}></i> {task.priority}
                         </div>
                         <div className="flex items-center gap-3">
@@ -181,8 +159,68 @@
                                 </div>
                             )}
                             {task.updates?.length > 0 && (
-                                <div className="flex items-center gap-1 text-slate-400" title="Comments">
+                                <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500" title="Comments">
                                     <i className="ph-bold ph-chat-circle"></i> <span>{task.updates.length}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ArchivedTasksModal = ({ tasks, onClose, onRestore, onDelete }) => {
+            const [searchTerm, setSearchTerm] = useState('');
+            
+            const filteredTasks = tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()) || t.assignedTo?.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            return (
+                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-animate">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col h-[85vh] border border-slate-200 dark:border-slate-800">
+                        <header className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center rounded-t-2xl bg-slate-50 dark:bg-slate-800/50">
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                <i className="ph-bold ph-archive text-orange-500"></i> Archived Tasks
+                            </h2>
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                <i className="ph-bold ph-x text-xl"></i>
+                            </button>
+                        </header>
+                        
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <div className="relative">
+                                <i className="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" placeholder="Search archives..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-slate-700 dark:text-slate-200" />
+                            </div>
+                        </div>
+
+                        <div className="flex-grow overflow-y-auto custom-scroll p-4 bg-slate-50 dark:bg-slate-950/50">
+                            {filteredTasks.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                                    <i className="ph-duotone ph-archive-box text-4xl mb-2"></i>
+                                    <p>No archived tasks found.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {filteredTasks.map(task => (
+                                        <div key={task.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between h-40">
+                                            <div>
+                                                <h3 className="font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 text-sm mb-2">{task.title}</h3>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                    Assigned: {task.assignedTo || 'Unassigned'}<br/>
+                                                    Completed: {task.dueDate}
+                                                </p>
+                                            </div>
+                                            <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50">
+                                                <button onClick={() => onDelete(task.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Delete Forever">
+                                                    <i className="ph-bold ph-trash"></i>
+                                                </button>
+                                                <button onClick={() => onRestore(task)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-slate-600 dark:text-slate-300 hover:text-orange-600 dark:hover:text-orange-400 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors">
+                                                    <i className="ph-bold ph-arrow-counter-clockwise"></i> Restore
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -232,97 +270,104 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-animate">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative flex flex-col h-[90vh] max-h-[700px]">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-animate">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl relative flex flex-col h-[90vh] max-h-[700px] border border-slate-200 dark:border-slate-800">
                         
-                        <header className="p-5 border-b border-slate-100 flex justify-between items-center rounded-t-xl bg-slate-50">
-                            <h2 className="text-lg font-bold text-slate-800">{task?.id ? 'Edit Task' : 'New Task'}</h2>
-                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors">
+                        <header className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center rounded-t-2xl bg-slate-50 dark:bg-slate-800/50">
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                {task?.id ? <><i className="ph-bold ph-pencil-simple text-orange-500"></i> Edit Task</> : <><i className="ph-bold ph-plus-circle text-orange-500"></i> New Task</>}
+                            </h2>
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                                 <i className="ph-bold ph-x text-xl"></i>
                             </button>
                         </header>
                         
-                        <div className="p-6 overflow-y-auto flex-grow space-y-5">
+                        <div className="p-6 overflow-y-auto flex-grow space-y-6 custom-scroll">
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Title</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Title</label>
                                 <input type="text" value={formData.title} onChange={e => handleChange('title', e.target.value)} 
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none font-medium text-slate-800" 
-                                    placeholder="What needs doing?" autoFocus />
+                                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none font-semibold text-slate-800 dark:text-white transition-all" 
+                                    placeholder="Task title..." autoFocus />
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Assigned To</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Assigned To</label>
                                     <input type="text" value={formData.assignedTo} onChange={e => handleChange('assignedTo', e.target.value)} 
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Name" />
+                                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-slate-700 dark:text-slate-200" placeholder="Name" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Priority</label>
-                                    <select value={formData.priority} onChange={e => handleChange('priority', e.target.value)} 
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white">
-                                        <option>Low</option>
-                                        <option>Medium</option>
-                                        <option>High</option>
-                                    </select>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Priority</label>
+                                    <div className="relative">
+                                        <select value={formData.priority} onChange={e => handleChange('priority', e.target.value)} 
+                                            className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none appearance-none text-slate-700 dark:text-slate-200 cursor-pointer">
+                                            <option>Low</option>
+                                            <option>Medium</option>
+                                            <option>High</option>
+                                        </select>
+                                        <i className="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-5">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Start Date</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Start Date</label>
                                     <input type="date" value={formData.startDate} onChange={e => handleChange('startDate', e.target.value)} 
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-slate-600" />
+                                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-slate-600 dark:text-slate-300" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Due Date</label>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Due Date</label>
                                     <input type="date" value={formData.dueDate} onChange={e => handleChange('dueDate', e.target.value)} 
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-slate-600" />
+                                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-slate-600 dark:text-slate-300" />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Description</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Description</label>
                                 <textarea value={formData.description} onChange={e => handleChange('description', e.target.value)} rows="3" 
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm" 
+                                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm text-slate-700 dark:text-slate-300" 
                                     placeholder="Add details..."></textarea>
                             </div>
 
                             {task?.id && (
-                                <div className="pt-4 border-t border-slate-100">
-                                    <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                                        <i className="ph-bold ph-chat-circle-text"></i> Activity Log
+                                <div className="pt-6 border-t border-slate-100 dark:border-slate-700/50">
+                                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                                        <i className="ph-bold ph-chat-teardrop-text text-orange-500"></i> Updates & Activity
                                     </h3>
-                                    <div className="space-y-3 mb-4 max-h-40 overflow-y-auto pr-2">
-                                        {task.updates?.sort((a,b) => new Date(b.date) - new Date(a.date)).map((upd, i) => (
-                                            <div key={i} className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-xs font-bold text-orange-600">{upd.author || 'User'}</span>
-                                                    <span className="text-[10px] text-slate-400">{new Date(upd.date).toLocaleString()}</span>
-                                                </div>
-                                                <p className="text-sm text-slate-600 whitespace-pre-wrap">{upd.text}</p>
-                                            </div>
-                                        ))}
-                                        {(!task.updates || task.updates.length === 0) && <p className="text-sm text-slate-400 italic">No updates yet.</p>}
-                                    </div>
-                                    <div className="flex gap-2">
+                                    
+                                    <div className="flex gap-2 mb-4">
                                         <input type="text" placeholder="Write an update..." value={newUpdate} onChange={e => setNewUpdate(e.target.value)} 
-                                            className="flex-grow px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none text-sm" />
+                                            className="flex-grow px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm dark:text-white" />
                                         <button onClick={handleAddUpdate} disabled={isSaving || !newUpdate.trim()} 
-                                            className="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg disabled:opacity-50 transition-colors">
+                                            className="bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-xl disabled:opacity-50 transition-colors">
                                             Post
                                         </button>
+                                    </div>
+
+                                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scroll">
+                                        {task.updates?.sort((a,b) => new Date(b.date) - new Date(a.date)).map((upd, i) => (
+                                            <div key={i} className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{upd.author || 'User'}</span>
+                                                    <span className="text-[10px] text-slate-400">{new Date(upd.date).toLocaleString()}</span>
+                                                </div>
+                                                <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{upd.text}</p>
+                                            </div>
+                                        ))}
+                                        {(!task.updates || task.updates.length === 0) && <p className="text-sm text-slate-400 italic text-center py-4">No updates yet.</p>}
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        <footer className="p-5 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-between items-center">
+                        <footer className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl flex justify-between items-center">
                             {task?.id ? (
-                                <button onClick={handleDelete} className="flex items-center gap-2 text-red-500 hover:text-red-700 hover:bg-red-50 py-2 px-3 rounded-lg transition-colors text-sm font-medium">
+                                <button onClick={handleDelete} className="flex items-center gap-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 px-3 rounded-lg transition-colors text-sm font-medium">
                                     <i className="ph-bold ph-trash"></i> Delete
                                 </button>
                             ) : <div></div>}
-                            <button onClick={handleSave} disabled={isSaving} className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                            <button onClick={handleSave} disabled={isSaving} className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2">
                                 {isSaving && <i className="ph-duotone ph-spinner animate-spin"></i>}
                                 {task?.id ? 'Save Changes' : 'Create Task'}
                             </button>
@@ -332,40 +377,39 @@
             );
         };
 
-        const KanbanColumn = ({ title, tasks, onAddTask, onEditTask, onDrop }) => {
-            const [isDragOver, setIsDragOver] = useState(false);
+        const KanbanColumn = ({ title, tasks, onAddTask, onEditTask, onArchiveAll, onArchiveTask }) => {
             const statusConfig = statusMap[title] || statusMap['To Do'];
             
-            const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
-            const handleDragLeave = () => setIsDragOver(false);
-            const handleDrop = (e) => { e.preventDefault(); onDrop(e.dataTransfer.getData('taskId')); setIsDragOver(false); };
-
             return (
-                <div className={`flex-1 flex flex-col rounded-xl transition-colors border-2 ${isDragOver ? 'border-orange-400 bg-orange-50' : 'border-transparent bg-slate-100/50'}`}
-                    onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
-                    
-                    <div className={`flex items-center justify-between p-4 border-t-4 bg-white rounded-t-xl shadow-sm border-x border-b border-slate-200 ${statusConfig.borderTop}`}>
-                        <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <div className={`flex-1 flex flex-col rounded-2xl transition-all border-2 duration-200 border-transparent bg-slate-100/50 dark:bg-slate-900/50`}>
+                    <div className={`flex items-center justify-between p-4 border-t-4 bg-white dark:bg-slate-800 rounded-t-2xl shadow-sm border-x border-b border-slate-200 dark:border-slate-700 ${statusConfig.borderTop}`}>
+                        <h2 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             {title}
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusConfig.badge}`}>{tasks.length}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${statusConfig.badge}`}>{tasks.length}</span>
                         </h2>
+                        {title === 'Completed' && tasks.length > 0 && (
+                            <button onClick={onArchiveAll} className="text-[10px] uppercase font-bold text-slate-400 hover:text-orange-500 flex items-center gap-1 transition-colors" title="Archive all completed tasks">
+                                <i className="ph-bold ph-archive"></i> Archive All
+                            </button>
+                        )}
                     </div>
                     
-                    <div className="p-3 flex-grow rounded-b-xl space-y-3 min-h-[400px]">
-                        {tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} />)}
+                    <div className="p-3 flex-grow rounded-b-2xl space-y-3 min-h-[400px] custom-scroll">
+                        {tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} onArchive={onArchiveTask} />)}
                         
-                        <button onClick={onAddTask} className="w-full flex items-center justify-center gap-2 text-sm p-3 rounded-lg text-slate-400 border border-slate-300 border-dashed hover:bg-white hover:text-orange-500 hover:border-orange-300 transition-all group">
-                            <i className="ph-bold ph-plus group-hover:scale-110 transition-transform"></i> Add Task
-                        </button>
+                        {title !== 'Completed' && (
+                            <button onClick={onAddTask} className="w-full flex items-center justify-center gap-2 text-sm p-3 rounded-xl text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 border-dashed hover:bg-white dark:hover:bg-slate-800 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300 dark:hover:border-orange-500 transition-all group">
+                                <i className="ph-bold ph-plus group-hover:scale-110 transition-transform"></i> Add Task
+                            </button>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        // --- Improved Timeline View ---
-        const TimelineView = ({ tasks, onEditTask, onSaveTask }) => {
+        // --- Simplified Read-Only Timeline ---
+        const TimelineView = ({ tasks, onEditTask }) => {
             const [startDate, setStartDate] = useState(new Date());
-            const [dragState, setDragState] = useState(null); // { type, task, handle, startX, originalStart, originalEnd, hasMoved }
             const dayRef = useRef(null);
 
             const timeDiff = (d1, d2) => (new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24);
@@ -378,98 +422,36 @@
             
             const changeWeek = (offset) => setStartDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + (7 * offset)); return d; });
 
-            const handleMouseDown = (e, task, type, handle = null) => {
-                e.stopPropagation(); e.preventDefault();
-                setDragState({ 
-                    type, task, handle, 
-                    startX: e.clientX, 
-                    originalStart: task.startDate, 
-                    originalEnd: task.dueDate,
-                    hasMoved: false 
-                });
-            };
-
-            useEffect(() => {
-                const handleMouseMove = (e) => {
-                    if (!dragState) return;
-                    const dx = Math.abs(e.clientX - dragState.startX);
-                    if (dx > 5) setDragState(prev => ({ ...prev, hasMoved: true }));
-                };
-                
-                const handleMouseUp = (e) => {
-                    if (!dragState || !dayRef.current) return;
-                    const { task, type, handle, originalStart, originalEnd, hasMoved } = dragState;
-
-                    // If it was just a click (no significant move), interpret as Edit action
-                    if (!hasMoved && type === 'move') {
-                        onEditTask(task);
-                        setDragState(null);
-                        return;
-                    }
-
-                    const dayWidth = dayRef.current.offsetWidth;
-                    const dx = e.clientX - dragState.startX;
-                    const dayDelta = Math.round(dx / dayWidth);
-
-                    if (dayDelta === 0) { setDragState(null); return; }
-
-                    const finalTask = { ...task };
-
-                    if (type === 'move') {
-                        const newStart = new Date(originalStart); newStart.setDate(newStart.getDate() + dayDelta);
-                        const newEnd = new Date(originalEnd); newEnd.setDate(newEnd.getDate() + dayDelta);
-                        finalTask.startDate = newStart.toISOString().split('T')[0];
-                        finalTask.dueDate = newEnd.toISOString().split('T')[0];
-                    } else if (type === 'resize') {
-                        if (handle === 'start') {
-                            const newDate = new Date(originalStart); newDate.setDate(newDate.getDate() + dayDelta);
-                            finalTask.startDate = newDate.toISOString().split('T')[0];
-                            if (new Date(finalTask.startDate) > new Date(finalTask.dueDate)) finalTask.startDate = originalStart;
-                        } else {
-                            const newDate = new Date(originalEnd); newDate.setDate(newDate.getDate() + dayDelta);
-                            finalTask.dueDate = newDate.toISOString().split('T')[0];
-                            if (new Date(finalTask.dueDate) < new Date(finalTask.startDate)) finalTask.dueDate = originalEnd;
-                        }
-                    }
-                    
-                    onSaveTask(finalTask, false);
-                    setDragState(null);
-                };
-
-                window.addEventListener('mousemove', handleMouseMove); window.addEventListener('mouseup', handleMouseUp);
-                return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
-            }, [dragState]);
-
             return (
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-[650px]">
                     <div className="flex items-center justify-between mb-6 flex-shrink-0">
-                        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             <i className="ph-bold ph-chart-bar text-orange-500"></i> Project Timeline
                         </h2>
-                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
-                            <button onClick={() => changeWeek(-1)} className="p-1.5 rounded-md hover:bg-white hover:shadow-sm text-slate-500"><i className="ph-bold ph-caret-left"></i></button>
-                            <span className="font-semibold text-slate-700 w-40 text-center text-sm">{dates[0].toLocaleDateString('en-AU', {month:'long', year:'numeric'})}</span>
-                            <button onClick={() => changeWeek(1)} className="p-1.5 rounded-md hover:bg-white hover:shadow-sm text-slate-500"><i className="ph-bold ph-caret-right"></i></button>
+                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <button onClick={() => changeWeek(-1)} className="p-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all text-slate-500 dark:text-slate-400"><i className="ph-bold ph-caret-left"></i></button>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 w-40 text-center text-sm">{dates[0].toLocaleDateString('en-AU', {month:'long', year:'numeric'})}</span>
+                            <button onClick={() => changeWeek(1)} className="p-2 rounded-lg hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all text-slate-500 dark:text-slate-400"><i className="ph-bold ph-caret-right"></i></button>
                         </div>
                     </div>
                     
-                    <div className="overflow-x-auto timeline-scroll pb-4 flex-grow relative">
+                    <div className="overflow-x-auto custom-scroll flex-grow relative select-none">
                         <div className="grid gap-y-1 min-w-[1200px]" style={{gridTemplateColumns: `200px repeat(${dates.length}, 1fr)`}}>
                             
                             {/* Sticky Header Row */}
-                            <div className="sticky left-0 bg-white z-20 font-bold text-slate-400 text-xs p-2 border-r border-slate-200 border-b shadow-sm flex items-center h-10 top-0">TASK</div>
+                            <div className="sticky left-0 bg-white dark:bg-slate-900 z-20 font-bold text-slate-400 dark:text-slate-500 text-xs p-3 border-r border-slate-200 dark:border-slate-800 border-b shadow-sm flex items-center h-12 top-0 uppercase tracking-wider">Task</div>
                             {dates.map((date, i) => {
                                 const isToday = date.toDateString() === new Date().toDateString();
                                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                                 return (
                                     <div key={i} ref={i === 0 ? dayRef : null} 
-                                        className={`text-center border-r border-slate-100 border-b py-1 sticky top-0 z-10 h-10 ${isWeekend ? 'bg-slate-50/80' : 'bg-white'} ${isToday ? 'bg-orange-50' : ''}`}>
+                                        className={`text-center border-r border-slate-100 dark:border-slate-800 border-b py-2 sticky top-0 z-10 h-12 ${isWeekend ? 'bg-slate-50/80 dark:bg-slate-800/40' : 'bg-white dark:bg-slate-900'} ${isToday ? 'bg-orange-50 dark:bg-orange-900/10' : ''}`}>
                                         <p className="text-[10px] text-slate-400 uppercase leading-tight">{date.toLocaleDateString('en-AU', {weekday: 'short'})}</p>
-                                        <p className={`text-xs font-bold leading-tight ${isToday ? 'text-orange-600' : 'text-slate-600'}`}>{date.getDate()}</p>
+                                        <p className={`text-sm font-bold leading-tight ${isToday ? 'text-orange-600 dark:text-orange-400' : 'text-slate-700 dark:text-slate-300'}`}>{date.getDate()}</p>
                                         
                                         {/* Today Line Indicator */}
                                         {isToday && (
-                                            <div className="absolute top-10 bottom-[-1000px] left-1/2 w-0.5 bg-blue-400 z-0 pointer-events-none opacity-50 transform -translate-x-1/2"></div>
+                                            <div className="absolute top-12 bottom-[-1000px] left-1/2 w-px bg-orange-400 dark:bg-orange-600 z-0 pointer-events-none opacity-40 transform -translate-x-1/2"></div>
                                         )}
                                     </div>
                                 );
@@ -482,38 +464,32 @@
                                 const gridColumnStart = Math.floor(timeDiff(taskStart, dates[0])) + 2;
                                 const duration = Math.max(1, Math.ceil(timeDiff(taskEnd, taskStart)) + 1);
                                 
-                                // Hide if out of view
                                 if (gridColumnStart > dates.length + 1 || (gridColumnStart + duration) < 2) return null;
                                 
-                                const statusColor = task.status === 'Completed' ? 'bg-green-500 border-green-600' : task.status === 'In Progress' ? 'bg-orange-500 border-orange-600' : 'bg-slate-400 border-slate-500';
+                                const statusColor = task.status === 'Completed' ? 'bg-green-500 border-green-600 dark:bg-green-600' : task.status === 'In Progress' ? 'bg-orange-500 border-orange-600 dark:bg-orange-600' : 'bg-slate-400 border-slate-500 dark:bg-slate-600';
 
                                 return (
                                     <React.Fragment key={task.id}>
-                                        <div className="sticky left-0 bg-white z-10 text-sm font-medium text-slate-600 p-2 pr-4 truncate border-r border-slate-200 border-b border-slate-50 flex items-center hover:bg-slate-50 transition-colors h-10 cursor-pointer" 
+                                        <div className="sticky left-0 bg-white dark:bg-slate-900 z-10 text-sm font-medium text-slate-600 dark:text-slate-300 px-3 truncate border-r border-slate-200 dark:border-slate-800 border-b border-slate-50 dark:border-slate-800/50 flex items-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors h-10 cursor-pointer" 
                                              style={{gridRow: taskIndex + 2}}
                                              onClick={() => onEditTask(task)}>
                                             {task.title}
                                         </div>
                                         
-                                        {/* Grid Background Cells */}
+                                        {/* Grid Cells */}
                                         {dates.map((d, i) => {
                                             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                                             return (
-                                                <div key={i} className={`border-r border-slate-100 border-b border-slate-50 h-10 ${isWeekend ? 'bg-slate-50/50' : ''}`} style={{gridRow: taskIndex + 2}}></div>
+                                                <div key={i} className={`border-r border-slate-100 dark:border-slate-800/60 border-b border-slate-50 dark:border-slate-800/30 h-10 ${isWeekend ? 'bg-slate-50/50 dark:bg-slate-800/20' : ''}`} style={{gridRow: taskIndex + 2}}></div>
                                             );
                                         })}
                                         
-                                        {/* Task Bar */}
-                                        <div className={`h-7 mt-1.5 mx-1 rounded-md flex items-center justify-between relative task-bar ${statusColor} border shadow-sm hover:shadow-md hover:brightness-110 transition-all text-white z-10`} 
-                                            style={{ gridColumn: `${Math.max(2, gridColumnStart)} / span ${duration}`, gridRow: taskIndex + 2, cursor: 'grab' }}
-                                            onMouseDown={(e) => handleMouseDown(e, task, 'move')}>
-                                            
-                                            {/* Resize Handles */}
-                                            <div className="resize-handle resize-handle-left" onMouseDown={(e) => handleMouseDown(e, task, 'resize', 'start')}></div>
-                                            
-                                            <div className="px-3 w-full truncate text-xs font-bold drop-shadow-sm pointer-events-none select-none">{task.title}</div>
-                                            
-                                            <div className="resize-handle resize-handle-right" onMouseDown={(e) => handleMouseDown(e, task, 'resize', 'end')}></div>
+                                        {/* Task Bar - Click to Edit */}
+                                        <div className={`h-7 mt-1.5 mx-1 rounded-lg flex items-center justify-between relative shadow-sm border border-transparent hover:border-white/20 hover:brightness-110 transition-all text-white z-10 cursor-pointer ${statusColor}`} 
+                                            style={{ gridColumn: `${Math.max(2, gridColumnStart)} / span ${duration}`, gridRow: taskIndex + 2 }}
+                                            onClick={() => onEditTask(task)}
+                                            title={`Edit ${task.title}`}>
+                                            <div className="px-3 w-full truncate text-xs font-bold drop-shadow-sm">{task.title}</div>
                                         </div>
                                     </React.Fragment>
                                 );
@@ -530,10 +506,19 @@
             const [allTasks, setAllTasks] = useState([]);
             const [view, setView] = useState('board');
             const [isModalOpen, setIsModalOpen] = useState(false);
+            const [isArchiveOpen, setIsArchiveOpen] = useState(false);
             const [selectedTask, setSelectedTask] = useState(null);
             const [newColumnStatus, setNewColumnStatus] = useState(null);
             const [isAuthReady, setIsAuthReady] = useState(false);
             const [error, setError] = useState(null);
+            const [darkMode, setDarkMode] = useState(localStorage.getItem('osf-theme') === 'dark');
+
+            // Dark Mode Effect
+            useEffect(() => {
+                if (darkMode) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+                localStorage.setItem('osf-theme', darkMode ? 'dark' : 'light');
+            }, [darkMode]);
 
             useEffect(() => {
                 const init = async () => {
@@ -555,14 +540,10 @@
                         const dbInstance = getFirestore(app);
                         setDb(dbInstance);
 
-                        // Auth Flow - Anonymous Login Only for Standalone Tool
                         await signInAnonymously(auth);
-                        
                         onAuthStateChanged(auth, (user) => { if(user) setIsAuthReady(true); });
 
-                        // Using standard root collection for personal project compatibility
                         const tasksCollection = collection(dbInstance, 'tasks');
-
                         return onSnapshot(tasksCollection, (snapshot) => {
                             const tasksData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             setAllTasks(tasksData);
@@ -579,20 +560,22 @@
                 init();
             }, []);
 
+            // Filter out archived tasks for main view
+            const activeTasks = useMemo(() => allTasks.filter(t => t.status !== 'Archived'), [allTasks]);
+            const archivedTasks = useMemo(() => allTasks.filter(t => t.status === 'Archived'), [allTasks]);
+
             const columns = useMemo(() => ({
-                'To Do': allTasks.filter(t => t.status === 'To Do'),
-                'In Progress': allTasks.filter(t => t.status === 'In Progress'),
-                'Completed': allTasks.filter(t => t.status === 'Completed'),
-            }), [allTasks]);
+                'To Do': activeTasks.filter(t => t.status === 'To Do'),
+                'In Progress': activeTasks.filter(t => t.status === 'In Progress'),
+                'Completed': activeTasks.filter(t => t.status === 'Completed'),
+            }), [activeTasks]);
 
             const handleLogin = (name) => { setLocalUserName(name); localStorage.setItem('osf-task-user', name); };
             const handleLogout = () => { setLocalUserName(null); localStorage.removeItem('osf-task-user'); };
             
             const handleSaveTask = async (taskData, close = true) => {
                 const { collection, doc, addDoc, updateDoc, serverTimestamp } = window.firebaseModules;
-                // Using standard root collection
                 const tasksCollection = collection(db, 'tasks');
-                
                 const payload = { ...taskData };
                 const id = payload.id; delete payload.id;
                 
@@ -609,62 +592,101 @@
             };
 
             const handleDeleteTask = async (id) => {
-                const { collection, doc, deleteDoc } = window.firebaseModules;
+                const { doc, deleteDoc } = window.firebaseModules;
                 setIsModalOpen(false);
                 await deleteDoc(doc(db, 'tasks', id));
             };
-            
-            const handleDrop = (taskId, newStatus) => {
-                const task = allTasks.find(t => t.id === taskId);
-                if (task && task.status !== newStatus) handleSaveTask({ ...task, status: newStatus }, false);
+
+            const handleArchiveTask = async (task) => {
+                if (window.confirm("Archive this task? It will be moved to the Archive vault.")) {
+                    await handleSaveTask({ ...task, status: 'Archived' }, false);
+                }
+            };
+
+            const handleArchiveAllCompleted = async () => {
+                const completedTasks = columns['Completed'];
+                if (completedTasks.length === 0) return;
+                if (!window.confirm(`Archive all ${completedTasks.length} completed tasks?`)) return;
+
+                const { writeBatch, doc } = window.firebaseModules;
+                const batch = writeBatch(db);
+                
+                completedTasks.forEach(task => {
+                    const ref = doc(db, 'tasks', task.id);
+                    batch.update(ref, { status: 'Archived' });
+                });
+
+                await batch.commit();
+            };
+
+            const handleRestoreTask = async (task) => {
+                await handleSaveTask({ ...task, status: 'Completed' }, false);
             };
 
             if (!localUserName) return <LoginScreen onLogin={handleLogin} isAuthReady={isAuthReady} error={error} />;
 
             return (
-                <div className="max-w-7xl mx-auto p-4 md:p-6 w-full">
+                <div className="max-w-7xl mx-auto p-4 md:p-6 w-full bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
                     
-                    {/* Toolbar */}
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-400 to-red-400 flex items-center justify-center font-bold text-white text-xs shadow-sm">
-                                {localUserName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-slate-800">Task Board</h1>
-                                <p className="text-xs text-slate-500">Logged in as {localUserName}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <div className="flex bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
-                                <button onClick={() => setView('board')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${view === 'board' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-                                    <i className="ph-bold ph-kanban"></i> Board
-                                </button>
-                                <button onClick={() => setView('timeline')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${view === 'timeline' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-                                    <i className="ph-bold ph-chart-bar"></i> Timeline
-                                </button>
-                            </div>
-                            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Sign Out">
+                    {/* Header with Back Button */}
+                    <div className="flex items-center justify-between mb-8">
+                        <a href="index.html" className="flex items-center gap-2 text-slate-500 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400 transition-colors font-medium">
+                            <i className="ph-bold ph-arrow-left"></i>
+                            <span>Back to Hub</span>
+                        </a>
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setIsArchiveOpen(true)} className="p-2 text-slate-400 hover:text-orange-500 dark:text-slate-500 dark:hover:text-orange-400 transition-colors" title="Archive Vault">
+                                <i className="ph-bold ph-archive text-xl"></i>
+                            </button>
+                            <button onClick={() => setDarkMode(!darkMode)} className="p-2 text-slate-400 hover:text-orange-500 dark:text-slate-500 dark:hover:text-orange-400 transition-colors">
+                                <i className={`ph-bold ${darkMode ? 'ph-sun' : 'ph-moon'} text-xl`}></i>
+                            </button>
+                            <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors" title="Sign Out">
                                 <i className="ph-bold ph-sign-out text-xl"></i>
                             </button>
                         </div>
                     </div>
 
+                    {/* Toolbar */}
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center font-bold text-white text-sm shadow-md">
+                                {localUserName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Task Board</h1>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Welcome back, {localUserName}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 w-full md:w-auto bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                            <button onClick={() => setView('board')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${view === 'board' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <i className="ph-bold ph-kanban"></i> Board
+                            </button>
+                            <button onClick={() => setView('timeline')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${view === 'timeline' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <i className="ph-bold ph-chart-bar"></i> Timeline
+                            </button>
+                        </div>
+                    </div>
+
                     {view === 'board' ? (
-                        <div className="flex flex-col lg:flex-row gap-6 items-start">
+                        <div className="flex flex-col lg:flex-row gap-6 items-start pb-10">
                             {['To Do', 'In Progress', 'Completed'].map(status => (
                                 <KanbanColumn key={status} title={status} tasks={columns[status]} 
                                     onAddTask={() => { setSelectedTask(null); setNewColumnStatus(status); setIsModalOpen(true); }}
                                     onEditTask={(t) => { setSelectedTask(t); setNewColumnStatus(null); setIsModalOpen(true); }}
-                                    onDrop={(id) => handleDrop(id, status)} />
+                                    onArchiveTask={handleArchiveTask}
+                                    onArchiveAll={status === 'Completed' ? handleArchiveAllCompleted : null}
+                                />
                             ))}
                         </div>
                     ) : (
-                        <TimelineView tasks={allTasks} onEditTask={(t) => { setSelectedTask(t); setNewColumnStatus(null); setIsModalOpen(true); }} onSaveTask={handleSaveTask} />
+                        <TimelineView tasks={activeTasks} onEditTask={(t) => { setSelectedTask(t); setNewColumnStatus(null); setIsModalOpen(true); }} />
                     )}
 
                     {isModalOpen && <TaskModal task={selectedTask} onClose={() => setIsModalOpen(false)} onSave={handleSaveTask} onDelete={handleDeleteTask} currentUser={localUserName} />}
+                    
+                    {isArchiveOpen && <ArchivedTasksModal tasks={archivedTasks} onClose={() => setIsArchiveOpen(false)} onRestore={handleRestoreTask} onDelete={handleDeleteTask} />}
                 </div>
             );
         };
