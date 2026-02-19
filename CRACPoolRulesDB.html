@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
@@ -29,12 +29,20 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col relative">
 
     <!-- Header -->
-    <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+    <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
         <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-900 font-bold text-xl">
@@ -48,7 +56,7 @@
             
             <!-- Search Bar -->
             <div class="relative w-full sm:w-96">
-                <input type="text" id="searchInput" placeholder="Search rules (e.g., 'nappy', 'refund', 'glass')..." 
+                <input type="text" id="searchInput" placeholder="Search rules (e.g., 'nappy', 'school', 'risk')..." 
                     class="w-full pl-10 pr-4 py-2 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-inner bg-blue-50/10 placeholder-blue-200 text-white border border-blue-700/50">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-blue-300"></i>
             </div>
@@ -56,10 +64,10 @@
     </header>
 
     <!-- Filter Categories -->
-    <div class="bg-white border-b border-slate-200 sticky top-[88px] sm:top-[72px] z-40">
+    <div class="bg-white border-b border-slate-200 sticky top-[88px] sm:top-[72px] z-30 shadow-sm">
         <div class="max-w-4xl mx-auto px-4 py-3 overflow-x-auto no-scrollbar">
             <div class="flex gap-2" id="filterContainer">
-                <button onclick="filterCategory('all')" class="filter-btn active bg-blue-900 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors">
+                <button onclick="filterCategory('all')" class="filter-btn active bg-blue-900 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors shadow-sm">
                     All Rules
                 </button>
                 <button onclick="filterCategory('Safety')" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors">
@@ -79,7 +87,7 @@
     </div>
 
     <!-- Main Content -->
-    <main class="flex-grow p-4">
+    <main class="flex-grow p-4 bg-slate-50">
         <div class="max-w-4xl mx-auto">
             
             <!-- Quick Alert for Staff -->
@@ -90,7 +98,7 @@
                     </div>
                     <div class="ml-3">
                         <p class="text-sm text-amber-700">
-                            <strong>Note:</strong> Management reserves the right to refuse entry or evict any person at any time for failure to comply with these conditions.
+                            <strong>Condition of Entry:</strong> Management reserves the right to refuse entry or evict any person at any time for failure to comply with these conditions.
                         </p>
                     </div>
                 </div>
@@ -98,7 +106,7 @@
 
             <!-- Results Grid -->
             <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Cards will be injected here via JS -->
+                <!-- Cards injected here via JS -->
             </div>
 
             <!-- No Results State -->
@@ -107,7 +115,7 @@
                     <i class="fa-solid fa-clipboard-question text-slate-400 text-2xl"></i>
                 </div>
                 <h3 class="text-lg font-medium text-slate-900">No matching rules found</h3>
-                <p class="text-slate-500">Try searching for a keyword like "camera", "food", or "age".</p>
+                <p class="text-slate-500">Try searching for a different keyword.</p>
             </div>
         </div>
     </main>
@@ -115,152 +123,185 @@
     <!-- Footer -->
     <footer class="bg-slate-800 text-slate-400 py-6 mt-auto">
         <div class="max-w-4xl mx-auto px-4 text-center text-sm">
-            <p>&copy; Clarence Regional Aquatic Centre. Management reserves all rights.</p>
-            <p class="mt-1 text-xs">Based on Conditions of Entry Signage.</p>
+            <p>&copy; Clarence Regional Aquatic Centre.</p>
+            <p class="text-xs mt-1">Based on official signage located at facility entrance.</p>
         </div>
     </footer>
 
+    <!-- Application Logic -->
     <script>
-        // Database of Rules extracted from the Image
+        // COMPREHENSIVE DATA FROM SIGNAGE
         const poolRules = [
-            {
-                id: 1,
-                category: "Supervision",
-                title: "Keep Watch: 0-5 Years",
-                icon: "fa-child-reaching",
-                color: "text-red-600",
-                content: "Children aged 0-5 years and non-swimmers must be accompanied by a parent/carer. The parent/carer must be in the water and stay within arms' reach of their child(ren) at all times.",
-                keywords: "baby, toddler, infant, swim, arm, reach, water, parent, carer, 0, 1, 2, 3, 4, 5"
+            // --- SUPERVISION ---
+            { 
+                category: "Supervision", 
+                title: "Keep Watch: 0-5 Years", 
+                icon: "fa-child-reaching", 
+                color: "text-red-600", 
+                content: "Children aged 0-5 years and non-swimmers must be accompanied by a parent/carer. The parent/carer must be in the water and stay within arms' reach of their child(ren) at all times.", 
+                keywords: "baby, toddler, infant, swim, arm, reach, water, parent, carer, 0, 1, 2, 3, 4, 5, supervision" 
+            },
+            { 
+                category: "Supervision", 
+                title: "Keep Watch: 6-12 Years", 
+                icon: "fa-person-swimming", 
+                color: "text-orange-500", 
+                content: "For children aged 6-12 years, parents/carers must be close, maintain constant visual contact, and be prepared to enter the water at any time.", 
+                keywords: "junior, school, visual, contact, watch, 6, 7, 8, 9, 10, 11, 12, supervision" 
+            },
+            { 
+                category: "Supervision", 
+                title: "Keep Watch: 13-14 Years", 
+                icon: "fa-user-clock", 
+                color: "text-blue-500", 
+                content: "For children aged 13-14 years, it is recommended that a parent check up on their child by physically going to the point where they are in or around the water.", 
+                keywords: "teen, check, monitor, 13, 14, adolescent, supervision" 
+            },
+            { 
+                category: "Supervision", 
+                title: "Safeguarding Commitment", 
+                icon: "fa-shield-heart", 
+                color: "text-purple-600", 
+                content: "The Centre is committed to the safeguarding of children, young people, and vulnerable adults. Patrons should alert staff to any incidents of abuse or neglect.", 
+                keywords: "protect, child, vulnerable, abuse, report, safety" 
+            },
+
+            // --- SAFETY & PROHIBITIONS ---
+            { 
+                category: "Safety", 
+                title: "Strict Prohibitions", 
+                icon: "fa-ban", 
+                color: "text-red-600", 
+                content: "The following are strictly prohibited: No Diving, No Running, No Rough Play, No Jumping, No Bombing.", 
+                keywords: "dive, jump, bomb, run, rough, behavior, unsafe, playing" 
+            },
+            { 
+                category: "Safety", 
+                title: "Anti-Social Behaviour", 
+                icon: "fa-user-slash", 
+                color: "text-red-600", 
+                content: "Disorderly, disruptive, inappropriate, or anti-social behaviour is not permitted. This includes vandalism and admission evasion. Offenders will be evicted.", 
+                keywords: "behaviour, fight, shout, rude, vandalism, steal, evade, entry" 
+            },
+            { 
+                category: "Safety", 
+                title: "Drugs & Alcohol", 
+                icon: "fa-wine-bottle", 
+                color: "text-red-600", 
+                content: "No Alcohol. Persons under the influence of drugs or alcohol will be refused entry or evicted. Consumption is not permitted at the Centre or within 4 metres of the site perimeter.", 
+                keywords: "drink, intoxicated, influence, beer, wine, illegal, 4m, perimeter" 
+            },
+            { 
+                category: "Safety", 
+                title: "Smoking & Vaping", 
+                icon: "fa-smoking-ban", 
+                color: "text-slate-600", 
+                content: "No Smoking. Smoking, vaping, or any consumption of tobacco products is not permitted at the Regional Aquatic Centre or within 4 metres of the site perimeter.", 
+                keywords: "smoke, vape, cigarette, tobacco, e-cigarette, 4m" 
+            },
+            { 
+                category: "Safety", 
+                title: "Glass & Prohibited Items", 
+                icon: "fa-glass-water-droplet", 
+                color: "text-slate-600", 
+                content: "Glass, breakables, knives, or any substance likely to cause damage are prohibited. Bicycles, scooters, and roller blades are not permitted.", 
+                keywords: "bottle, sharp, knife, bike, scooter, skate, wheels" 
+            },
+            { 
+                category: "Safety", 
+                title: "Emergency Evacuation", 
+                icon: "fa-bell", 
+                color: "text-red-500", 
+                content: "All pools will be evacuated and closed in the case of an emergency, or in any situation where a risk to public health and safety has occurred. Pools re-open only when safe.", 
+                keywords: "alarm, fire, close, evacuate, danger, safety" 
             },
             {
-                id: 2,
-                category: "Supervision",
-                title: "Keep Watch: 6-12 Years",
-                icon: "fa-person-swimming",
-                color: "text-orange-500",
-                content: "For children aged 6-12 years, parents/carers must be close, maintain constant visual contact, and be prepared to enter the water at any time.",
-                keywords: "junior, school, visual, contact, watch, 6, 7, 8, 9, 10, 11, 12"
-            },
-            {
-                id: 3,
-                category: "Supervision",
-                title: "Keep Watch: 13-14 Years",
-                icon: "fa-user-clock",
-                color: "text-blue-500",
-                content: "For children aged 13-14 years, it is recommended that a parent check up on their child by physically going to the point where they are in or around the water.",
-                keywords: "teen, check, monitor, 13, 14"
-            },
-            {
-                id: 4,
                 category: "Safety",
-                title: "Strict Prohibitions",
-                icon: "fa-ban",
-                color: "text-red-600",
-                content: "The following are strictly prohibited: No Diving, No Running, No Rough Play, No Jumping, No Bombing.",
-                keywords: "dive, jump, bomb, run, rough, behavior, unsafe"
-            },
-            {
-                id: 5,
-                category: "Safety",
-                title: "Drugs & Alcohol",
-                icon: "fa-wine-bottle",
-                color: "text-red-600",
-                content: "No Alcohol. Persons under the influence of drugs or alcohol will be refused entry or evicted. Consumption of alcohol or drugs is not permitted at the Centre or within 4 metres of the site perimeter.",
-                keywords: "drink, intoxicated, influence, beer, wine, illegal"
-            },
-            {
-                id: 6,
-                category: "Safety",
-                title: "Smoking & Vaping",
-                icon: "fa-smoking-ban",
-                color: "text-slate-600",
-                content: "No Smoking. Smoking, vaping, or any consumption of tobacco products is not permitted at the Regional Aquatic Centre or within 4 metres of the site perimeter.",
-                keywords: "smoke, vape, cigarette, tobacco, e-cigarette"
-            },
-            {
-                id: 7,
-                category: "Hygiene",
-                title: "Appropriate Swimwear",
-                icon: "fa-shirt",
-                color: "text-cyan-600",
-                content: "Patrons must wear appropriate swimwear. Acceptable: Boardshorts, 'Speedos', One- and Two-Piece Swimsuits, 'Burkinis', and Rashguards. Unacceptable: Street clothes, tracksuits, cotton shirts.",
-                keywords: "clothes, dress, pants, cotton, denim, suit, bikini, rashie, wear"
-            },
-            {
-                id: 8,
-                category: "Hygiene",
-                title: "Aqua Nappies",
-                icon: "fa-baby",
-                color: "text-cyan-600",
-                content: "All non-toilet trained children must wear an approved aqua nappy at all times whilst in the pool. Standard nappies are not permitted.",
-                keywords: "diaper, poop, toilet, baby, infant, swim nappy"
-            },
-            {
-                id: 9,
-                category: "Hygiene",
-                title: "Health & Illness",
-                icon: "fa-virus",
-                color: "text-emerald-600",
-                content: "Do not swim if you have had diarrhoea in the last two weeks. Shower and wash thoroughly with soap before entering the pool. Don't drink or swallow pool water.",
-                keywords: "sick, poop, vomit, shower, soap, wash, clean, germs"
-            },
-            {
-                id: 10,
-                category: "Safety",
-                title: "Glass & Breakables",
-                icon: "fa-glass-water-droplet",
-                color: "text-slate-600",
-                content: "Glass and other breakables, knives, or any substance likely to cause damage to property or animals (other than guide dogs) are not permitted. Bicycles, scooters, and roller blades are not permitted.",
-                keywords: "bottle, sharp, knife, bike, scooter, skate, dog, animal"
-            },
-            {
-                id: 11,
-                category: "Admission",
-                title: "Photography & Privacy",
-                icon: "fa-camera",
-                color: "text-slate-600",
-                content: "No Photography. No cameras of any description are to be used in the facility without management permission. No cameras allowed in change rooms under any circumstances.",
-                keywords: "photo, video, phone, record, film, privacy, change room"
-            },
-            {
-                id: 12,
-                category: "Admission",
-                title: "Entry & Eviction Rights",
-                icon: "fa-gavel",
-                color: "text-slate-700",
-                content: "Management reserves the right to refuse entry or evict patrons for: Not following conditions, disorderly/unsafe behaviour, vandalism, or admission evasion.",
-                keywords: "kick out, ban, leave, refuse, behaviour"
-            },
-            {
-                id: 13,
-                category: "Admission",
-                title: "School Aged Children",
-                icon: "fa-school",
+                title: "Medical & Risk Acknowledgement",
+                icon: "fa-notes-medical",
                 color: "text-blue-600",
-                content: "School aged children are not permitted within the centre during school hours (during school terms) unless they have written consent from their parent or guardian and/or the school.",
-                keywords: "truant, class, student, day, hours"
+                content: "Patrons use facilities at their own risk. Patrons acknowledge they are not aware of any medical reason why they should not participate in active or passive exercise.",
+                keywords: "risk, liability, doctor, condition, health, injury"
+            },
+
+            // --- HYGIENE & ATTIRE ---
+            { 
+                category: "Hygiene", 
+                title: "Appropriate Swimwear", 
+                icon: "fa-shirt", 
+                color: "text-cyan-600", 
+                content: "Patrons must wear appropriate swimwear. Acceptable: Boardshorts, 'Speedos', One- and Two-Piece Swimsuits, 'Burkinis', and Rashguards. Unacceptable: Street clothes, tracksuits, cotton shirts.", 
+                keywords: "clothes, dress, pants, cotton, denim, suit, bikini, rashie, wear, uniform" 
+            },
+            { 
+                category: "Hygiene", 
+                title: "Aqua Nappies", 
+                icon: "fa-baby", 
+                color: "text-cyan-600", 
+                content: "All non-toilet trained children must wear an approved aqua nappy at all times whilst in the pool. Standard nappies are not permitted.", 
+                keywords: "diaper, poop, toilet, baby, infant, swim nappy" 
+            },
+            { 
+                category: "Hygiene", 
+                title: "Illness Exclusion", 
+                icon: "fa-virus", 
+                color: "text-emerald-600", 
+                content: "Don't swim if you have had diarrhoea in the last two weeks. Shower and wash thoroughly with soap before entering the pool. Don't drink or swallow pool water.", 
+                keywords: "sick, poop, vomit, shower, soap, wash, clean, germs, stomach" 
+            },
+
+            // --- ADMISSION & FEES ---
+            { 
+                category: "Admission", 
+                title: "Fees & Passes", 
+                icon: "fa-ticket", 
+                color: "text-green-600", 
+                content: "An entry fee applies to access the Centre. Wristbands must be worn to enter. No pass outs are available. This fee enables entry once.", 
+                keywords: "money, cost, pay, band, wristband, re-entry, passout" 
+            },
+            { 
+                category: "Admission", 
+                title: "Refund Policy", 
+                icon: "fa-hand-holding-dollar", 
+                color: "text-green-700", 
+                content: "No refunds will be given for incorrect purchases, inclement weather, or pool closures.", 
+                keywords: "money back, storm, rain, weather, close, cancellation" 
+            },
+            { 
+                category: "Admission", 
+                title: "School Aged Children", 
+                icon: "fa-school", 
+                color: "text-blue-600", 
+                content: "School aged children are not permitted within the centre during school hours (during school terms) unless they have written consent from their parent/guardian and/or the school.", 
+                keywords: "truant, class, student, day, hours, term" 
+            },
+            { 
+                category: "Admission", 
+                title: "Photography & Privacy", 
+                icon: "fa-camera", 
+                color: "text-slate-600", 
+                content: "No Photography. No cameras of any description to be used without management permission. Management reserves right to confiscate equipment if breached. No cameras in change rooms.", 
+                keywords: "photo, video, phone, record, film, privacy, change room, confiscate" 
+            },
+            { 
+                category: "Admission", 
+                title: "Personal Property", 
+                icon: "fa-bag-shopping", 
+                color: "text-slate-500", 
+                content: "Management accepts no responsibility for any loss, damage or theft of personal property or belongings.", 
+                keywords: "theft, steal, bag, phone, wallet, lost, property, lockers" 
             },
             {
-                id: 14,
                 category: "Admission",
-                title: "Fees & Refunds",
-                icon: "fa-ticket",
-                color: "text-green-600",
-                content: "An entry fee applies. Wristbands must be worn. No refunds will be given for incorrect purchases, inclement weather, or pool closures.",
-                keywords: "money, cost, pay, rain, storm, close, band"
-            },
-            {
-                id: 15,
-                category: "Safety",
-                title: "Safeguarding",
-                icon: "fa-shield-heart",
-                color: "text-purple-600",
-                content: "The Centre is committed to safeguarding children, young people, and vulnerable adults. Patrons should alert staff to incidents of abuse or neglect.",
-                keywords: "protect, child, vulnerable, abuse, report"
+                title: "Refusal of Entry",
+                icon: "fa-gavel",
+                color: "text-slate-800",
+                content: "Management reserves the right to refuse entry or evict any person at sole discretion for: not following conditions, influence of drugs/alcohol, unsafe behaviour, vandalism, or admission evasion.",
+                keywords: "kick out, ban, leave, refuse, evict, police"
             }
         ];
 
-        // App Logic
+        // --- APP LOGIC ---
         const searchInput = document.getElementById('searchInput');
         const resultsGrid = document.getElementById('resultsGrid');
         const noResults = document.getElementById('noResults');
@@ -284,7 +325,7 @@
                     card.innerHTML = `
                         <div class="flex items-start justify-between mb-2">
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded">${rule.category}</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">${rule.category}</span>
                             </div>
                             <i class="fa-solid ${rule.icon} ${rule.color} text-xl"></i>
                         </div>
@@ -302,7 +343,7 @@
             const filtered = poolRules.filter(rule => {
                 const matchesSearch = rule.title.toLowerCase().includes(query) || 
                                       rule.content.toLowerCase().includes(query) || 
-                                      rule.keywords.includes(query);
+                                      rule.keywords.toLowerCase().includes(query);
                 const matchesCategory = currentCategory === 'all' || rule.category === currentCategory;
                 
                 return matchesSearch && matchesCategory;
@@ -318,11 +359,9 @@
             const buttons = document.querySelectorAll('.filter-btn');
             buttons.forEach(btn => {
                 if (btn.innerText.includes(category === 'all' ? 'All Rules' : category)) {
-                    btn.classList.add('bg-blue-900', 'text-white');
-                    btn.classList.remove('bg-slate-100', 'text-slate-600');
+                    btn.className = "filter-btn active bg-blue-900 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors shadow-sm";
                 } else {
-                    btn.classList.remove('bg-blue-900', 'text-white');
-                    btn.classList.add('bg-slate-100', 'text-slate-600');
+                    btn.className = "filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors";
                 }
             });
 
