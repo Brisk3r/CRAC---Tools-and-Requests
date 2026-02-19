@@ -139,6 +139,20 @@
                     <p class="text-sm text-slate-500 mt-2">Height/Weight limits, riding position, medical warnings, and attire.</p>
                 </div>
             </button>
+            
+            <!-- Birthday Parties Button -->
+            <button onclick="filterCategory('Birthday Parties')" class="group glass-panel p-8 rounded-2xl text-left hover:bg-amber-50 transition-all border-l-8 border-amber-500 shadow-sm hover:shadow-lg relative overflow-hidden md:col-span-2 lg:col-span-1">
+                <div class="absolute right-[-20px] bottom-[-20px] text-amber-100 text-9xl transition-transform group-hover:scale-110 group-hover:rotate-12">
+                    <i class="fa-solid fa-cake-candles"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 text-2xl mb-4 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-gift"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">Birthday Parties</h3>
+                    <p class="text-sm text-slate-500 mt-2">Party packages, catering rules, decorations, and spectator fees.</p>
+                </div>
+            </button>
         </div>
 
         <button onclick="filterCategory('all')" class="mt-8 text-slate-500 hover:text-blue-600 font-medium text-sm flex items-center gap-2 transition-colors">
@@ -170,6 +184,9 @@
                     </button>
                     <button onclick="filterCategory('Waterslide')" class="filter-btn bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-100 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors">
                         Slide
+                    </button>
+                    <button onclick="filterCategory('Birthday Parties')" class="filter-btn bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-100 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors">
+                        Parties
                     </button>
                     <button onclick="filterCategory('Safety')" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors">
                         Safety
@@ -232,18 +249,12 @@
     <!-- Application Logic -->
     <script>
         // --- CONFIGURATION ---
-        // 1. Create a Google Sheet and paste the simplified CSV content into it.
-        // 2. Go to File > Share > Publish to web.
-        // 3. Select "Comma-separated values (.csv)" from the dropdown.
-        // 4. Paste the generated link inside the quotes below.
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTb3ppPMnnD2FEOWux0sHcVVBEO2sAPHBjFYFFZZqy3Zi7EZLJA58lGjAfqWv2jvHNK8bvstkZZa_yu/pub?output=csv"; 
 
         // --- STYLE LOOKUP SYSTEM ---
-        // This is the "Brain" that decides how cards look based on the simple data provided by staff.
-
         const categoryConfig = {
             'Waterslide': { 
-                icon: 'fa-water-ladder', // Default icon if no keyword match
+                icon: 'fa-water-ladder',
                 border: 'border-pink-500', 
                 badge: 'text-pink-700 bg-pink-50 border-pink-100',
                 iconColor: 'text-pink-600'
@@ -259,6 +270,12 @@
                 border: 'border-teal-500', 
                 badge: 'text-teal-700 bg-teal-50 border-teal-100',
                 iconColor: 'text-teal-600'
+            },
+            'Birthday Parties': { 
+                icon: 'fa-cake-candles', 
+                border: 'border-amber-500', 
+                badge: 'text-amber-700 bg-amber-50 border-amber-100',
+                iconColor: 'text-amber-600'
             },
             'Admission': { 
                 icon: 'fa-ticket', 
@@ -293,7 +310,6 @@
             }
         };
 
-        // This list overrides the default category icon if the TITLE contains a specific word.
         const iconKeywordMap = [
             { keyword: 'Height', icon: 'fa-ruler-vertical' },
             { keyword: 'Weight', icon: 'fa-weight-scale' },
@@ -314,21 +330,23 @@
             { keyword: 'Holiday', icon: 'fa-calendar-day' },
             { keyword: 'Time', icon: 'fa-stopwatch' },
             { keyword: 'Lane', icon: 'fa-arrows-left-right' },
-            { keyword: 'Minor', icon: 'fa-child' }
+            { keyword: 'Minor', icon: 'fa-child' },
+            { keyword: 'Cater', icon: 'fa-basket-shopping' },
+            { keyword: 'Decoration', icon: 'fa-wand-magic-sparkles' },
+            { keyword: 'Cake', icon: 'fa-cake-candles' },
+            { keyword: 'Spectator', icon: 'fa-eye' },
+            { keyword: 'Package', icon: 'fa-box-open' }
         ];
 
         function getRuleStyle(rule) {
-            // 1. Get Base Style from Category
             const config = categoryConfig[rule.category] || categoryConfig['default'];
-            
-            // 2. Check for Icon Overrides based on Title
             let finalIcon = config.icon;
             const titleLower = (rule.title || '').toLowerCase();
             
             for (const map of iconKeywordMap) {
                 if (titleLower.includes(map.keyword.toLowerCase())) {
                     finalIcon = map.icon;
-                    break; // Stop at first match
+                    break;
                 }
             }
 
@@ -341,10 +359,15 @@
         }
 
         // --- DATA HANDLING ---
-        // Fallback data if Sheet fails
+        // Includes default rules + the new Birthday Party rules so the app works before Google Sheet syncs
         let poolRules = [
-             { category: "Waterslide", title: "Height & Weight Limits", content: "Height restriction: Patrons must be a minimum of 1.2m to ride. Maximum weight restriction is 120kg per rider." },
-             { category: "Admission", title: "Refusal of Entry", content: "Management reserves the right to refuse entry or evict any person at sole discretion." }
+            { category: "Birthday Parties", title: "Party Package Details", content: "$22 per child (minimum 10). Included: decorated gazebo setup, entry, party food (sausage rolls, pies, nuggets, chips, sauce), slushie, and lolly party bag.", keywords: "party, package, cost, food, minimum, gazebo" },
+            { category: "Birthday Parties", title: "Parent & Spectator Fees", content: "One parent entry is free. Extra guests swimming pay $5.50 (Adult) or $4.50 (Child). Spectating guests pay a $2.00 entry fee.", keywords: "parent, adult, free, spectator, cost, swim, watch" },
+            { category: "Birthday Parties", title: "Self-Catering Booking", content: "Self-catering is welcome (bring own food, gazebo). You must advise the Centre of the date, time, and approximate guest numbers to ensure appropriate staffing.", keywords: "cater, own food, gazebo, booking, staff, numbers" },
+            { category: "Birthday Parties", title: "Decorations Policy", content: "No balloons or streamers are allowed, with the strict exception of foil balloons.", keywords: "balloon, streamer, decorate, foil" },
+            { category: "Birthday Parties", title: "Cakes & Outside Food", content: "Cakes, lollies, and drinks are welcome. No Glass or Alcohol permitted in the complex. Cakes can be stored in the canteen fridge if required.", keywords: "cake, fridge, store, lolly, drink, glass, alcohol" },
+            { category: "Waterslide", title: "Height & Weight Limits", content: "Height restriction: Patrons must be a minimum of 1.2m to ride. Maximum weight restriction is 120kg per rider.", keywords: "slide, height, weight, 1.2m" },
+            { category: "Admission", title: "Refusal of Entry", content: "Management reserves the right to refuse entry or evict any person at sole discretion.", keywords: "evict, rules" }
         ];
 
         // --- APP LOGIC ---
@@ -361,8 +384,6 @@
 
         function init() {
             if (GOOGLE_SHEET_URL) {
-                // CACHE BUSTER ADDITION
-                // We add a unique timestamp to the URL to force the browser to fetch a fresh copy
                 const separator = GOOGLE_SHEET_URL.includes('?') ? '&' : '?';
                 const bustCacheUrl = GOOGLE_SHEET_URL + separator + 't=' + new Date().getTime();
 
@@ -374,6 +395,11 @@
                             console.log("Loaded rules from Google Sheets");
                             poolRules = results.data;
                             document.getElementById('dbStatus').classList.remove('hidden');
+                            
+                            // If user is actively searching or on a category, re-render to reflect new fetched data
+                            if (!mainContentView.classList.contains('hidden')) {
+                                renderCards(); 
+                            }
                         }
                     },
                     error: function(err) {
@@ -387,7 +413,7 @@
             mainContentView.classList.add('hidden');
             homeView.classList.remove('hidden');
             globalSearchContainer.classList.add('hidden');
-            searchInput.value = ''; // Clear search
+            searchInput.value = ''; 
         }
 
         function filterCategory(category) {
@@ -398,7 +424,6 @@
             categoryHeader.classList.remove('hidden');
             alertBox.classList.remove('hidden'); 
 
-            // Header Content Logic
             switch(category) {
                 case 'Admission':
                     categoryHeader.innerHTML = `<h2 class="text-2xl font-bold text-blue-900"><i class="fa-solid fa-ticket mr-2"></i>Conditions of Entry</h2><p class="text-slate-500">General admission policies and requirements.</p>`;
@@ -412,18 +437,21 @@
                 case 'Waterslide':
                     categoryHeader.innerHTML = `<h2 class="text-2xl font-bold text-pink-600"><i class="fa-solid fa-water-ladder mr-2"></i>Waterslides</h2><p class="text-slate-500">Safety restrictions, health warnings, and riding rules.</p>`;
                     break;
+                case 'Birthday Parties':
+                    categoryHeader.innerHTML = `<h2 class="text-2xl font-bold text-amber-600"><i class="fa-solid fa-cake-candles mr-2"></i>Birthday Parties</h2><p class="text-slate-500">Party packages, catering rules, decorations, and spectator fees.</p>`;
+                    break;
                 default:
                     categoryHeader.innerHTML = `<h2 class="text-2xl font-bold text-slate-800">All Database Entries</h2><p class="text-slate-500">Searching across all facility rules.</p>`;
             }
 
-            // Update Filter Buttons
             const buttons = document.querySelectorAll('.filter-btn');
             buttons.forEach(btn => {
                 const btnText = btn.innerText;
                 const isSelected = btnText.includes(category === 'all' ? 'All Rules' : category) || 
                                    (category === 'Admission' && btnText.includes('Entry')) ||
                                    (category === 'Learn to Swim' && btnText.includes('LTS')) ||
-                                   (category === 'Waterslide' && btnText.includes('Slide'));
+                                   (category === 'Waterslide' && btnText.includes('Slide')) ||
+                                   (category === 'Birthday Parties' && btnText.includes('Parties'));
                 
                 btn.className = "filter-btn px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors border";
                 
@@ -431,11 +459,13 @@
                     if (category === 'Learn to Swim') btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'active', 'shadow-sm');
                     else if (category === 'Squads') btn.classList.add('bg-teal-600', 'text-white', 'border-teal-600', 'active', 'shadow-sm');
                     else if (category === 'Waterslide') btn.classList.add('bg-pink-600', 'text-white', 'border-pink-600', 'active', 'shadow-sm');
+                    else if (category === 'Birthday Parties') btn.classList.add('bg-amber-600', 'text-white', 'border-amber-600', 'active', 'shadow-sm');
                     else btn.classList.add('bg-blue-900', 'text-white', 'border-blue-900', 'active', 'shadow-sm');
                 } else {
-                     if (btnText.includes('LTS')) btn.classList.add('bg-indigo-50', 'text-indigo-700', 'hover:bg-indigo-100', 'border-indigo-100');
+                    if (btnText.includes('LTS')) btn.classList.add('bg-indigo-50', 'text-indigo-700', 'hover:bg-indigo-100', 'border-indigo-100');
                     else if (btnText.includes('Squads')) btn.classList.add('bg-teal-50', 'text-teal-700', 'hover:bg-teal-100', 'border-teal-100');
                     else if (btnText.includes('Slide')) btn.classList.add('bg-pink-50', 'text-pink-700', 'hover:bg-pink-100', 'border-pink-100');
+                    else if (btnText.includes('Parties')) btn.classList.add('bg-amber-50', 'text-amber-700', 'hover:bg-amber-100', 'border-amber-100');
                     else btn.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200', 'border-transparent');
                 }
             });
@@ -466,7 +496,6 @@
                 filtered.forEach(rule => {
                     const card = document.createElement('div');
                     
-                    // GET STYLE FROM LOOKUP SYSTEM
                     const style = getRuleStyle(rule);
 
                     card.className = `glass-panel rounded-xl p-5 card-hover border-l-4 ${style.border}`;
