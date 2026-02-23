@@ -6,7 +6,7 @@
     <title>Calendar Admin | Clarence Regional Aquatic Centre</title>
     
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+<link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +59,7 @@
         const { useState, useEffect, useMemo } = React;
 
         // --- CONSTANTS ---
-        const HIDDEN_ADMIN_EMAIL = "info@clarenceregionalaquaticcentre.com.au"; // User must exist in Firebase Console
+        const HIDDEN_ADMIN_EMAIL = "info@clarenceregionalaquaticcentre.com.au";
         const TARGET_VENUE = 'CRAC'; 
 
         // --- DEFAULTS ---
@@ -115,8 +115,6 @@
             useEffect(() => {
                 const initAuth = async () => {
                     try {
-                        // In Admin portal, we initially try anonymous to connect to DB,
-                        // but user MUST sign in with email/pass to see the admin UI.
                         await auth.signInAnonymously();
                     } catch (err) {
                         console.error("Auth Error:", err);
@@ -125,7 +123,6 @@
                 };
                 
                 const unsubscribe = auth.onAuthStateChanged((u) => {
-                    // Only consider authenticated if it's NOT anonymous (real login)
                     if (u && !u.isAnonymous) {
                         setUser(u);
                         setIsAuthenticated(true);
@@ -142,7 +139,6 @@
 
             const handleLogout = async () => {
                 await auth.signOut();
-                // Fallback to anonymous so DB connection remains alive if needed
                 await auth.signInAnonymously();
             };
 
@@ -164,9 +160,7 @@
                 setError('');
                 
                 try {
-                    // STRICT SECURITY: No fallback. Must validate against Firebase.
                     await auth.signInWithEmailAndPassword(HIDDEN_ADMIN_EMAIL, password);
-                    // App component handles state change via onAuthStateChanged
                 } catch (err) {
                     console.error("Login Failed:", err);
                     
@@ -213,16 +207,13 @@
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
             
-            // Layout View State
-            const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+            const [viewMode, setViewMode] = useState('list');
 
-            // Filtering State
             const [searchTerm, setSearchTerm] = useState('');
             const [dateFilter, setDateFilter] = useState('future');
             const [zoneFilter, setZoneFilter] = useState('all');
             const [typeFilter, setTypeFilter] = useState('all');
             
-            // Pagination State
             const [currentPage, setCurrentPage] = useState(1);
             const itemsPerPage = 20;
 
@@ -233,7 +224,6 @@
                 };
             }, []);
 
-            // Load Data
             useEffect(() => {
                 if (!db || !user) return;
                 
@@ -284,7 +274,27 @@
                 catch(err) { alert("Initialization failed: " + err.message); }
             };
 
-            const openModal = (event = null) => { setSelectedEvent(event); setIsModalOpen(true); };
+            // ─────────────────────────────────────────────────────────────────
+            // BUG FIX #1: If the user clicks an event chip in the Calendar View,
+            // the object passed in is an *expanded instance* (isInstance: true)
+            // that has the occurrence's specific date — NOT the original series
+            // start date. Saving that object would overwrite the series start
+            // date in Firestore and lose all earlier occurrences.
+            //
+            // Fix: look up the canonical event from the `events` array by id
+            // before opening the modal so we always edit the original record.
+            // ─────────────────────────────────────────────────────────────────
+            const openModal = (event = null) => {
+                if (event?.isInstance) {
+                    // Find the original event from the master list
+                    const original = events.find(e => e.id === event.id);
+                    setSelectedEvent(original || event);
+                } else {
+                    setSelectedEvent(event);
+                }
+                setIsModalOpen(true);
+            };
+
             const closeModal = () => { setIsModalOpen(false); setSelectedEvent(null); };
 
             const handleSaveEvent = async (eventData) => {
@@ -301,7 +311,6 @@
                 try { await db.collection(paths.events).doc(id).delete(); } catch(err) { alert("Delete failed: " + err.message); }
             };
 
-            // NEW: Batch Delete Handler for Maintenance
             const handleBatchDelete = async (ids) => {
                 if (!ids || ids.length === 0) return;
                 if (!window.confirm(`Are you sure you want to delete ${ids.length} past events? This cannot be undone.`)) return;
@@ -327,7 +336,6 @@
                 try { await db.collection(paths.settings).doc('main_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
             };
 
-            // --- RECURRENCE EXPANSION (For Calendar View) ---
             const expandedEvents = useMemo(() => {
                 if (viewMode === 'list') return events; 
                 
@@ -360,6 +368,7 @@
                             if (event.recurrence.days.includes(dayName)) {
                                 const s = new Date(current); s.setHours(startTime.h, startTime.m, 0, 0);
                                 const e = new Date(s.getTime() + duration);
+                                // isInstance: true flags this as an expanded occurrence, not the canonical event
                                 expanded.push({ ...event, startDateTime: s, endDateTime: e, isInstance: true });
                             }
                             current.setDate(current.getDate() + 1);
@@ -373,8 +382,6 @@
                 return expanded.sort((a,b) => a.startDateTime - b.startDateTime);
             }, [events, viewMode, searchTerm, typeFilter, zoneFilter]);
 
-
-            // --- LIST VIEW FILTERING (Legacy logic for compatibility) ---
             const filteredEventsList = useMemo(() => {
                 const now = new Date();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -409,7 +416,6 @@
                 });
             }, [events, searchTerm, dateFilter, zoneFilter, typeFilter]);
 
-            // Grouping for List View
             const groupedEventsList = useMemo(() => {
                 const groups = {};
                 const startIndex = (currentPage - 1) * itemsPerPage;
@@ -525,7 +531,6 @@
                                                     <div key={event.id} className="p-4 hover:bg-blue-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
                                                         <div className="flex items-start gap-3 flex-1">
                                                             <div className="flex-shrink-0 w-28 text-sm text-gray-600 font-medium pt-1 flex flex-col">
-                                                                {/* Time Range */}
                                                                 <span>
                                                                     {event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                                                     {' - '}
@@ -545,12 +550,10 @@
                                                                     </span>
                                                                 </div>
 
-                                                                {/* Description Snippet */}
                                                                 {event.description && (
                                                                     <p className="text-sm text-gray-500 mt-1 truncate">{event.description}</p>
                                                                 )}
                                                                 
-                                                                {/* Recurrence Summary */}
                                                                 {event.recurrence && event.recurrence.days && (
                                                                     <p className="text-xs text-blue-600 mt-0.5">
                                                                         Weekly on {event.recurrence.days.map(d=>d.slice(0,3)).join(', ')}
@@ -595,8 +598,8 @@
             
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-            const startDay = new Date(startOfMonth); startDay.setDate(1 - startDay.getDay()); // Start on Sunday
-            const endDay = new Date(endOfMonth); endDay.setDate(endOfMonth.getDate() + (6 - endOfMonth.getDay())); // End on Saturday
+            const startDay = new Date(startOfMonth); startDay.setDate(1 - startDay.getDay());
+            const endDay = new Date(endOfMonth); endDay.setDate(endOfMonth.getDate() + (6 - endOfMonth.getDay()));
 
             const days = [];
             let d = new Date(startDay);
@@ -646,9 +649,31 @@
             const [startDateTime, setStartDateTime] = useState('');
             const [endDateTime, setEndDateTime] = useState('');
 
-            // Simple date helpers
-            const toLocalISOString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
-            const toLocalDateString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
+            // ─────────────────────────────────────────────────────────────────
+            // BUG FIX #2: The original toLocalISOString subtracted the timezone
+            // offset from the Date object and then called .toISOString(), which
+            // converts back to UTC. For AEDT (UTC+11) getTimezoneOffset() = -660,
+            // so subtracting -660 actually ADDED 11 hours. Then when the user
+            // saved, new Date(datetimeLocalString) parsed it as local time and
+            // added another 11 hours — causing event times to drift by many
+            // hours every time the form was opened and saved.
+            //
+            // Fix: Read the local date/time components directly from the Date
+            // object without any UTC conversion so no offset is applied.
+            // ─────────────────────────────────────────────────────────────────
+            const toLocalISOString = (date) => {
+                if (!date) return '';
+                const d = new Date(date);
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            };
+
+            const toLocalDateString = (date) => {
+                if (!date) return '';
+                const d = new Date(date);
+                const pad = n => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            };
 
             useEffect(() => {
                 if (event) {
@@ -657,16 +682,9 @@
                         recurrence: event.recurrence ? { ...event.recurrence } : null
                     });
                     
-                    // CRITICAL FIX: Always init start/end times from the event object itself
-                    // This ensures the daily time (e.g. 10am) is preserved and not overwritten by recurrence end date
                     setStartDateTime(toLocalISOString(event.startDateTime));
-                    
-                    // If recurring, event.endDateTime holds the daily end time (e.g. 11am)
-                    // event.recurrence.endDate holds the series end date (e.g. Dec 31)
-                    // We must use event.endDateTime for the time input
                     setEndDateTime(toLocalISOString(event.endDateTime));
 
-                    // Fix recurrence end date display
                     if (event.recurrence?.endDate) {
                         const ed = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
                         setFormData(prev => ({...prev, recurrence: {...prev.recurrence, endDate: toLocalDateString(ed)}}));
@@ -680,9 +698,6 @@
             const handleSubmit = (e) => {
                 e.preventDefault();
                 const sTime = new Date(startDateTime);
-                
-                // IMPORTANT: The endDateTime state holds the daily end time (e.g. today at 11am)
-                // We use this regardless of whether it's recurring or not to define the daily slot
                 const eTime = new Date(endDateTime);
 
                 const finalData = { 
@@ -692,7 +707,6 @@
                 };
 
                 if (formData.recurrence) {
-                    // Fix recurrence endDate to be a proper Date object
                     if (formData.recurrence.endDate) {
                         const [y,m,d] = formData.recurrence.endDate.split('-').map(Number);
                         finalData.recurrence.endDate = new Date(y, m-1, d);
@@ -717,7 +731,6 @@
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label><input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g., Aqua Fitness Class" /></div>
                                 
-                                {/* Time Inputs: These now strictly control the DAILY start/end time */}
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label><input type="datetime-local" required value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">End Time {isRecurring && '(Daily)'}</label><input type="datetime-local" required value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                 
@@ -728,7 +741,6 @@
                                 {isRecurring && (
                                     <div className="mt-4 pl-7 space-y-4">
                                         <div><span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Repeat On</span><div className="flex flex-wrap gap-2">{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (<button type="button" key={day} onClick={() => { const d = formData.recurrence.days || []; const newD = d.includes(day) ? d.filter(x => x !== day) : [...d, day]; setFormData(p => ({...p, recurrence: {...p.recurrence, days: newD}})); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{day.slice(0,3)}</button>))}</div></div>
-                                        {/* Series End Date: Separate from daily time */}
                                         <div><label className="block text-sm font-medium text-gray-700 mb-1">Series Ends On</label><input type="date" required value={formData.recurrence.endDate || ''} onChange={e => setFormData(p => ({...p, recurrence: {...p.recurrence, endDate: e.target.value}}))} className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                     </div>
                                 )}
@@ -785,7 +797,6 @@
             const [scanned, setScanned] = useState(false);
             const [isDeleting, setIsDeleting] = useState(false);
 
-            // Re-run scan when events or scanned state changes (auto-update list after deletion)
             useEffect(() => {
                 if (scanned) {
                     const now = new Date();
@@ -869,7 +880,7 @@
             const [newZone, setNewZone] = useState('');
             const [editingId, setEditingId] = useState(null);
             const [tempName, setTempName] = useState('');
-            const [newChildNames, setNewChildNames] = useState({}); // Track new child input for each parent
+            const [newChildNames, setNewChildNames] = useState({});
 
             const add = () => { if(!newZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newZone, children: []}]})); setNewZone(''); };
             const remove = (id) => { setSettings(s => ({...s, zones: s.zones.filter(z => z.id !== id)})); };
