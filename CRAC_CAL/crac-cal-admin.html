@@ -23,9 +23,10 @@
         .modal-overlay { background-color: rgba(0, 0, 0, 0.6); }
         .bg-gray-50-50 { background-color: rgba(249, 250, 251, 0.5); }
         
-        /* Fixed Print Utilities */
+        /* Re-engineered Print Utilities */
         @media print {
-            @page { size: landscape; margin: 10mm; }
+            @page { size: landscape; margin: 8mm; }
+            
             body, html { 
                 height: auto !important; 
                 min-height: 0 !important; 
@@ -37,25 +38,39 @@
                 padding-bottom: 0 !important; 
                 background-color: white !important; 
             }
+            
             .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
             .print-hide { display: none !important; }
-            .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
             .print-page-break { break-after: page; page-break-after: always; }
+            .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
             
-            /* Flatten the modal to behave like a normal page for printing */
+            /* Completely detaches modal from viewport for native page printing */
             .print-modal-wrapper {
                 position: static !important;
-                inset: auto !important;
+                display: block !important;
                 width: 100% !important;
                 height: auto !important;
-                min-height: auto !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 overflow: visible !important;
                 background: white !important;
             }
 
-            /* Ensure backgrounds show up in print */
+            /* Force the table to compress to fit perfectly on A4 landscape */
+            table { border-collapse: collapse !important; width: 100% !important; }
+            tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+            
+            /* Tightly control cell height so 15 rows fit vertically */
+            .print-cell-wrapper {
+                min-height: 38px !important; 
+                padding: 2px !important;
+            }
+            .print-text-sm {
+                font-size: 10px !important;
+                line-height: 1.15 !important;
+            }
+
+            /* Ensure backgrounds render faithfully */
             .bg-green-50 { background-color: #f0fdf4 !important; }
             .bg-yellow-100 { background-color: #fef9c3 !important; }
             .bg-red-100 { background-color: #fee2e2 !important; }
@@ -343,7 +358,7 @@
                         if (current < startRange) current = new Date(startRange);
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
                         
-                        // Protective Duration Cap (prevents "every day booked forever" errors)
+                        // Protective Duration Cap 
                         let duration = event.endDateTime.getTime() - event.startDateTime.getTime();
                         if (duration > 24 * 60 * 60 * 1000) {
                             const hDiff = event.endDateTime.getHours() - event.startDateTime.getHours();
@@ -808,8 +823,7 @@
                         if (current < startOfWeek) current = new Date(startOfWeek);
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
                         
-                        // FIX: Cap duration to the time-of-day difference. 
-                        // Prevents errors where users put the series end date in the "End Time" field (which forces a booking over multiple entire days).
+                        // FIX 1: Cap recurring duration to the time-of-day difference to prevent daily blockouts
                         let duration = event.endDateTime.getTime() - event.startDateTime.getTime();
                         if (duration > 24 * 60 * 60 * 1000) {
                             const hDiff = event.endDateTime.getHours() - event.startDateTime.getHours();
@@ -827,17 +841,30 @@
                             current.setDate(current.getDate() + 1);
                         }
                     } else {
-                        if (event.endDateTime >= startOfWeek && event.startDateTime <= endOfWeek) expanded.push(event);
+                        // FIX 2: Clamp corrupted single-event entries (where end date was set months away by mistake)
+                        if (event.endDateTime >= startOfWeek && event.startDateTime <= endOfWeek) {
+                            const start = new Date(event.startDateTime);
+                            let end = new Date(event.endDateTime);
+                            const timeDiff = end.getTime() - start.getTime();
+                            if (timeDiff > 24 * 60 * 60 * 1000) {
+                                // Event is improperly logged as multiple days. Clamp it to same day.
+                                end = new Date(start);
+                                end.setHours(event.endDateTime.getHours(), event.endDateTime.getMinutes());
+                                if (end < start) end.setDate(end.getDate() + 1);
+                            }
+                            expanded.push({ ...event, startDateTime: start, endDateTime: end });
+                        }
                     }
                 });
                 return expanded;
             }, [events, startOfWeek, endOfWeek]);
 
-            // Map ambiguously named lanes to their primary parent to prevent ghosting across multiple pools
+            // FIX 3: Map ambiguously named lanes to their primary parent to prevent ghosting across multiple pools
             const childToParentMap = useMemo(() => {
                 const map = {};
                 settings.zones.forEach(z => {
                     z.children?.forEach(c => {
+                        // First pool that defines this exact lane name "owns" it in ambiguous situations
                         if (!map[c.id]) map[c.id] = z.id;
                     });
                 });
@@ -860,7 +887,7 @@
             const printPage = () => window.print();
 
             return (
-                <div className="fixed inset-0 bg-white z-50 overflow-auto print-exact fade-in print-modal-wrapper">
+                <div className="fixed inset-0 bg-white z-50 overflow-auto fade-in print-modal-wrapper">
                     {/* Toolbar - Hidden when printing */}
                     <div className="print-hide sticky top-0 bg-gray-800 text-white p-4 flex flex-col md:flex-row justify-between items-center shadow-md z-10 gap-4">
                         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -903,8 +930,8 @@
                                     </div>
                                 </div>
 
-                                <div className="border border-gray-300 rounded-lg overflow-hidden print-break-inside-avoid">
-                                    <table className="w-full text-sm text-left border-collapse">
+                                <div className="border border-gray-300 rounded-lg print:overflow-visible overflow-hidden print-break-inside-avoid">
+                                    <table className="w-full text-sm text-left border-collapse bg-white">
                                         <thead className="bg-gray-100 text-gray-700 uppercase font-bold text-xs border-b border-gray-300">
                                             <tr>
                                                 <th className={`px-2 py-2 border-r border-gray-300 w-20 sm:w-24 text-center bg-gray-200 ${printMode === 'consolidated' ? 'text-10' : ''}`}>Time</th>
@@ -926,7 +953,7 @@
                                                         const cellStart = new Date(day); cellStart.setHours(hour, 0, 0, 0);
                                                         const cellEnd = new Date(day); cellEnd.setHours(hour + 1, 0, 0, 0);
                                                         
-                                                        // Accurate Zone Filter matching
+                                                        // Accurate Zone Filter matching utilizing ghost-pool protection
                                                         const cellEvents = weekEvents.filter(e => {
                                                             const overlapsTime = e.startDateTime < cellEnd && e.endDateTime > cellStart;
                                                             if(!overlapsTime) return false;
@@ -942,7 +969,7 @@
                                                                     if (z.startsWith(zone.id + ' - ')) return true;
                                                                     if (zone.children.some(c => c.id === z)) {
                                                                         if (eZones.includes(zone.id)) return true; // Parent uniquely checked alongside child
-                                                                        if (childToParentMap[z] === zone.id) return true; // Unique child resolution map
+                                                                        if (childToParentMap[z] === zone.id) return true; // Unique child resolution map checks primary ownership
                                                                     }
                                                                     return false;
                                                                 });
@@ -981,30 +1008,34 @@
                                                             bgClass = "bg-red-100";
                                                             borderClass = "border-red-300";
                                                             textContent = (
-                                                                <div className="flex flex-col items-center">
-                                                                    <span className="text-red-800 font-bold leading-tight text-center">{mainEventTitle || 'Fully Booked'}</span>
+                                                                <div className="flex flex-col items-center justify-center text-center">
+                                                                    <span className="text-red-800 font-bold leading-tight">{mainEventTitle || 'Fully Booked'}</span>
                                                                 </div>
                                                             );
                                                         } else if (totalChildren > 0 && bookedLanes.size > 0) {
                                                             bgClass = "bg-yellow-100";
                                                             borderClass = "border-yellow-300";
                                                             textContent = (
-                                                                <div className="flex flex-col items-center">
+                                                                <div className="flex flex-col items-center justify-center text-center">
                                                                     <span className="text-yellow-800 font-bold">{totalChildren - bookedLanes.size} Lanes</span>
-                                                                    <span className="text-yellow-700 text-xs">Available</span>
+                                                                    <span className="text-yellow-700 text-xs mt-0.5">Available</span>
                                                                 </div>
                                                             );
                                                         } else if (cellEvents.length > 0) {
-                                                            // Fallback safety
+                                                            // Fallback safety for non-lane pools
                                                             bgClass = "bg-yellow-100";
                                                             borderClass = "border-yellow-300";
-                                                            textContent = <span className="text-yellow-800 font-bold leading-tight text-center">{cellEvents[0].title}</span>;
+                                                            textContent = (
+                                                                <div className="flex flex-col items-center justify-center text-center">
+                                                                    <span className="text-yellow-800 font-bold leading-tight">{cellEvents[0].title}</span>
+                                                                </div>
+                                                            );
                                                         }
 
                                                         return (
-                                                            <td key={day.toISOString()} className={`p-1 border-r border-gray-300 ${bgClass} transition-colors`}>
+                                                            <td key={day.toISOString()} className={`p-[2px] sm:p-1 border-r border-gray-300 ${bgClass} transition-colors`}>
                                                                 <div 
-                                                                    className={`h-full flex flex-col items-center justify-center p-1 rounded border ${borderClass} bg-opacity-50 ${printMode === 'consolidated' ? 'text-10 leading-tight' : 'text-xs'}`}
+                                                                    className={`print-cell-wrapper h-full flex flex-col items-center justify-center p-1 rounded border ${borderClass} bg-opacity-50 print-text-sm ${printMode === 'consolidated' ? 'text-10 leading-tight' : 'text-xs'}`}
                                                                     style={{ minHeight: printMode === 'consolidated' ? '2.5rem' : '4rem' }}
                                                                 >
                                                                     {textContent}
