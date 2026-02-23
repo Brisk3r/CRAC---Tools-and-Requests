@@ -25,6 +25,21 @@
         .modal-overlay { background-color: rgba(0, 0, 0, 0.6); }
         /* Replaces bg-gray-50/50 (v3 opacity modifier syntax) */
         .bg-gray-50-50 { background-color: rgba(249, 250, 251, 0.5); }
+        
+        /* Print Utilities */
+        @media print {
+            body { background-color: white !important; }
+            .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-hide { display: none !important; }
+            .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+            .print-page-break { break-after: page; page-break-after: always; }
+            /* Ensure backgrounds show up in print */
+            .bg-green-50 { background-color: #f0fdf4 !important; }
+            .bg-yellow-100 { background-color: #fef9c3 !important; }
+            .bg-red-100 { background-color: #fee2e2 !important; }
+            .bg-gray-100 { background-color: #f3f4f6 !important; }
+            .border-gray-300 { border-color: #d1d5db !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 antialiased">
@@ -56,7 +71,8 @@
             ChevronLeft: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
             ChevronRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
             List: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
-            Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            Printer: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         };
 
         const { useState, useEffect, useMemo } = React;
@@ -194,6 +210,7 @@
             const [dbStatus, setDbStatus] = useState("Initializing...");
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [isExportOpen, setIsExportOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [viewMode, setViewMode] = useState('list');
             const [searchTerm, setSearchTerm] = useState('');
@@ -236,8 +253,6 @@
                 catch(err) { alert("Initialization failed: " + err.message); }
             };
 
-            // BUG FIX #1: Always look up the canonical event before editing so that
-            // clicking an expanded calendar instance doesn't overwrite the series start date.
             const openModal = (event = null) => {
                 if (event?.isInstance) {
                     const original = events.find(e => e.id === event.id);
@@ -383,7 +398,7 @@
 
             return (
                 <div className="min-h-screen bg-gray-50 pb-20">
-                    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
+                    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20 print-hide">
                         <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center" style={{gap: '1rem'}}>
                             <div className="flex items-center" style={{gap: '0.75rem'}}>
                                 <div className="bg-blue-600 text-white p-2 rounded-lg"><Icons.Settings size={20} /></div>
@@ -402,7 +417,7 @@
                         </div>
                     </header>
 
-                    <main className="container mx-auto px-4 py-6">
+                    <main className="container mx-auto px-4 py-6 print-hide">
                         {!settings && (
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 flex flex-col items-center justify-center text-center">
                                 <Icons.AlertTriangle className="text-yellow-600 mb-2" size={32} />
@@ -439,13 +454,15 @@
                                     {settings && Object.keys(settings.eventTypes).map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
 
-                                {/* max-w-[200px] replaced with inline style */}
                                 <select value={zoneFilter} onChange={e => { setZoneFilter(e.target.value); setCurrentPage(1); }} style={{maxWidth: '200px'}} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
                                     <option value="all">All Zones</option>
                                     {allZonesFlat.map(z => <option key={z} value={z}>{z}</option>)}
                                 </select>
                             </div>
-                            <button onClick={() => openModal()} className="w-full lg:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"><Icons.Plus size={18} /> Add Event</button>
+                            <div className="flex items-center gap-3 w-full lg:w-auto">
+                                <button onClick={() => setIsExportOpen(true)} className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-gray-800 text-white px-5 py-2 rounded-lg font-bold hover:bg-gray-900 transition-colors shadow-sm whitespace-nowrap"><Icons.Printer size={18} /> Export Timetable</button>
+                                <button onClick={() => openModal()} className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"><Icons.Plus size={18} /> Add Event</button>
+                            </div>
                         </div>
 
                         {/* LIST VIEW */}
@@ -477,9 +494,7 @@
                                                                     {event.recurrence && <Icons.Repeat size={14} className="text-blue-500 flex-shrink-0" title="Recurring Event" />}
                                                                 </div>
                                                                 <div className="flex flex-wrap mt-1" style={{gap: '0.5rem'}}>
-                                                                    {/* text-[10px] replaced with .text-10 custom class */}
                                                                     <span className="text-10 uppercase font-bold px-2 py-0 rounded text-white" style={{ backgroundColor: settings?.eventTypes?.[event.type] || '#9ca3af' }}>{event.type}</span>
-                                                                    {/* max-w-[200px] replaced with inline style */}
                                                                     <span className="text-xs text-gray-600 bg-gray-100 px-2 rounded border border-gray-200 truncate" style={{maxWidth: '200px'}} title={Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}>
                                                                         {formatZoneList(event.zone)}
                                                                     </span>
@@ -516,12 +531,12 @@
 
                     {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings || CRAC_DEFAULTS} />}
                     {isSettingsOpen && <SettingsModal settings={settings || CRAC_DEFAULTS} events={events} onSave={handleSaveSettings} onDeleteBatch={handleBatchDelete} onClose={() => setIsSettingsOpen(false)} />}
+                    {isExportOpen && <ExportModal settings={settings || CRAC_DEFAULTS} events={events} onClose={() => setIsExportOpen(false)} />}
                 </div>
             );
         };
 
         // CALENDAR VIEW
-        // auto-rows-[minmax(120px,auto)] and max-h-[150px] replaced with inline styles
         const CalendarView = ({ events, onEdit, onDelete, eventTypes }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -544,7 +559,6 @@
                     <div className="grid grid-cols-7 text-center text-xs font-semibold text-gray-500 border-b border-gray-200 bg-gray-50">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="py-2">{day}</div>)}
                     </div>
-                    {/* auto-rows-[minmax(120px,auto)] → inline gridAutoRows */}
                     <div className="grid grid-cols-7 divide-x divide-gray-200" style={{gridAutoRows: 'minmax(120px, auto)'}}>
                         {days.map(day => {
                             const dayEvents = events.filter(e => e.startDateTime.toDateString() === day.toDateString());
@@ -552,7 +566,6 @@
                             return (
                                 <div key={day.toISOString()} className={`p-2 flex flex-col gap-1 ${isCurr ? 'bg-white text-gray-800' : 'text-gray-400'}`} style={{backgroundColor: isCurr ? '' : 'rgba(249,250,251,0.5)'}}>
                                     <div className="text-right text-xs font-medium mb-1">{day.getDate()}</div>
-                                    {/* max-h-[150px] → inline maxHeight */}
                                     <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar" style={{maxHeight: '150px'}}>
                                         {dayEvents.map(e => (
                                             <div key={e.id + e.startDateTime.toISOString()} onClick={() => onEdit(e)}
@@ -572,13 +585,11 @@
         };
 
         // EVENT FORM
-        // max-h-[90vh] replaced with inline style
         const EventForm = ({ event, onSave, onClose, settings }) => {
             const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: '', recurrence: null });
             const [startDateTime, setStartDateTime] = useState('');
             const [endDateTime, setEndDateTime] = useState('');
 
-            // BUG FIX #2: Read local date components directly to avoid timezone drift.
             const toLocalISOString = (date) => {
                 if (!date) return '';
                 const d = new Date(date);
@@ -628,9 +639,7 @@
             const isRecurring = !!formData.recurrence;
 
             return (
-                /* modal-overlay replaces bg-black/60 backdrop-blur-sm */
                 <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4 fade-in">
-                    {/* max-h-[90vh] replaced with inline style */}
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
                         <div className="p-6 border-b flex justify-between items-center">
                             <h2 className="text-xl font-bold text-gray-900">{event ? 'Edit Event' : 'New Event'}</h2>
@@ -724,8 +733,225 @@
             );
         };
 
+        // EXPORT MODAL (TIMETABLE HEATMAPS)
+        const ExportModal = ({ settings, events, onClose }) => {
+            const [weekOffset, setWeekOffset] = useState(0);
+
+            // Determine target week dates
+            const { startOfWeek, endOfWeek, daysInWeek } = useMemo(() => {
+                const now = new Date();
+                now.setDate(now.getDate() + (weekOffset * 7));
+                
+                const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+                const start = new Date(now);
+                start.setDate(now.getDate() - currentDay + 1);
+                start.setHours(0,0,0,0);
+                
+                const end = new Date(start);
+                end.setDate(start.getDate() + 6);
+                end.setHours(23,59,59,999);
+
+                const days = [];
+                for(let i=0; i<7; i++) {
+                    const d = new Date(start);
+                    d.setDate(start.getDate() + i);
+                    days.push(d);
+                }
+
+                return { startOfWeek: start, endOfWeek: end, daysInWeek: days };
+            }, [weekOffset]);
+
+            // Expand events just for this specific week
+            const weekEvents = useMemo(() => {
+                const expanded = [];
+                events.forEach(event => {
+                    if (event.recurrence && event.recurrence.days) {
+                        let current = new Date(event.startDateTime); 
+                        current.setHours(0,0,0,0);
+                        const endRecur = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
+                        const effectiveEnd = new Date(Math.min(endRecur.getTime(), endOfWeek.getTime()));
+                        
+                        if (current < startOfWeek) current = new Date(startOfWeek);
+                        const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
+                        const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        
+                        while(current <= effectiveEnd) {
+                            const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
+                            if (event.recurrence.days.includes(dayName)) {
+                                const s = new Date(current); s.setHours(startTime.h, startTime.m, 0, 0);
+                                expanded.push({ ...event, startDateTime: s, endDateTime: new Date(s.getTime() + duration) });
+                            }
+                            current.setDate(current.getDate() + 1);
+                        }
+                    } else {
+                        if (event.endDateTime >= startOfWeek && event.startDateTime <= endOfWeek) expanded.push(event);
+                    }
+                });
+                return expanded;
+            }, [events, startOfWeek, endOfWeek]);
+
+            // Determine operational hours
+            const displayHours = useMemo(() => {
+                let minOpen = 6; 
+                let maxClose = 19;
+                if (settings.openingHours?.length > 0) {
+                    minOpen = Math.min(...settings.openingHours.map(h => h.open));
+                    maxClose = Math.max(...settings.openingHours.map(h => h.close));
+                }
+                const hrs = [];
+                for(let i = minOpen; i < maxClose; i++) hrs.push(i);
+                return hrs;
+            }, [settings]);
+
+            const printPage = () => window.print();
+
+            return (
+                <div className="fixed inset-0 bg-white z-50 overflow-auto print-exact fade-in">
+                    {/* Toolbar - Hidden when printing */}
+                    <div className="print-hide sticky top-0 bg-gray-800 text-white p-4 flex justify-between items-center shadow-md z-10">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-xl font-bold">Timetable Export</h2>
+                            <div className="flex bg-gray-700 rounded-lg p-1">
+                                <button onClick={() => setWeekOffset(o => o - 1)} className="px-3 py-1 hover:bg-gray-600 rounded text-sm transition-colors">&larr; Prev Week</button>
+                                <div className="px-4 py-1 text-sm font-semibold border-l border-r border-gray-600">
+                                    {startOfWeek.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })} - {endOfWeek.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })}
+                                </div>
+                                <button onClick={() => setWeekOffset(o => o + 1)} className="px-3 py-1 hover:bg-gray-600 rounded text-sm transition-colors">Next Week &rarr;</button>
+                                <button onClick={() => setWeekOffset(0)} className="px-3 py-1 ml-2 bg-blue-600 hover:bg-blue-500 rounded text-sm transition-colors">Current Week</button>
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={printPage} className="flex items-center gap-2 bg-white text-gray-900 px-4 py-2 rounded-lg font-bold hover:bg-gray-100 transition-colors"><Icons.Printer size={18} /> Print Timetable</button>
+                            <button onClick={onClose} className="p-2 text-gray-300 hover:text-white transition-colors"><Icons.X size={24} /></button>
+                        </div>
+                    </div>
+
+                    {/* Print Document Area */}
+                    <div className="p-8 max-w-6xl mx-auto space-y-12">
+                        {settings.zones.map((zone, idx) => (
+                            <div key={zone.id} className="print-page-break">
+                                <div className="mb-4 flex justify-between items-end border-b-2 border-blue-900 pb-2">
+                                    <div>
+                                        <h1 className="text-3xl font-extrabold text-blue-900 tracking-tight">Clarence Regional Aquatic Centre</h1>
+                                        <h2 className="text-2xl font-bold text-gray-700 mt-1">{zone.id} Availability</h2>
+                                        <p className="text-gray-500 font-medium">Week of {startOfWeek.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                    </div>
+                                    <div className="text-right text-sm">
+                                        <div className="flex items-center gap-4 mt-2">
+                                            <div className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-green-50 border border-green-200 block"></span> Free</div>
+                                            <div className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-yellow-100 border border-yellow-300 block"></span> Partial</div>
+                                            <div className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-red-100 border border-red-300 block"></span> Booked</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="border border-gray-300 rounded-lg overflow-hidden print-break-inside-avoid">
+                                    <table className="w-full text-sm text-left border-collapse">
+                                        <thead className="bg-gray-100 text-gray-700 uppercase font-bold text-xs border-b border-gray-300">
+                                            <tr>
+                                                <th className="px-3 py-3 border-r border-gray-300 w-24 text-center bg-gray-200">Time</th>
+                                                {daysInWeek.map(day => (
+                                                    <th key={day.toISOString()} className="px-3 py-3 border-r border-gray-300 text-center w-[12%]">
+                                                        <div className="font-extrabold">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                                                        <div className="font-normal text-gray-500">{day.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}</div>
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {displayHours.map(hour => (
+                                                <tr key={hour} className="border-b border-gray-200">
+                                                    <td className="px-2 py-3 border-r border-gray-300 font-bold text-gray-600 text-center bg-gray-50 align-top">
+                                                        {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour-12}:00 PM` : `${hour}:00 AM`}
+                                                    </td>
+                                                    {daysInWeek.map(day => {
+                                                        const cellStart = new Date(day); cellStart.setHours(hour, 0, 0, 0);
+                                                        const cellEnd = new Date(day); cellEnd.setHours(hour + 1, 0, 0, 0);
+                                                        
+                                                        // Find events overlapping this specific hour
+                                                        const cellEvents = weekEvents.filter(e => {
+                                                            const overlapsTime = e.startDateTime < cellEnd && e.endDateTime > cellStart;
+                                                            if(!overlapsTime) return false;
+                                                            const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                                                            // Match parent or any specific child lanes
+                                                            return eZones.includes(zone.id) || eZones.some(z => z.startsWith(zone.id + ' - ') || zone.children?.some(c => c.id === z));
+                                                        });
+
+                                                        let isFullyBooked = false;
+                                                        let bookedLanes = new Set();
+                                                        let mainEventTitle = "";
+
+                                                        cellEvents.forEach(e => {
+                                                            const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                                                            if (eZones.includes(zone.id)) {
+                                                                isFullyBooked = true;
+                                                                if(!mainEventTitle) mainEventTitle = e.title;
+                                                            } else {
+                                                                eZones.forEach(z => {
+                                                                    if(zone.children?.some(c => c.id === z || z === `${zone.id} - ${c.id}`)) {
+                                                                        bookedLanes.add(z);
+                                                                    }
+                                                                });
+                                                            }
+                                                        });
+
+                                                        const totalChildren = zone.children?.length || 0;
+                                                        if (totalChildren > 0 && bookedLanes.size >= totalChildren) {
+                                                            isFullyBooked = true;
+                                                        }
+
+                                                        let bgClass = "bg-green-50";
+                                                        let borderClass = "border-green-200";
+                                                        let textContent = <span className="text-green-700 font-medium">Free</span>;
+
+                                                        if (isFullyBooked) {
+                                                            bgClass = "bg-red-100";
+                                                            borderClass = "border-red-300";
+                                                            textContent = (
+                                                                <div className="flex flex-col items-center">
+                                                                    <span className="text-red-800 font-bold leading-tight text-center">{mainEventTitle || 'Fully Booked'}</span>
+                                                                </div>
+                                                            );
+                                                        } else if (totalChildren > 0 && bookedLanes.size > 0) {
+                                                            bgClass = "bg-yellow-100";
+                                                            borderClass = "border-yellow-300";
+                                                            textContent = (
+                                                                <div className="flex flex-col items-center">
+                                                                    <span className="text-yellow-800 font-bold">{totalChildren - bookedLanes.size} Lanes</span>
+                                                                    <span className="text-yellow-700 text-xs">Available</span>
+                                                                </div>
+                                                            );
+                                                        } else if (cellEvents.length > 0) {
+                                                            // For zones without children that have an event but aren't explicitly full (fallback safety)
+                                                            bgClass = "bg-yellow-100";
+                                                            borderClass = "border-yellow-300";
+                                                            textContent = <span className="text-yellow-800 font-bold leading-tight text-center">{cellEvents[0].title}</span>;
+                                                        }
+
+                                                        return (
+                                                            <td key={day.toISOString()} className={`p-1 border-r border-gray-300 ${bgClass} transition-colors`}>
+                                                                <div className={`h-full min-h-[4rem] flex items-center justify-center p-2 rounded border ${borderClass} bg-opacity-50`}>
+                                                                    {textContent}
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="mt-4 text-center text-sm text-gray-500 font-medium pb-8 border-b border-gray-200">
+                                    Achieve your fitness goals! Join us at the Clarence Regional Aquatic Centre.
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         // SETTINGS MODAL
-        // h-[90vh] replaced with inline style
         const SettingsModal = ({ settings, events, onSave, onDeleteBatch, onClose }) => {
             const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings)));
             const [activeTab, setActiveTab] = useState('zones');
@@ -739,9 +965,7 @@
             };
 
             return (
-                /* modal-overlay replaces bg-black/60 backdrop-blur-sm */
-                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4 fade-in">
-                    {/* h-[90vh] replaced with inline style */}
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4 fade-in print-hide">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col" style={{height: '90vh'}}>
                         <div className="p-6 border-b flex justify-between items-center flex-shrink-0">
                             <h2 className="text-xl font-bold text-gray-900">System Configuration</h2>
