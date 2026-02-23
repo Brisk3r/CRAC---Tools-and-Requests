@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendar Admin | Clarence Regional Aquatic Centre</title>
     
-    <!-- Tailwind CSS -->
-<link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Tailwind CSS v2 (no bracket syntax, no /opacity modifiers) -->
+    <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,12 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Replacement for text-[10px] which requires Tailwind v3 */
+        .text-10 { font-size: 10px; line-height: 1.4; }
+        /* Modal overlay: replaces bg-black/60 and backdrop-blur-sm (v3 only) */
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.6); }
+        /* Replaces bg-gray-50/50 (v3 opacity modifier syntax) */
+        .bg-gray-50-50 { background-color: rgba(249, 250, 251, 0.5); }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 antialiased">
@@ -35,7 +41,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <script type="text/babel">
-        // --- ICONS (Lucide React style) ---
         const Icons = {
             Search: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
             Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
@@ -48,21 +53,17 @@
             Check: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
             AlertTriangle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
             Database: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
-            Filter: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
             ChevronLeft: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
             ChevronRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-            Broom: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2.5 1.52S4.1 21 5.46 21c1.67 0 3.03-1.34 3.03-3.01v-3.05Z"/></svg>,
             List: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
             Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
         };
 
         const { useState, useEffect, useMemo } = React;
 
-        // --- CONSTANTS ---
         const HIDDEN_ADMIN_EMAIL = "info@clarenceregionalaquaticcentre.com.au";
         const TARGET_VENUE = 'CRAC'; 
 
-        // --- DEFAULTS ---
         const CRAC_DEFAULTS = { 
             zones: [ 
                 { id: '50m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
@@ -85,7 +86,6 @@
             ]
         };
 
-        // --- FIREBASE INIT ---
         const firebaseConfig = {
             apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
             authDomain: "osf---availability-roster.firebaseapp.com",
@@ -105,34 +105,21 @@
             console.error("Firebase Init Error:", e);
         }
 
-        // --- MAIN APP ---
         const App = () => {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [user, setUser] = useState(null);
             const [firebaseReady, setFirebaseReady] = useState(false);
-            const [authError, setAuthError] = useState(null);
 
             useEffect(() => {
                 const initAuth = async () => {
-                    try {
-                        await auth.signInAnonymously();
-                    } catch (err) {
-                        console.error("Auth Error:", err);
-                        setAuthError(err.message);
-                    }
+                    try { await auth.signInAnonymously(); } 
+                    catch (err) { console.error("Auth Error:", err); }
                 };
-                
                 const unsubscribe = auth.onAuthStateChanged((u) => {
-                    if (u && !u.isAnonymous) {
-                        setUser(u);
-                        setIsAuthenticated(true);
-                    } else {
-                        setUser(null);
-                        setIsAuthenticated(false);
-                    }
+                    if (u && !u.isAnonymous) { setUser(u); setIsAuthenticated(true); } 
+                    else { setUser(null); setIsAuthenticated(false); }
                     setFirebaseReady(true);
                 });
-                
                 initAuth();
                 return () => unsubscribe();
             }, []);
@@ -142,10 +129,13 @@
                 await auth.signInAnonymously();
             };
 
-            if (!firebaseReady) return <div className="h-screen flex flex-col items-center justify-center text-gray-500 gap-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p>Connecting to CRAC System...</p></div>;
-            
+            if (!firebaseReady) return (
+                <div className="h-screen flex flex-col items-center justify-center text-gray-500" style={{gap: '1rem'}}>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p>Connecting to CRAC System...</p>
+                </div>
+            );
             if (!isAuthenticated) return <Login />;
-            
             return <AdminPage onLogout={handleLogout} user={user} />;
         };
 
@@ -158,16 +148,11 @@
                 e.preventDefault();
                 setIsLoggingIn(true);
                 setError('');
-                
                 try {
                     await auth.signInWithEmailAndPassword(HIDDEN_ADMIN_EMAIL, password);
                 } catch (err) {
-                    console.error("Login Failed:", err);
-                    
-                    if (err.code === 'auth/operation-not-allowed') {
-                        setError('Login provider enabled but domain not authorized. Please check Firebase Console -> Auth -> Settings -> Authorized Domains.');
-                    } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
-                        setError('Incorrect password.'); 
+                    if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
+                        setError('Incorrect password.');
                     } else {
                         setError(`Connection error: ${err.message}`);
                     }
@@ -180,7 +165,7 @@
                     <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm fade-in">
                         <div className="text-center mb-8">
                             <h1 className="text-2xl font-bold text-blue-900">Admin Portal</h1>
-                            <p className="text-gray-500 text-sm mt-1">{TARGET_VENUE === 'CRAC' ? 'Clarence Regional Aquatic Centre' : 'Yamba Community Pool'}</p>
+                            <p className="text-gray-500 text-sm mt-1">Clarence Regional Aquatic Centre</p>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
@@ -188,7 +173,12 @@
                                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter password" autoFocus />
                             </div>
                             {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-100">{error}</p>}
-                            <button type="submit" disabled={isLoggingIn} className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button
+                                type="submit"
+                                disabled={isLoggingIn}
+                                style={{opacity: isLoggingIn ? 0.5 : 1, cursor: isLoggingIn ? 'not-allowed' : 'pointer'}}
+                                className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm"
+                            >
                                 {isLoggingIn ? 'Verifying...' : 'Login'}
                             </button>
                         </form>
@@ -202,91 +192,54 @@
             const [settings, setSettings] = useState(null);
             const [isLoading, setIsLoading] = useState(true);
             const [dbStatus, setDbStatus] = useState("Initializing...");
-            
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [selectedEvent, setSelectedEvent] = useState(null);
-            
             const [viewMode, setViewMode] = useState('list');
-
             const [searchTerm, setSearchTerm] = useState('');
             const [dateFilter, setDateFilter] = useState('future');
             const [zoneFilter, setZoneFilter] = useState('all');
             const [typeFilter, setTypeFilter] = useState('all');
-            
             const [currentPage, setCurrentPage] = useState(1);
             const itemsPerPage = 20;
 
-            const paths = useMemo(() => {
-                return {
-                    events: 'calendar_events',
-                    settings: 'calendar_settings'
-                };
-            }, []);
+            const paths = useMemo(() => ({ events: 'calendar_events', settings: 'calendar_settings' }), []);
 
             useEffect(() => {
                 if (!db || !user) return;
-                
                 let settingsLoaded = false, eventsLoaded = false;
-                const checkLoading = () => { 
-                    if (settingsLoaded && eventsLoaded) {
-                        setIsLoading(false);
-                        setDbStatus("Connected");
-                    }
-                };
+                const checkLoading = () => { if (settingsLoaded && eventsLoaded) { setIsLoading(false); setDbStatus("Connected"); } };
 
                 const unsubSettings = db.collection(paths.settings).doc('main_config').onSnapshot(doc => {
-                    if (doc.exists) { setSettings(doc.data()); } 
-                    else { setSettings(null); }
+                    setSettings(doc.exists ? doc.data() : null);
                     settingsLoaded = true; checkLoading();
-                }, err => {
-                    console.error("Settings Error:", err);
-                    setDbStatus(`Error: ${err.message}`);
-                    settingsLoaded = true; checkLoading();
-                });
+                }, err => { setDbStatus(`Error: ${err.message}`); settingsLoaded = true; checkLoading(); });
 
-                const unsubEvents = db.collection(paths.events)
-                    .onSnapshot(snapshot => {
-                        const fetched = snapshot.docs.map(doc => {
-                            const d = doc.data();
-                            return {
-                                id: doc.id,
-                                ...d,
-                                startDateTime: d.startDateTime?.toDate ? d.startDateTime.toDate() : new Date(d.startDateTime),
-                                endDateTime: d.endDateTime?.toDate ? d.endDateTime.toDate() : new Date(d.endDateTime) 
-                            };
-                        });
-                        fetched.sort((a,b) => a.startDateTime - b.startDateTime);
-                        setEvents(fetched);
-                        eventsLoaded = true; checkLoading();
-                    }, err => {
-                        console.error("Events Error:", err);
-                        setDbStatus(`Error: ${err.message}`);
-                        eventsLoaded = true; checkLoading();
+                const unsubEvents = db.collection(paths.events).onSnapshot(snapshot => {
+                    const fetched = snapshot.docs.map(doc => {
+                        const d = doc.data();
+                        return { id: doc.id, ...d,
+                            startDateTime: d.startDateTime?.toDate ? d.startDateTime.toDate() : new Date(d.startDateTime),
+                            endDateTime: d.endDateTime?.toDate ? d.endDateTime.toDate() : new Date(d.endDateTime) };
                     });
+                    fetched.sort((a,b) => a.startDateTime - b.startDateTime);
+                    setEvents(fetched);
+                    eventsLoaded = true; checkLoading();
+                }, err => { setDbStatus(`Error: ${err.message}`); eventsLoaded = true; checkLoading(); });
 
                 return () => { unsubSettings(); unsubEvents(); };
             }, [paths, user]);
 
             const initializeDatabase = async () => {
                 if (!window.confirm("Initialize database with CRAC default settings?")) return;
-                try { await db.collection(paths.settings).doc('main_config').set(CRAC_DEFAULTS); } 
+                try { await db.collection(paths.settings).doc('main_config').set(CRAC_DEFAULTS); }
                 catch(err) { alert("Initialization failed: " + err.message); }
             };
 
-            // ─────────────────────────────────────────────────────────────────
-            // BUG FIX #1: If the user clicks an event chip in the Calendar View,
-            // the object passed in is an *expanded instance* (isInstance: true)
-            // that has the occurrence's specific date — NOT the original series
-            // start date. Saving that object would overwrite the series start
-            // date in Firestore and lose all earlier occurrences.
-            //
-            // Fix: look up the canonical event from the `events` array by id
-            // before opening the modal so we always edit the original record.
-            // ─────────────────────────────────────────────────────────────────
+            // BUG FIX #1: Always look up the canonical event before editing so that
+            // clicking an expanded calendar instance doesn't overwrite the series start date.
             const openModal = (event = null) => {
                 if (event?.isInstance) {
-                    // Find the original event from the master list
                     const original = events.find(e => e.id === event.id);
                     setSelectedEvent(original || event);
                 } else {
@@ -300,7 +253,7 @@
             const handleSaveEvent = async (eventData) => {
                 try {
                     const dataToSave = { ...eventData, venue: TARGET_VENUE };
-                    if (selectedEvent) { await db.collection(paths.events).doc(selectedEvent.id).update(dataToSave); } 
+                    if (selectedEvent) { await db.collection(paths.events).doc(selectedEvent.id).update(dataToSave); }
                     else { await db.collection(paths.events).add(dataToSave); }
                     closeModal();
                 } catch (err) { alert("Error saving: " + err.message); }
@@ -314,31 +267,24 @@
             const handleBatchDelete = async (ids) => {
                 if (!ids || ids.length === 0) return;
                 if (!window.confirm(`Are you sure you want to delete ${ids.length} past events? This cannot be undone.`)) return;
-                
                 try {
                     const batchSize = 400;
                     for (let i = 0; i < ids.length; i += batchSize) {
                         const batch = db.batch();
-                        const chunk = ids.slice(i, i + batchSize);
-                        chunk.forEach(id => {
-                            const ref = db.collection(paths.events).doc(id);
-                            batch.delete(ref);
-                        });
+                        ids.slice(i, i + batchSize).forEach(id => batch.delete(db.collection(paths.events).doc(id)));
                         await batch.commit();
                     }
                     alert("Cleanup complete. Database is now tidy.");
-                } catch (err) {
-                    alert("Error deleting events: " + err.message);
-                }
+                } catch (err) { alert("Error deleting events: " + err.message); }
             };
 
             const handleSaveSettings = async (newSettings) => {
-                try { await db.collection(paths.settings).doc('main_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
+                try { await db.collection(paths.settings).doc('main_config').set(newSettings, { merge: true }); }
+                catch(err) { alert("Save failed: " + err.message); }
             };
 
             const expandedEvents = useMemo(() => {
-                if (viewMode === 'list') return events; 
-                
+                if (viewMode === 'list') return events;
                 const expanded = [];
                 const now = new Date();
                 const startRange = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -351,32 +297,23 @@
                         const zones = Array.isArray(event.zone) ? event.zone : [event.zone];
                         if (!zones.some(z => z === zoneFilter)) return;
                     }
-
                     if (event.recurrence && event.recurrence.days) {
-                        let current = new Date(event.startDateTime);
-                        current.setHours(0,0,0,0);
+                        let current = new Date(event.startDateTime); current.setHours(0,0,0,0);
                         const endRecur = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
                         const effectiveEnd = new Date(Math.min(endRecur.getTime(), endRange.getTime()));
-                        
                         if (current < startRange) current = new Date(startRange);
-
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
                         const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
-
                         while(current <= effectiveEnd) {
                             const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
                             if (event.recurrence.days.includes(dayName)) {
                                 const s = new Date(current); s.setHours(startTime.h, startTime.m, 0, 0);
-                                const e = new Date(s.getTime() + duration);
-                                // isInstance: true flags this as an expanded occurrence, not the canonical event
-                                expanded.push({ ...event, startDateTime: s, endDateTime: e, isInstance: true });
+                                expanded.push({ ...event, startDateTime: s, endDateTime: new Date(s.getTime() + duration), isInstance: true });
                             }
                             current.setDate(current.getDate() + 1);
                         }
                     } else {
-                        if (event.startDateTime >= startRange && event.startDateTime <= endRange) {
-                            expanded.push(event);
-                        }
+                        if (event.startDateTime >= startRange && event.startDateTime <= endRange) expanded.push(event);
                     }
                 });
                 return expanded.sort((a,b) => a.startDateTime - b.startDateTime);
@@ -386,7 +323,6 @@
                 const now = new Date();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 6);
-                
                 return events.filter(event => {
                     if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
                     if (zoneFilter !== 'all') {
@@ -394,16 +330,13 @@
                         if (!zones.some(z => z === zoneFilter)) return false;
                     }
                     if (typeFilter !== 'all' && event.type !== typeFilter) return false;
-
-                    const eventStart = new Date(event.startDateTime);
-                    eventStart.setHours(0,0,0,0);
+                    const eventStart = new Date(event.startDateTime); eventStart.setHours(0,0,0,0);
                     let effectiveEnd = new Date(event.endDateTime);
                     if (event.recurrence && event.recurrence.endDate) {
                         const recEnd = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
                         effectiveEnd = new Date(recEnd);
                     }
                     effectiveEnd.setHours(23, 59, 59, 999);
-
                     if (dateFilter === 'today') {
                         if (!event.recurrence) return eventStart.getTime() === today.getTime();
                         if (today < eventStart || today > effectiveEnd) return false;
@@ -419,8 +352,7 @@
             const groupedEventsList = useMemo(() => {
                 const groups = {};
                 const startIndex = (currentPage - 1) * itemsPerPage;
-                const slicedEvents = filteredEventsList.slice(startIndex, startIndex + itemsPerPage);
-                slicedEvents.forEach(event => {
+                filteredEventsList.slice(startIndex, startIndex + itemsPerPage).forEach(event => {
                     const dateKey = event.startDateTime.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
                     if (!groups[dateKey]) groups[dateKey] = [];
                     groups[dateKey].push(event);
@@ -452,18 +384,18 @@
             return (
                 <div className="min-h-screen bg-gray-50 pb-20">
                     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
-                        <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div className="flex items-center gap-3">
+                        <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center" style={{gap: '1rem'}}>
+                            <div className="flex items-center" style={{gap: '0.75rem'}}>
                                 <div className="bg-blue-600 text-white p-2 rounded-lg"><Icons.Settings size={20} /></div>
                                 <div>
                                     <h1 className="text-xl font-bold text-gray-900 leading-none">Calendar Admin</h1>
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center mt-1" style={{gap: '0.5rem'}}>
                                         <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{TARGET_VENUE}</span>
-                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${dbStatus.includes('Error') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>{dbStatus}</span>
+                                        <span className={`text-xs px-1 py-0 rounded-full ${dbStatus.includes('Error') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`} style={{fontSize: '10px'}}>{dbStatus}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center" style={{gap: '0.75rem'}}>
                                 <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"><Icons.Settings size={16} /> Config</button>
                                 <button onClick={onLogout} className="flex items-center gap-2 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-sm font-medium"><Icons.LogOut size={16} /> Logout</button>
                             </div>
@@ -480,15 +412,16 @@
                         )}
 
                         {/* TOOLBAR */}
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
-                            <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto items-center">
-                                <div className="relative flex-grow md:w-64 w-full">
-                                    <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col lg:flex-row items-center justify-between" style={{gap: '1rem'}}>
+                            <div className="flex flex-col md:flex-row w-full lg:w-auto items-center" style={{gap: '0.75rem'}}>
+                                <div className="relative w-full md:w-64">
+                                    <Icons.Search className="absolute text-gray-400" style={{left: '0.75rem', top: '50%', transform: 'translateY(-50%)'}} size={18} />
                                     <input type="text" placeholder="Search events..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full" />
                                 </div>
-                                
-                                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
-                                    <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Card View"><Icons.List size={18} /></button>
+
+                                {/* View Toggle */}
+                                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 flex-shrink-0">
+                                    <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="List View"><Icons.List size={18} /></button>
                                     <button onClick={() => setViewMode('calendar')} className={`p-2 rounded ${viewMode === 'calendar' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Calendar View"><Icons.Calendar size={18} /></button>
                                 </div>
 
@@ -500,13 +433,14 @@
                                         <option value="all">All Events</option>
                                     </select>
                                 )}
-                                
+
                                 <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
                                     <option value="all">All Types</option>
                                     {settings && Object.keys(settings.eventTypes).map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
-                                
-                                <select value={zoneFilter} onChange={e => { setZoneFilter(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm max-w-[200px]">
+
+                                {/* max-w-[200px] replaced with inline style */}
+                                <select value={zoneFilter} onChange={e => { setZoneFilter(e.target.value); setCurrentPage(1); }} style={{maxWidth: '200px'}} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
                                     <option value="all">All Zones</option>
                                     {allZonesFlat.map(z => <option key={z} value={z}>{z}</option>)}
                                 </select>
@@ -514,7 +448,7 @@
                             <button onClick={() => openModal()} className="w-full lg:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"><Icons.Plus size={18} /> Add Event</button>
                         </div>
 
-                        {/* --- VIEW SWITCHER --- */}
+                        {/* LIST VIEW */}
                         {viewMode === 'list' && (
                             <div className="space-y-6">
                                 {Object.keys(groupedEventsList).length === 0 ? (
@@ -528,12 +462,12 @@
                                             </div>
                                             <div className="divide-y divide-gray-100">
                                                 {dayEvents.map(event => (
-                                                    <div key={event.id} className="p-4 hover:bg-blue-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
-                                                        <div className="flex items-start gap-3 flex-1">
-                                                            <div className="flex-shrink-0 w-28 text-sm text-gray-600 font-medium pt-1 flex flex-col">
+                                                    <div key={event.id} className="p-4 hover:bg-blue-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between group" style={{gap: '1rem'}}>
+                                                        <div className="flex items-start flex-1" style={{gap: '0.75rem'}}>
+                                                            <div className="flex-shrink-0 text-sm text-gray-600 font-medium pt-1" style={{width: '7rem'}}>
                                                                 <span>
                                                                     {event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                                                                    {' - '}
+                                                                    {' – '}
                                                                     {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                                                 </span>
                                                             </div>
@@ -542,26 +476,21 @@
                                                                     <h4 className="font-bold text-gray-900 truncate">{event.title}</h4>
                                                                     {event.recurrence && <Icons.Repeat size={14} className="text-blue-500 flex-shrink-0" title="Recurring Event" />}
                                                                 </div>
-                                                                
-                                                                <div className="flex flex-wrap gap-2 mt-1">
-                                                                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded text-white" style={{ backgroundColor: settings?.eventTypes?.[event.type] || '#9ca3af' }}>{event.type}</span>
-                                                                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 truncate max-w-[200px]" title={Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}>
+                                                                <div className="flex flex-wrap mt-1" style={{gap: '0.5rem'}}>
+                                                                    {/* text-[10px] replaced with .text-10 custom class */}
+                                                                    <span className="text-10 uppercase font-bold px-2 py-0 rounded text-white" style={{ backgroundColor: settings?.eventTypes?.[event.type] || '#9ca3af' }}>{event.type}</span>
+                                                                    {/* max-w-[200px] replaced with inline style */}
+                                                                    <span className="text-xs text-gray-600 bg-gray-100 px-2 rounded border border-gray-200 truncate" style={{maxWidth: '200px'}} title={Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}>
                                                                         {formatZoneList(event.zone)}
                                                                     </span>
                                                                 </div>
-
-                                                                {event.description && (
-                                                                    <p className="text-sm text-gray-500 mt-1 truncate">{event.description}</p>
-                                                                )}
-                                                                
+                                                                {event.description && <p className="text-sm text-gray-500 mt-1 truncate">{event.description}</p>}
                                                                 {event.recurrence && event.recurrence.days && (
-                                                                    <p className="text-xs text-blue-600 mt-0.5">
-                                                                        Weekly on {event.recurrence.days.map(d=>d.slice(0,3)).join(', ')}
-                                                                    </p>
+                                                                    <p className="text-xs text-blue-600 mt-0.5">Weekly on {event.recurrence.days.map(d=>d.slice(0,3)).join(', ')}</p>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <div className="flex gap-2 self-end sm:self-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex gap-2 self-end sm:self-center">
                                                             <button onClick={() => openModal(event)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded transition-colors"><Icons.Edit size={18} /></button>
                                                             <button onClick={() => handleDeleteEvent(event.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded transition-colors"><Icons.Trash size={18} /></button>
                                                         </div>
@@ -573,16 +502,16 @@
                                 )}
                                 {totalPages > 1 && (
                                     <div className="mt-6 flex justify-center items-center gap-4">
-                                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border bg-white hover:bg-gray-50 disabled:opacity-50"><Icons.ChevronLeft size={20} /></button>
+                                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border bg-white hover:bg-gray-50" style={{opacity: currentPage === 1 ? 0.5 : 1}}><Icons.ChevronLeft size={20} /></button>
                                         <span className="text-sm font-medium text-gray-600">Page {currentPage} of {totalPages}</span>
-                                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border bg-white hover:bg-gray-50 disabled:opacity-50"><Icons.ChevronRight size={20} /></button>
+                                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border bg-white hover:bg-gray-50" style={{opacity: currentPage === totalPages ? 0.5 : 1}}><Icons.ChevronRight size={20} /></button>
                                     </div>
                                 )}
                             </div>
                         )}
 
+                        {/* CALENDAR VIEW */}
                         {viewMode === 'calendar' && <CalendarView events={expandedEvents} onEdit={openModal} onDelete={handleDeleteEvent} eventTypes={settings?.eventTypes} />}
-                        
                     </main>
 
                     {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings || CRAC_DEFAULTS} />}
@@ -591,23 +520,17 @@
             );
         };
 
-        // --- SUB-VIEWS ---
-
+        // CALENDAR VIEW
+        // auto-rows-[minmax(120px,auto)] and max-h-[150px] replaced with inline styles
         const CalendarView = ({ events, onEdit, onDelete, eventTypes }) => {
             const [currentMonth, setCurrentMonth] = useState(new Date());
-            
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
             const startDay = new Date(startOfMonth); startDay.setDate(1 - startDay.getDay());
             const endDay = new Date(endOfMonth); endDay.setDate(endOfMonth.getDate() + (6 - endOfMonth.getDay()));
-
             const days = [];
             let d = new Date(startDay);
             while (d <= endDay) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
-
-            const getEventsForDay = (date) => {
-                return events.filter(e => e.startDateTime.toDateString() === date.toDateString());
-            };
 
             return (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in">
@@ -619,18 +542,22 @@
                         </div>
                     </div>
                     <div className="grid grid-cols-7 text-center text-xs font-semibold text-gray-500 border-b border-gray-200 bg-gray-50">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-2">{d}</div>)}
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="py-2">{day}</div>)}
                     </div>
-                    <div className="grid grid-cols-7 auto-rows-[minmax(120px,auto)] divide-x divide-gray-200">
+                    {/* auto-rows-[minmax(120px,auto)] → inline gridAutoRows */}
+                    <div className="grid grid-cols-7 divide-x divide-gray-200" style={{gridAutoRows: 'minmax(120px, auto)'}}>
                         {days.map(day => {
-                            const dayEvents = getEventsForDay(day);
+                            const dayEvents = events.filter(e => e.startDateTime.toDateString() === day.toDateString());
                             const isCurr = day.getMonth() === currentMonth.getMonth();
                             return (
-                                <div key={day.toISOString()} className={`p-2 flex flex-col gap-1 ${isCurr ? 'bg-white' : 'bg-gray-50/50 text-gray-400'}`}>
+                                <div key={day.toISOString()} className={`p-2 flex flex-col gap-1 ${isCurr ? 'bg-white text-gray-800' : 'text-gray-400'}`} style={{backgroundColor: isCurr ? '' : 'rgba(249,250,251,0.5)'}}>
                                     <div className="text-right text-xs font-medium mb-1">{day.getDate()}</div>
-                                    <div className="flex-1 flex flex-col gap-1 overflow-y-auto max-h-[150px] no-scrollbar">
+                                    {/* max-h-[150px] → inline maxHeight */}
+                                    <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar" style={{maxHeight: '150px'}}>
                                         {dayEvents.map(e => (
-                                            <div key={e.id + e.startDateTime.toISOString()} onClick={() => onEdit(e)} className="text-[10px] p-1.5 rounded cursor-pointer text-white truncate shadow-sm hover:opacity-80 transition-opacity" style={{ backgroundColor: eventTypes?.[e.type] || '#9ca3af' }}>
+                                            <div key={e.id + e.startDateTime.toISOString()} onClick={() => onEdit(e)}
+                                                className="text-10 p-1 rounded cursor-pointer text-white truncate shadow-sm hover:opacity-75 transition-opacity"
+                                                style={{ backgroundColor: eventTypes?.[e.type] || '#9ca3af' }}>
                                                 <span className="font-bold mr-1">{e.startDateTime.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span>
                                                 {e.title}
                                             </div>
@@ -644,73 +571,50 @@
             );
         };
 
+        // EVENT FORM
+        // max-h-[90vh] replaced with inline style
         const EventForm = ({ event, onSave, onClose, settings }) => {
             const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: '', recurrence: null });
             const [startDateTime, setStartDateTime] = useState('');
             const [endDateTime, setEndDateTime] = useState('');
 
-            // ─────────────────────────────────────────────────────────────────
-            // BUG FIX #2: The original toLocalISOString subtracted the timezone
-            // offset from the Date object and then called .toISOString(), which
-            // converts back to UTC. For AEDT (UTC+11) getTimezoneOffset() = -660,
-            // so subtracting -660 actually ADDED 11 hours. Then when the user
-            // saved, new Date(datetimeLocalString) parsed it as local time and
-            // added another 11 hours — causing event times to drift by many
-            // hours every time the form was opened and saved.
-            //
-            // Fix: Read the local date/time components directly from the Date
-            // object without any UTC conversion so no offset is applied.
-            // ─────────────────────────────────────────────────────────────────
+            // BUG FIX #2: Read local date components directly to avoid timezone drift.
             const toLocalISOString = (date) => {
                 if (!date) return '';
                 const d = new Date(date);
                 const pad = n => String(n).padStart(2, '0');
-                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
             };
 
             const toLocalDateString = (date) => {
                 if (!date) return '';
                 const d = new Date(date);
                 const pad = n => String(n).padStart(2, '0');
-                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
             };
 
             useEffect(() => {
                 if (event) {
-                    setFormData({
-                        title: event.title, description: event.description || '', zone: Array.isArray(event.zone) ? event.zone : [], type: event.type,
-                        recurrence: event.recurrence ? { ...event.recurrence } : null
-                    });
-                    
+                    setFormData({ title: event.title, description: event.description || '', zone: Array.isArray(event.zone) ? event.zone : [], type: event.type, recurrence: event.recurrence ? { ...event.recurrence } : null });
                     setStartDateTime(toLocalISOString(event.startDateTime));
                     setEndDateTime(toLocalISOString(event.endDateTime));
-
                     if (event.recurrence?.endDate) {
                         const ed = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
                         setFormData(prev => ({...prev, recurrence: {...prev.recurrence, endDate: toLocalDateString(ed)}}));
                     }
                 } else {
-                    const now = new Date(); now.setMinutes(0); now.setSeconds(0); const end = new Date(now); end.setHours(now.getHours() + 1);
+                    const now = new Date(); now.setMinutes(0); now.setSeconds(0);
+                    const end = new Date(now); end.setHours(now.getHours() + 1);
                     setStartDateTime(toLocalISOString(now)); setEndDateTime(toLocalISOString(end));
                 }
             }, [event]);
 
             const handleSubmit = (e) => {
                 e.preventDefault();
-                const sTime = new Date(startDateTime);
-                const eTime = new Date(endDateTime);
-
-                const finalData = { 
-                    ...formData, 
-                    startDateTime: sTime,
-                    endDateTime: eTime 
-                };
-
-                if (formData.recurrence) {
-                    if (formData.recurrence.endDate) {
-                        const [y,m,d] = formData.recurrence.endDate.split('-').map(Number);
-                        finalData.recurrence.endDate = new Date(y, m-1, d);
-                    }
+                const finalData = { ...formData, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime) };
+                if (formData.recurrence?.endDate) {
+                    const [y,m,dd] = formData.recurrence.endDate.split('-').map(Number);
+                    finalData.recurrence.endDate = new Date(y, m-1, dd);
                 }
                 onSave(finalData);
             };
@@ -724,69 +628,140 @@
             const isRecurring = !!formData.recurrence;
 
             return (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                        <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-bold text-gray-900">{event ? 'Edit Event' : 'New Event'}</h2><button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button></div>
+                /* modal-overlay replaces bg-black/60 backdrop-blur-sm */
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4 fade-in">
+                    {/* max-h-[90vh] replaced with inline style */}
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{maxHeight: '90vh'}}>
+                        <div className="p-6 border-b flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-gray-900">{event ? 'Edit Event' : 'New Event'}</h2>
+                            <button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button>
+                        </div>
                         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label><input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g., Aqua Fitness Class" /></div>
-                                
-                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label><input type="datetime-local" required value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-sm font-medium text-gray-700 mb-1">End Time {isRecurring && '(Daily)'}</label><input type="datetime-local" required value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                
-                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"><option value="">Select Type</option>{Object.keys(settings?.eventTypes || {}).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                                <div className="col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
+                                    <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g., Aqua Fitness Class" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                    <input type="datetime-local" required value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time {isRecurring && '(Daily)'}</label>
+                                    <input type="datetime-local" required value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                        <option value="">Select Type</option>
+                                        {Object.keys(settings?.eventTypes || {}).map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
                             </div>
+
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isRecurring} onChange={e => setFormData(p => ({...p, recurrence: e.target.checked ? { frequency: 'weekly', days: [], endDate: '' } : null}))} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" /><span className="font-semibold text-gray-700">Repeat Weekly</span></label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={isRecurring} onChange={e => setFormData(p => ({...p, recurrence: e.target.checked ? { frequency: 'weekly', days: [], endDate: '' } : null}))} className="w-5 h-5 text-blue-600 rounded" />
+                                    <span className="font-semibold text-gray-700">Repeat Weekly</span>
+                                </label>
                                 {isRecurring && (
                                     <div className="mt-4 pl-7 space-y-4">
-                                        <div><span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Repeat On</span><div className="flex flex-wrap gap-2">{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (<button type="button" key={day} onClick={() => { const d = formData.recurrence.days || []; const newD = d.includes(day) ? d.filter(x => x !== day) : [...d, day]; setFormData(p => ({...p, recurrence: {...p.recurrence, days: newD}})); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{day.slice(0,3)}</button>))}</div></div>
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Series Ends On</label><input type="date" required value={formData.recurrence.endDate || ''} onChange={e => setFormData(p => ({...p, recurrence: {...p.recurrence, endDate: e.target.value}}))} className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                        <div>
+                                            <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Repeat On</span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(day => (
+                                                    <button type="button" key={day}
+                                                        onClick={() => { const d = formData.recurrence.days || []; setFormData(p => ({...p, recurrence: {...p.recurrence, days: d.includes(day) ? d.filter(x=>x!==day) : [...d,day]}})); }}
+                                                        className={`px-3 py-1 text-sm rounded-md transition-colors ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                                                        {day.slice(0,3)}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Series Ends On</label>
+                                            <input type="date" required value={formData.recurrence.endDate || ''} onChange={e => setFormData(p => ({...p, recurrence: {...p.recurrence, endDate: e.target.value}}))} className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
                                     </div>
                                 )}
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Allocated Zones</label>
-                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-200 max-h-48 overflow-y-auto bg-gray-50">
+                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-200 overflow-y-auto bg-gray-50" style={{maxHeight: '12rem'}}>
                                     {settings.zones.length > 0 ? settings.zones.map(zone => (
                                         <div key={zone.id} className="p-3">
-                                            <label className="flex items-center gap-2 font-medium text-gray-900 cursor-pointer"><input type="checkbox" checked={formData.zone.includes(zone.id)} onChange={() => handleZoneToggle(zone.id)} className="rounded text-blue-600 focus:ring-blue-500" />{zone.id}</label>
-                                            {zone.children && zone.children.length > 0 && (<div className="ml-6 mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">{zone.children.map(child => (<label key={child.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><input type="checkbox" checked={formData.zone.includes(child.id)} onChange={() => handleZoneToggle(child.id)} className="rounded text-blue-600 focus:ring-blue-500" />{child.id.replace(zone.id + ' - ', '')}</label>))}</div>)}
+                                            <label className="flex items-center gap-2 font-medium text-gray-900 cursor-pointer">
+                                                <input type="checkbox" checked={formData.zone.includes(zone.id)} onChange={() => handleZoneToggle(zone.id)} className="rounded text-blue-600" />
+                                                {zone.id}
+                                            </label>
+                                            {zone.children && zone.children.length > 0 && (
+                                                <div className="ml-6 mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {zone.children.map(child => (
+                                                        <label key={child.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                                            <input type="checkbox" checked={formData.zone.includes(child.id)} onChange={() => handleZoneToggle(child.id)} className="rounded text-blue-600" />
+                                                            {child.id.replace(zone.id + ' - ', '')}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    )) : <div className="p-4 text-center text-gray-500">No zones configured in settings.</div>}
+                                    )) : <div className="p-4 text-center text-gray-500">No zones configured.</div>}
                                 </div>
                             </div>
-                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label><textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Additional details..."></textarea></div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Additional details..."></textarea>
+                            </div>
                         </form>
-                        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-xl"><button onClick={onClose} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button><button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Event</button></div>
+                        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+                            <button onClick={onClose} className="px-5 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                            <button onClick={handleSubmit} className="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Event</button>
+                        </div>
                     </div>
                 </div>
             );
         };
 
+        // SETTINGS MODAL
+        // h-[90vh] replaced with inline style
         const SettingsModal = ({ settings, events, onSave, onDeleteBatch, onClose }) => {
-            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); 
-            const [activeTab, setActiveTab] = useState('zones'); 
+            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings)));
+            const [activeTab, setActiveTab] = useState('zones');
             const handleSave = () => { onSave(localSettings); onClose(); };
-            
-            const Tabs = { 
-                zones: <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />, 
-                eventTypes: <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />, 
+
+            const Tabs = {
+                zones: <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />,
+                eventTypes: <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />,
                 hours: <HoursSettings settings={localSettings} setSettings={setLocalSettings} />,
                 maintenance: <MaintenanceSettings events={events} onDeleteBatch={onDeleteBatch} />
             };
 
             return (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
-                        <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-bold text-gray-900">System Configuration</h2><button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button></div>
+                /* modal-overlay replaces bg-black/60 backdrop-blur-sm */
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4 fade-in">
+                    {/* h-[90vh] replaced with inline style */}
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col" style={{height: '90vh'}}>
+                        <div className="p-6 border-b flex justify-between items-center flex-shrink-0">
+                            <h2 className="text-xl font-bold text-gray-900">System Configuration</h2>
+                            <button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button>
+                        </div>
                         <div className="flex flex-1 overflow-hidden">
-                            <aside className="w-64 bg-gray-50 border-r p-4 space-y-1">
-                                {['zones', 'eventTypes', 'hours', 'maintenance'].map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}>{tab === 'zones' ? 'Zone Management' : tab === 'eventTypes' ? 'Event Types' : tab === 'maintenance' ? 'Maintenance' : 'Opening Hours'}</button>)}
+                            <aside className="bg-gray-50 border-r p-4 space-y-1 flex-shrink-0" style={{width: '16rem'}}>
+                                {['zones','eventTypes','hours','maintenance'].map(tab => (
+                                    <button key={tab} onClick={() => setActiveTab(tab)}
+                                        className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm border border-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                        {tab === 'zones' ? 'Zone Management' : tab === 'eventTypes' ? 'Event Types' : tab === 'maintenance' ? 'Maintenance' : 'Opening Hours'}
+                                    </button>
+                                ))}
                             </aside>
                             <main className="flex-1 overflow-y-auto p-6">{Tabs[activeTab]}</main>
                         </div>
-                        <div className="p-6 border-t flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors">Cancel</button><button onClick={handleSave} className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Configuration</button></div>
+                        <div className="p-6 border-t flex justify-end gap-3 flex-shrink-0">
+                            <button onClick={onClose} className="px-5 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                            <button onClick={handleSave} className="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Configuration</button>
+                        </div>
                     </div>
                 </div>
             );
@@ -803,8 +778,7 @@
                     const past = events.filter(e => {
                         if (e.recurrence && e.recurrence.endDate) {
                             const end = e.recurrence.endDate.toDate ? e.recurrence.endDate.toDate() : new Date(e.recurrence.endDate);
-                            const cutoff = new Date(end);
-                            cutoff.setHours(23, 59, 59, 999);
+                            const cutoff = new Date(end); cutoff.setHours(23, 59, 59, 999);
                             return now > cutoff;
                         }
                         if (!e.endDateTime) return false;
@@ -814,10 +788,6 @@
                     setPastEvents(past);
                 }
             }, [events, scanned]);
-
-            const handleScanClick = () => {
-                setScanned(true);
-            };
 
             const handleDeleteClick = async () => {
                 if (pastEvents.length === 0) return;
@@ -831,36 +801,34 @@
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">Data Cleanup</h3>
                         <p className="text-sm text-gray-500 mb-4">Identify and remove events that have already finished to keep your calendar running smoothly.</p>
-                        
                         {!scanned ? (
-                            <button onClick={handleScanClick} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
+                            <button onClick={() => setScanned(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
                                 <Icons.Search size={18} /> Scan for Past Events
                             </button>
                         ) : (
-                            <div className="animate-in fade-in slide-in-from-top-4">
+                            <div>
                                 <div className="flex justify-between items-center mb-4">
-                                    <h4 className="font-semibold text-gray-800">{pastEvents.length} Achieved Events Found</h4>
-                                    <button onClick={handleScanClick} className="text-sm text-blue-600 hover:underline">Rescan</button>
+                                    <h4 className="font-semibold text-gray-800">{pastEvents.length} Past Events Found</h4>
+                                    <button onClick={() => setScanned(false)} className="text-sm text-blue-600 hover:underline">Rescan</button>
                                 </div>
-                                
                                 {pastEvents.length > 0 ? (
                                     <div className="space-y-4">
-                                        <div className="bg-gray-50 border rounded-lg p-3 max-h-60 overflow-y-auto text-sm space-y-2">
+                                        <div className="bg-gray-50 border rounded-lg p-3 overflow-y-auto text-sm space-y-2" style={{maxHeight: '15rem'}}>
                                             {pastEvents.map(e => (
-                                                <div key={e.id} className="flex justify-between border-b border-gray-200 pb-2 last:border-0 last:pb-0">
+                                                <div key={e.id} className="flex justify-between border-b border-gray-200 pb-2" style={{borderBottom: pastEvents[pastEvents.length-1].id === e.id ? 'none' : ''}}>
                                                     <span className="font-medium text-gray-700">{e.title}</span>
                                                     <span className="text-gray-500 text-xs">
-                                                        {e.recurrence ? `Ended: ${new Date(e.recurrence.endDate.toDate ? e.recurrence.endDate.toDate() : e.recurrence.endDate).toLocaleDateString()}` : `Ended: ${e.endDateTime.toLocaleDateString()}`}
+                                                        {e.recurrence
+                                                            ? `Ended: ${new Date(e.recurrence.endDate.toDate ? e.recurrence.endDate.toDate() : e.recurrence.endDate).toLocaleDateString()}`
+                                                            : `Ended: ${e.endDateTime.toLocaleDateString()}`}
                                                     </span>
                                                 </div>
                                             ))}
                                         </div>
-                                        <button 
-                                            onClick={handleDeleteClick}
-                                            disabled={isDeleting}
-                                            className="w-full bg-red-600 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 flex items-center justify-center gap-2 transition-colors"
-                                        >
-                                            {isDeleting ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> : <Icons.Trash size={18} />}
+                                        <button onClick={handleDeleteClick} disabled={isDeleting}
+                                            style={{opacity: isDeleting ? 0.6 : 1}}
+                                            className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 flex items-center justify-center gap-2 transition-colors">
+                                            {isDeleting ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white" style={{borderTopColor: 'transparent'}}></div> : <Icons.Trash size={18} />}
                                             {isDeleting ? 'Deleting...' : `Delete ${pastEvents.length} Events`}
                                         </button>
                                     </div>
@@ -882,34 +850,22 @@
             const [tempName, setTempName] = useState('');
             const [newChildNames, setNewChildNames] = useState({});
 
-            const add = () => { if(!newZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newZone, children: []}]})); setNewZone(''); };
+            const add = () => { if(!newZone.trim()) return; setSettings(s => ({...s, zones: [...s.zones, {id: newZone.trim(), children: []}]})); setNewZone(''); };
             const remove = (id) => { setSettings(s => ({...s, zones: s.zones.filter(z => z.id !== id)})); };
-            
             const startEdit = (id) => { setEditingId(id); setTempName(id); };
             const saveEdit = (oldId) => {
-                if (!tempName) return;
-                setSettings(s => ({
-                    ...s, 
-                    zones: s.zones.map(z => z.id === oldId ? {...z, id: tempName} : z)
-                }));
+                if (!tempName.trim()) return;
+                setSettings(s => ({...s, zones: s.zones.map(z => z.id === oldId ? {...z, id: tempName.trim()} : z)}));
                 setEditingId(null);
             };
-
             const addChild = (parentId) => {
-                const childName = newChildNames[parentId];
+                const childName = (newChildNames[parentId] || '').trim();
                 if (!childName) return;
-                setSettings(s => ({
-                    ...s,
-                    zones: s.zones.map(z => z.id === parentId ? {...z, children: [...(z.children || []), {id: childName}]} : z)
-                }));
+                setSettings(s => ({...s, zones: s.zones.map(z => z.id === parentId ? {...z, children: [...(z.children||[]), {id: childName}]} : z)}));
                 setNewChildNames({...newChildNames, [parentId]: ''});
             };
-
             const removeChild = (parentId, childId) => {
-                setSettings(s => ({
-                    ...s,
-                    zones: s.zones.map(z => z.id === parentId ? {...z, children: z.children.filter(c => c.id !== childId)} : z)
-                }));
+                setSettings(s => ({...s, zones: s.zones.map(z => z.id === parentId ? {...z, children: z.children.filter(c => c.id !== childId)} : z)}));
             };
 
             return (
@@ -935,7 +891,7 @@
                                         )}
                                         <button onClick={() => remove(z.id)} className="text-red-500 text-sm hover:underline">Delete Zone</button>
                                     </div>
-                                    <div className="p-3 bg-white">
+                                    <div className="p-3">
                                         <div className="space-y-2 mb-3">
                                             {z.children && z.children.map(child => (
                                                 <div key={child.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded border border-gray-100">
@@ -943,15 +899,10 @@
                                                     <button onClick={() => removeChild(z.id, child.id)} className="text-red-400 hover:text-red-600"><Icons.Trash size={14} /></button>
                                                 </div>
                                             ))}
-                                            {(!z.children || z.children.length === 0) && <p className="text-xs text-gray-400 italic">No sub-zones (lanes) configured.</p>}
+                                            {(!z.children || z.children.length === 0) && <p className="text-xs text-gray-400 italic">No sub-zones configured.</p>}
                                         </div>
                                         <div className="flex gap-2">
-                                            <input 
-                                                value={newChildNames[z.id] || ''} 
-                                                onChange={e => setNewChildNames({...newChildNames, [z.id]: e.target.value})} 
-                                                className="flex-1 p-1.5 text-sm border rounded" 
-                                                placeholder="New Lane Name (e.g. Lane 1)" 
-                                            />
+                                            <input value={newChildNames[z.id] || ''} onChange={e => setNewChildNames({...newChildNames, [z.id]: e.target.value})} className="flex-1 p-1 text-sm border rounded" placeholder="New Lane Name (e.g. Lane 1)" />
                                             <button onClick={() => addChild(z.id)} className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-medium hover:bg-blue-200">Add Lane</button>
                                         </div>
                                     </div>
@@ -959,7 +910,10 @@
                             ))}
                         </div>
                     </div>
-                    <div className="flex gap-3 pt-4 border-t"><input value={newZone} onChange={e => setNewZone(e.target.value)} className="flex-1 p-2 border rounded-lg" placeholder="New Parent Zone (e.g. 50m Pool)" /><button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Add Zone</button></div>
+                    <div className="flex gap-3 pt-4 border-t">
+                        <input value={newZone} onChange={e => setNewZone(e.target.value)} className="flex-1 p-2 border rounded-lg" placeholder="New Parent Zone (e.g. 50m Pool)" />
+                        <button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Add Zone</button>
+                    </div>
                 </div>
             );
         };
@@ -969,20 +923,15 @@
             const [newColor, setNewColor] = useState('#3B82F6');
             const [editingKey, setEditingKey] = useState(null);
             const [editName, setEditName] = useState('');
-            
-            const add = () => { if(!newName) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [newName]: newColor}})); setNewName(''); };
+
+            const add = () => { if(!newName.trim()) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [newName.trim()]: newColor}})); setNewName(''); };
             const remove = (key) => { const n = {...settings.eventTypes}; delete n[key]; setSettings(s => ({...s, eventTypes: n})); };
-            
             const updateColor = (key, color) => { setSettings(s => ({...s, eventTypes: {...s.eventTypes, [key]: color}})); };
-            
             const startRename = (key) => { setEditingKey(key); setEditName(key); };
             const saveRename = (oldKey) => {
-                if (!editName) return;
+                if (!editName.trim()) return;
                 const newTypes = {};
-                Object.keys(settings.eventTypes).forEach(k => {
-                    if (k === oldKey) newTypes[editName] = settings.eventTypes[oldKey];
-                    else newTypes[k] = settings.eventTypes[k];
-                });
+                Object.keys(settings.eventTypes).forEach(k => { newTypes[k === oldKey ? editName.trim() : k] = settings.eventTypes[k]; });
                 setSettings(s => ({...s, eventTypes: newTypes}));
                 setEditingKey(null);
             };
@@ -993,7 +942,7 @@
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                         {Object.entries(settings.eventTypes).map(([key, val]) => (
                             <div key={key} className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm">
-                                <input type="color" value={val} onChange={(e) => updateColor(key, e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" title="Change Color" />
+                                <input type="color" value={val} onChange={e => updateColor(key, e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" title="Change Color" />
                                 {editingKey === key ? (
                                     <div className="flex gap-2 flex-1">
                                         <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full text-sm border rounded px-1" />
@@ -1010,17 +959,18 @@
                             </div>
                         ))}
                     </div>
-                    <div className="flex gap-3 items-center bg-gray-50 p-4 rounded-lg"><input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New Type Name" className="flex-1 p-2 border rounded-lg" /><input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="h-10 w-14 rounded cursor-pointer border-0" /><button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Add</button></div>
+                    <div className="flex gap-3 items-center bg-gray-50 p-4 rounded-lg">
+                        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New Type Name" className="flex-1 p-2 border rounded-lg" />
+                        <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="h-10 w-14 rounded cursor-pointer border-0" />
+                        <button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Add</button>
+                    </div>
                 </div>
             );
         };
 
         const HoursSettings = ({ settings, setSettings }) => {
             const updateHour = (day, field, val) => {
-                setSettings(s => ({
-                    ...s,
-                    openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(val)} : h)
-                }));
+                setSettings(s => ({...s, openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(val)} : h)}));
             };
             return (
                 <div>
@@ -1028,7 +978,7 @@
                     <div className="space-y-2">
                         {settings.openingHours?.length > 0 ? settings.openingHours.map(h => (
                             <div key={h.day} className="flex items-center justify-between p-3 bg-white border rounded-lg">
-                                <span className="font-medium w-32">{h.day}</span>
+                                <span className="font-medium" style={{width: '8rem'}}>{h.day}</span>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-gray-500 uppercase">Open</span>
