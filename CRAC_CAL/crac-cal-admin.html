@@ -19,32 +19,49 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Replacement for text-[10px] which requires Tailwind v3 */
         .text-10 { font-size: 10px; line-height: 1.4; }
-        /* Modal overlay: replaces bg-black/60 and backdrop-blur-sm (v3 only) */
         .modal-overlay { background-color: rgba(0, 0, 0, 0.6); }
-        /* Replaces bg-gray-50/50 (v3 opacity modifier syntax) */
         .bg-gray-50-50 { background-color: rgba(249, 250, 251, 0.5); }
         
-        /* Print Utilities */
+        /* Fixed Print Utilities */
         @media print {
-            body, html { height: auto !important; overflow: visible !important; background-color: white !important; }
-            .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { size: landscape; margin: 10mm; }
+            body, html { 
+                height: auto !important; 
+                min-height: 0 !important; 
+                overflow: visible !important; 
+                background-color: white !important; 
+            }
+            .min-h-screen { 
+                min-height: 0 !important; 
+                padding-bottom: 0 !important; 
+                background-color: white !important; 
+            }
+            .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
             .print-hide { display: none !important; }
             .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
             .print-page-break { break-after: page; page-break-after: always; }
+            
+            /* Flatten the modal to behave like a normal page for printing */
             .print-modal-wrapper {
                 position: static !important;
-                overflow: visible !important;
+                inset: auto !important;
+                width: 100% !important;
                 height: auto !important;
                 min-height: auto !important;
                 padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                background: white !important;
             }
+
             /* Ensure backgrounds show up in print */
             .bg-green-50 { background-color: #f0fdf4 !important; }
             .bg-yellow-100 { background-color: #fef9c3 !important; }
             .bg-red-100 { background-color: #fee2e2 !important; }
             .bg-gray-100 { background-color: #f3f4f6 !important; }
+            .bg-gray-200 { background-color: #e5e7eb !important; }
+            .border-gray-200 { border-color: #e5e7eb !important; }
             .border-gray-300 { border-color: #d1d5db !important; }
         }
     </style>
@@ -325,7 +342,16 @@
                         const effectiveEnd = new Date(Math.min(endRecur.getTime(), endRange.getTime()));
                         if (current < startRange) current = new Date(startRange);
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
-                        const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        
+                        // Protective Duration Cap (prevents "every day booked forever" errors)
+                        let duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        if (duration > 24 * 60 * 60 * 1000) {
+                            const hDiff = event.endDateTime.getHours() - event.startDateTime.getHours();
+                            const mDiff = event.endDateTime.getMinutes() - event.startDateTime.getMinutes();
+                            duration = (hDiff * 60 + mDiff) * 60000;
+                            if (duration < 0) duration += 24 * 60 * 60 * 1000;
+                        }
+
                         while(current <= effectiveEnd) {
                             const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
                             if (event.recurrence.days.includes(dayName)) {
@@ -769,7 +795,7 @@
                 return { startOfWeek: start, endOfWeek: end, daysInWeek: days };
             }, [weekOffset]);
 
-            // Expand events just for this specific week
+            // Expand events just for this specific week (With defensive capping)
             const weekEvents = useMemo(() => {
                 const expanded = [];
                 events.forEach(event => {
@@ -781,7 +807,16 @@
                         
                         if (current < startOfWeek) current = new Date(startOfWeek);
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
-                        const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        
+                        // FIX: Cap duration to the time-of-day difference. 
+                        // Prevents errors where users put the series end date in the "End Time" field (which forces a booking over multiple entire days).
+                        let duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        if (duration > 24 * 60 * 60 * 1000) {
+                            const hDiff = event.endDateTime.getHours() - event.startDateTime.getHours();
+                            const mDiff = event.endDateTime.getMinutes() - event.startDateTime.getMinutes();
+                            duration = (hDiff * 60 + mDiff) * 60000;
+                            if (duration < 0) duration += 24 * 60 * 60 * 1000;
+                        }
                         
                         while(current <= effectiveEnd) {
                             const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
@@ -797,6 +832,17 @@
                 });
                 return expanded;
             }, [events, startOfWeek, endOfWeek]);
+
+            // Map ambiguously named lanes to their primary parent to prevent ghosting across multiple pools
+            const childToParentMap = useMemo(() => {
+                const map = {};
+                settings.zones.forEach(z => {
+                    z.children?.forEach(c => {
+                        if (!map[c.id]) map[c.id] = z.id;
+                    });
+                });
+                return map;
+            }, [settings.zones]);
 
             // Determine operational hours
             const displayHours = useMemo(() => {
@@ -880,13 +926,28 @@
                                                         const cellStart = new Date(day); cellStart.setHours(hour, 0, 0, 0);
                                                         const cellEnd = new Date(day); cellEnd.setHours(hour + 1, 0, 0, 0);
                                                         
-                                                        // Find events overlapping this specific hour
+                                                        // Accurate Zone Filter matching
                                                         const cellEvents = weekEvents.filter(e => {
                                                             const overlapsTime = e.startDateTime < cellEnd && e.endDateTime > cellStart;
                                                             if(!overlapsTime) return false;
+                                                            
                                                             const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
-                                                            // Match parent or any specific child lanes
-                                                            return eZones.includes(zone.id) || eZones.some(z => z.startsWith(zone.id + ' - ') || zone.children?.some(c => c.id === z));
+                                                            
+                                                            // Explicit parent zone match
+                                                            if (eZones.includes(zone.id)) return true;
+                                                            
+                                                            // Detailed child lane match (protects against identical lane names across different pools)
+                                                            if (zone.children && zone.children.length > 0) {
+                                                                return eZones.some(z => {
+                                                                    if (z.startsWith(zone.id + ' - ')) return true;
+                                                                    if (zone.children.some(c => c.id === z)) {
+                                                                        if (eZones.includes(zone.id)) return true; // Parent uniquely checked alongside child
+                                                                        if (childToParentMap[z] === zone.id) return true; // Unique child resolution map
+                                                                    }
+                                                                    return false;
+                                                                });
+                                                            }
+                                                            return false;
                                                         });
 
                                                         let isFullyBooked = false;
@@ -934,7 +995,7 @@
                                                                 </div>
                                                             );
                                                         } else if (cellEvents.length > 0) {
-                                                            // For zones without children that have an event but aren't explicitly full (fallback safety)
+                                                            // Fallback safety
                                                             bgClass = "bg-yellow-100";
                                                             borderClass = "border-yellow-300";
                                                             textContent = <span className="text-yellow-800 font-bold leading-tight text-center">{cellEvents[0].title}</span>;
