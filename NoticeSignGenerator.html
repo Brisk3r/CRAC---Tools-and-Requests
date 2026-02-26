@@ -184,7 +184,7 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Main Headline</label>
-                            <!-- UPDATED: Textarea to allow multi-line headlines -->
+                            <!-- Textarea to allow multi-line headlines -->
                             <textarea id="headlineInput" oninput="updatePreview()" rows="2" class="w-full p-2 border border-slate-300 rounded font-bold text-lg leading-tight" placeholder="Enter headline here... (Press Enter for new line)">Pool Closure</textarea>
                             
                             <!-- Headline Styles -->
@@ -261,17 +261,26 @@
                         The 50m Pool is closed for winter maintenance.
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs text-slate-500">Font Size (px)</label>
+                    <div class="grid grid-cols-12 gap-2">
+                        <div class="col-span-4">
+                            <label class="block text-xs text-slate-500">Font Size</label>
                             <input type="number" id="contentSize" value="28" oninput="updatePreview()" class="w-full border rounded p-1">
                         </div>
-                        <div>
-                            <label class="block text-xs text-slate-500">Alignment</label>
+                        <div class="col-span-4">
+                            <label class="block text-xs text-slate-500">Text Align</label>
                             <select id="contentAlign" onchange="updatePreview()" class="w-full border rounded p-1">
                                 <option value="left">Left</option>
                                 <option value="center" selected>Center</option>
                                 <option value="justify">Justify</option>
+                            </select>
+                        </div>
+                        <!-- New Vertical Alignment Control -->
+                        <div class="col-span-4">
+                            <label class="block text-xs text-slate-500">Vert. Align</label>
+                            <select id="contentVerticalAlign" onchange="updatePreview()" class="w-full border rounded p-1">
+                                <option value="start" selected>Top</option>
+                                <option value="center">Middle</option>
+                                <option value="end">Bottom</option>
                             </select>
                         </div>
                     </div>
@@ -318,11 +327,11 @@
         <div class="xl:col-span-7 flex flex-col items-center">
             <div id="previewPane" class="relative">
                 
-                <!-- Page Border Layer -->
-                <div id="previewBorder" class="absolute inset-0 pointer-events-none z-50"></div>
+                <!-- Page Border Layer (Z-Index Lowered) -->
+                <div id="previewBorder" class="absolute inset-0 pointer-events-none z-40"></div>
 
-                <!-- Safety Header (Optional) -->
-                <div id="safetyHeader" class="hidden w-full text-white text-center font-black uppercase tracking-widest flex items-center justify-center font-condensed z-40" style="height: 12%;">
+                <!-- Safety Header (Z-Index Raised to overlap border) -->
+                <div id="safetyHeader" class="hidden w-full text-white text-center font-black uppercase tracking-widest flex items-center justify-center font-condensed z-50" style="height: 12%;">
                     <div class="flex items-center justify-center gap-4 text-5xl">
                         <span id="safetyHeaderText">DANGER</span>
                     </div>
@@ -339,8 +348,8 @@
                     <!-- Headline -->
                     <div id="previewHeadline" class="font-bold mb-6 break-words leading-tight shrink-0"></div>
 
-                    <!-- Dynamic Content Area (Flex for positioning) -->
-                    <div class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden">
+                    <!-- Dynamic Content Area (ID Added for Vertical Align) -->
+                    <div id="dynamicContentArea" class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden">
                         
                         <!-- Icon -->
                         <div id="previewIcon" class="shrink-0 transition-all duration-300"></div>
@@ -417,7 +426,7 @@
     }
 
     function updatePreview() {
-        // 1. Safety Header
+        // 1. Safety Header (Z-Index 50 - Above Border)
         const signType = document.getElementById('signType').value;
         const headerEl = document.getElementById('safetyHeader');
         const headerTextEl = document.getElementById('safetyHeaderText');
@@ -442,7 +451,7 @@
             }
         }
 
-        // 2. Borders
+        // 2. Borders (Z-Index 40 - Below Header)
         const borderStyle = document.getElementById('borderStyle').value;
         const borderEl = document.getElementById('previewBorder');
         borderEl.style.border = 'none'; // reset
@@ -477,7 +486,7 @@
 
         // 4. Headline
         const hl = document.getElementById('previewHeadline');
-        // UPDATED: Use innerHTML to allow breaks
+        // Use innerHTML to allow breaks
         hl.innerHTML = document.getElementById('headlineInput').value.replace(/\n/g, '<br>');
         hl.style.color = document.getElementById('headlineColor').value;
         hl.style.fontSize = document.getElementById('headlineSize').value + 'px';
@@ -522,10 +531,16 @@
             imgContainer.classList.add('hidden');
         }
 
-        // 7. Body Content
+        // 7. Body Content & Alignment
         bodyText.innerHTML = document.getElementById('contentEditor').innerHTML;
         bodyText.style.fontSize = document.getElementById('contentSize').value + 'px';
         bodyText.style.textAlign = document.getElementById('contentAlign').value;
+
+        // Apply Vertical Alignment
+        const vertAlign = document.getElementById('contentVerticalAlign').value;
+        const dynamicArea = document.getElementById('dynamicContentArea');
+        dynamicArea.classList.remove('justify-start', 'justify-center', 'justify-end');
+        dynamicArea.classList.add('justify-' + vertAlign);
 
         // 8. Footer & QR
         const footerContainer = document.getElementById('footerContainer');
