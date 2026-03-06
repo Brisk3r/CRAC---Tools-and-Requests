@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosk Label Printer</title>
+    <style>
+        /* --- Base & UI Styles --- */
+        :root {
+            --primary-blue: #0056b3;
+            --secondary-blue: #00a0e9;
+            --page-bg: #f4f4f9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--page-bg);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .controls {
+            background: #ffffff;
+            width: 100%;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 3px solid var(--primary-blue);
+            box-sizing: border-box;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select, button {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-blue);
+        }
+
+        button {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.print-btn {
+            background-color: #28a745;
+        }
+
+        button.print-btn:hover {
+            background-color: #218838;
+        }
+        
+        button.clear-btn {
+            background-color: #dc3545;
+        }
+
+        button.clear-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* --- Print Engine & Canvas Styles --- */
+        #print-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            gap: 40px;
+            width: 100%;
+        }
+
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .label {
+            height: 99mm; /* Exactly 1/3 of A4 height */
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            position: relative;
+            border: 1px dashed #ddd; /* Light guide for cutting */
+            overflow: hidden; /* Prevent content spilling over the cut lines */
+        }
+
+        .label.full {
+            width: 210mm;
+            padding: 10mm 20mm;
+        }
+
+        .label.half {
+            width: 105mm; /* Exactly 1/2 of A4 width */
+            padding: 10mm 5mm;
+        }
+
+        /* --- Label Content Formatting --- */
+        .image-container {
+            position: relative;
+            flex-shrink: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            z-index: 2;
+        }
+
+        /* Sizes based on half vs full layout */
+        .label.full .image-container {
+            width: 70mm;
+            height: 70mm;
+        }
+
+        .label.half .image-container {
+            width: 45mm;
+            height: 45mm;
+            margin-left: 2mm;
+        }
+
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .label-waves {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .text-wrapper {
+            padding-left: 8mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+            min-width: 0; /* CRITICAL: allows text to wrap without pushing container bounds */
+            padding-right: 5mm;
+            position: relative;
+            z-index: 2;
+        }
+
+        .label.half .text-wrapper {
+            padding-left: 4mm;
+            padding-right: 8mm; /* Extra space so it doesn't overlap the delete button */
+        }
+
+        .title {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-weight: 900;
+            line-height: 1.1;
+            text-transform: uppercase;
+            color: #222;
+            margin: 0 0 4mm 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .label.full .title {
+            font-size: 34pt;
+        }
+
+        .label.half .title {
+            font-size: 18pt;
+            margin: 0 0 2mm 0;
+        }
+
+        .price {
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            color: #444;
+            margin: 0;
+            word-wrap: break-word;
+        }
+
+        .label.full .price {
+            font-size: 22pt;
+        }
+
+        .label.half .price {
+            font-size: 13pt;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5mm;
+            right: 5mm;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        .delete-btn:hover {
+            background: #ff6b81;
+            transform: scale(1.1);
+        }
+
+        /* --- Print Media Queries --- */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .controls, .delete-btn {
+                display: none !important;
+            }
+            #print-area {
+                padding: 0;
+                gap: 0;
+            }
+            .a4-page {
+                box-shadow: none;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+            .label {
+                /* Optional: remove borders for final print if using pre-perforated paper */
+                /* border: none; */ 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls no-print">
+        <div class="input-group">
+            <input type="text" id="itemName" placeholder="Item Name (e.g. RED FROGS)" required>
+            <input type="text" id="itemPrice" placeholder="Price (e.g. Bag of 5 for $1)" required>
+        </div>
+        <div class="input-group">
+            <input type="url" id="itemImage" placeholder="Image URL (Optional)">
+            <select id="itemSize">
+                <option value="full">Full Width (1 per row)</option>
+                <option value="half">Half Width (2 per row)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <button onclick="addLabel()">+ Add Label</button>
+            <button class="print-btn" onclick="window.print()">🖨️ Print Labels</button>
+            <button class="clear-btn" onclick="clearAll()">🗑️ Clear All</button>
+        </div>
+    </div>
+
+    <div id="print-area">
+        <!-- A4 Pages will be dynamically generated here -->
+    </div>
+
+    <script>
+        // Pre-load with some examples from your provided PDF
+        let labelsData = [
+            {
+                id: 1,
+                name: "SNAKES ALIVE",
+                price: "Bag of 5 for $1",
+                img: "https://www.teammed.com.au/shop/product-images/cache/601de26220d9fe27fe04d0af6e82e6be.jpg",
+                size: "full"
+            },
+            {
+                id: 2,
+                name: "COKE BOTTLES",
+                price: "Bag of 5 for 50¢",
+                img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSY0eCOE7k0i8SpT9j_TlqpoFqBVC2UO8og5w&s",
+                size: "half"
+            },
+            {
+                id: 3,
+                name: "MIXED LOLLYS",
+                price: "Bag for 50c",
+                img: "https://136634416.cdn6.editmysite.com/uploads/1/3/6/6/136634416/XWZOFXUOATSIQYLUJFJATX2T.jpeg",
+                size: "half"
+            }
+        ];
+
+        // Wave SVG to match the kiosk branding style and print edges
+        const labelWaveSVG = `
+        <svg class="label-waves" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Top Left Corner Graphic -->
+            <path d="M0,0 L25,0 C15,10 8,25 0,35 Z" fill="var(--secondary-blue)" opacity="0.15"/>
+            <!-- Bottom Right Corner Graphic -->
+            <path d="M100,100 L75,100 C85,90 92,75 100,65 Z" fill="var(--primary-blue)" opacity="0.15"/>
+            <!-- Bottom Edge Wave -->
+            <path d="M0,85 C30,98 70,78 100,90 L100,100 L0,100 Z" fill="var(--primary-blue)"/>
+            <path d="M0,92 C40,102 60,82 100,95 L100,100 L0,100 Z" fill="var(--secondary-blue)"/>
+        </svg>`;
+
+        function addLabel() {
+            const name = document.getElementById('itemName').value;
+            const price = document.getElementById('itemPrice').value;
+            const imgInput = document.getElementById('itemImage').value;
+            const size = document.getElementById('itemSize').value;
+
+            if (!name || !price) {
+                alert("Please enter both an item name and a price to add a label.");
+                return;
+            }
+
+            // Fallback image if none provided
+            const img = imgInput || `https://placehold.co/400x400/e9ecef/a3a3a3?text=${encodeURIComponent(name.charAt(0))}`;
+
+            labelsData.push({ id: Date.now(), name, price, img, size });
+            
+            // Clear inputs for next entry
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemImage').value = '';
+            document.getElementById('itemName').focus();
+            
+            renderPages();
+        }
+
+        function removeLabel(id) {
+            labelsData = labelsData.filter(label => label.id !== id);
+            renderPages();
+        }
+
+        function clearAll() {
+            if(confirm("Are you sure you want to clear all labels? This cannot be undone.")) {
+                labelsData = [];
+                renderPages();
+            }
+        }
+
+        function renderPages() {
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = ''; // Clear current view
+
+            let currentPage = null;
+            let currentSlotsUsed = 0; // A full A4 page has 6 slots. Half=1 slot, Full=2 slots.
+
+            labelsData.forEach(label => {
+                const slotsNeeded = label.size === 'full' ? 2 : 1;
+
+                // Create a new page if the current one is full or doesn't exist
+                if (!currentPage || currentSlotsUsed + slotsNeeded > 6) {
+                    currentPage = document.createElement('div');
+                    currentPage.className = 'a4-page';
+                    printArea.appendChild(currentPage);
+                    currentSlotsUsed = 0;
+                }
+
+                // Build the label HTML
+                const labelDiv = document.createElement('div');
+                labelDiv.className = `label ${label.size}`;
+                
+                // Allow CSS word-wrap to handle line breaks naturally instead of forcing <br> tags
+                const formattedName = label.name.trim();
+
+                labelDiv.innerHTML = `
+                    ${labelWaveSVG}
+                    <div class="image-container">
+                        <img src="${label.img}" alt="${label.name}" class="product-img" onerror="this.src='https://placehold.co/400x400/e9ecef/a3a3a3?text=Img'">
+                    </div>
+                    <div class="text-wrapper">
+                        <h1 class="title">${formattedName}</h1>
+                        <p class="price">${label.price}</p>
+                    </div>
+                    <button class="delete-btn no-print" onclick="removeLabel(${label.id})" title="Remove label">✕</button>
+                `;
+
+                currentPage.appendChild(labelDiv);
+                currentSlotsUsed += slotsNeeded;
+            });
+
+            // If no labels, show a helpful empty state
+            if (labelsData.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.style.color = '#666';
+                emptyState.style.textAlign = 'center';
+                emptyState.style.padding = '50px';
+                emptyState.innerHTML = '<h3>No labels added yet.</h3><p>Use the controls above to start building your print sheet.</p>';
+                printArea.appendChild(emptyState);
+            }
+        }
+
+        // Initial render
+        renderPages();
+    </script>
+</body>
+</html>
