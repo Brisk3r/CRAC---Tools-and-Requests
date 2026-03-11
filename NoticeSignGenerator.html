@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.413.0"></script>
     <style>
         /* Custom styles */
         body { font-family: 'Inter', sans-serif; }
@@ -29,27 +29,40 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            box-sizing: border-box;
         }
 
-        /* Print Specifics */
+        #previewBorder {
+            box-sizing: border-box;
+        }
+
+        /* Print Specifics - Fixed for exactly 1 page */
         @media print {
             @page { size: A4 portrait; margin: 0; }
-            body, html { margin: 0; padding: 0; background: white; height: 100%; }
+            body, html { margin: 0; padding: 0; background: white; height: 100%; overflow: hidden; }
             .no-print { display: none !important; }
             
             #previewPane {
                 width: 210mm !important;
-                height: 297mm !important;
+                height: 296mm !important; /* 1mm shy of exactly A4 to prevent overflow push */
+                max-height: 296mm !important;
                 box-shadow: none !important;
                 margin: 0 !important;
-                page-break-after: always;
+                padding: 0 !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                box-sizing: border-box !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
             }
 
             /* Ensure borders print correctly */
             .border-print-force {
                 border: 15mm solid !important; 
+                box-sizing: border-box !important;
             }
         }
 
@@ -184,7 +197,6 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Main Headline</label>
-                            <!-- Textarea to allow multi-line headlines -->
                             <textarea id="headlineInput" oninput="updatePreview()" rows="2" class="w-full p-2 border border-slate-300 rounded font-bold text-lg leading-tight" placeholder="Enter headline here... (Press Enter for new line)">Pool Closure</textarea>
                             
                             <!-- Headline Styles -->
@@ -201,30 +213,118 @@
                     </div>
                 </div>
 
-                <!-- Section 3: Visuals (Icon & Image) -->
+                <!-- Section 3: Visuals (Icons & Image) -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                     <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                         <i data-lucide="image" class="w-5 h-5 text-slate-500"></i> Visuals
                     </h2>
 
-                    <div class="space-y-4">
-                        <!-- Icon Control -->
+                    <div class="space-y-5">
+                        <!-- Icon Control (Now Multi-Icon Support) -->
                         <div class="border-b border-slate-100 pb-4">
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Central Icon / Symbol</label>
-                            <div class="flex gap-2 mb-2">
-                                <select id="iconSelect" onchange="handleIconSelect()" class="flex-grow p-2 border border-slate-300 rounded text-sm">
-                                    <option value="none">No Icon</option>
-                                    <option value="ban">Prohibited (Ban)</option>
-                                    <option value="triangle-alert">Warning (Triangle)</option>
-                                    <option value="info">Info (Circle)</option>
-                                    <option value="clock">Time / Clock</option>
-                                    <option value="waves">Waves / Swim</option>
-                                    <option value="sparkles">Cleaning</option>
-                                    <option value="custom">Upload Custom Icon...</option>
-                                </select>
-                                <input type="color" id="iconColor" value="#ef4444" oninput="updatePreview()" class="h-9 w-10 p-0 border-0 rounded cursor-pointer">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Icons (Up to 3 per row)</label>
+                            
+                            <div class="space-y-2 mb-3">
+                                <!-- Icon Slot 1 -->
+                                <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                    <span class="text-xs font-bold text-slate-400 w-4">1.</span>
+                                    <select id="iconSelect1" onchange="handleIconSelect(1)" class="flex-grow p-1.5 border border-slate-300 rounded text-sm min-w-0">
+                                        <option value="none">No Icon</option>
+                                        <option value="ban">Prohibited (Ban)</option>
+                                        <option value="triangle-alert">Warning (Triangle)</option>
+                                        <option value="info">Info (Circle)</option>
+                                        <option value="clock">Time / Clock</option>
+                                        <option value="waves">Waves / Swim</option>
+                                        <option value="sparkles">Cleaning / Sparkles</option>
+                                        <option value="cctv">Camera / CCTV</option>
+                                        <option value="parking-circle">Parking</option>
+                                        <option value="wheelchair">Wheelchair / Access</option>
+                                        <option value="accessibility">Accessibility (Person)</option>
+                                        <option value="slippery">Slippery (Falling Person)</option>
+                                        <option value="droplets">Water / Droplets</option>
+                                        <option value="droplet">Single Drop</option>
+                                        <option value="flame">Flammable</option>
+                                        <option value="zap">High Voltage / Electricity</option>
+                                        <option value="cigarette-off">No Smoking</option>
+                                        <option value="dog">Pets / Dogs</option>
+                                        <option value="trash-2">Trash / Waste</option>
+                                        <option value="users">People / Group</option>
+                                        <option value="custom">Upload Custom Icon...</option>
+                                    </select>
+                                    <input type="color" id="iconColor1" value="#dc2626" oninput="updatePreview()" class="h-8 w-10 p-0 border-0 rounded cursor-pointer shrink-0">
+                                    <input type="file" id="customIconUpload1" accept="image/*" onchange="handleCustomIcon(event, 1)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+                                </div>
+
+                                <!-- Icon Slot 2 -->
+                                <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                    <span class="text-xs font-bold text-slate-400 w-4">2.</span>
+                                    <select id="iconSelect2" onchange="handleIconSelect(2)" class="flex-grow p-1.5 border border-slate-300 rounded text-sm min-w-0">
+                                        <!-- Same options injected via JS to save space, or duplicated here for ease -->
+                                        <option value="none">No Icon</option>
+                                        <option value="ban">Prohibited (Ban)</option>
+                                        <option value="triangle-alert">Warning (Triangle)</option>
+                                        <option value="info">Info (Circle)</option>
+                                        <option value="clock">Time / Clock</option>
+                                        <option value="waves">Waves / Swim</option>
+                                        <option value="sparkles">Cleaning / Sparkles</option>
+                                        <option value="cctv">Camera / CCTV</option>
+                                        <option value="parking-circle">Parking</option>
+                                        <option value="wheelchair">Wheelchair / Access</option>
+                                        <option value="accessibility">Accessibility (Person)</option>
+                                        <option value="slippery">Slippery (Falling Person)</option>
+                                        <option value="droplets">Water / Droplets</option>
+                                        <option value="droplet">Single Drop</option>
+                                        <option value="flame">Flammable</option>
+                                        <option value="zap">High Voltage / Electricity</option>
+                                        <option value="cigarette-off">No Smoking</option>
+                                        <option value="dog">Pets / Dogs</option>
+                                        <option value="trash-2">Trash / Waste</option>
+                                        <option value="users">People / Group</option>
+                                        <option value="custom">Upload Custom Icon...</option>
+                                    </select>
+                                    <input type="color" id="iconColor2" value="#2563eb" oninput="updatePreview()" class="h-8 w-10 p-0 border-0 rounded cursor-pointer shrink-0">
+                                    <input type="file" id="customIconUpload2" accept="image/*" onchange="handleCustomIcon(event, 2)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+                                </div>
+
+                                <!-- Icon Slot 3 -->
+                                <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                    <span class="text-xs font-bold text-slate-400 w-4">3.</span>
+                                    <select id="iconSelect3" onchange="handleIconSelect(3)" class="flex-grow p-1.5 border border-slate-300 rounded text-sm min-w-0">
+                                        <option value="none">No Icon</option>
+                                        <option value="ban">Prohibited (Ban)</option>
+                                        <option value="triangle-alert">Warning (Triangle)</option>
+                                        <option value="info">Info (Circle)</option>
+                                        <option value="clock">Time / Clock</option>
+                                        <option value="waves">Waves / Swim</option>
+                                        <option value="sparkles">Cleaning / Sparkles</option>
+                                        <option value="cctv">Camera / CCTV</option>
+                                        <option value="parking-circle">Parking</option>
+                                        <option value="wheelchair">Wheelchair / Access</option>
+                                        <option value="accessibility">Accessibility (Person)</option>
+                                        <option value="slippery">Slippery (Falling Person)</option>
+                                        <option value="droplets">Water / Droplets</option>
+                                        <option value="droplet">Single Drop</option>
+                                        <option value="flame">Flammable</option>
+                                        <option value="zap">High Voltage / Electricity</option>
+                                        <option value="cigarette-off">No Smoking</option>
+                                        <option value="dog">Pets / Dogs</option>
+                                        <option value="trash-2">Trash / Waste</option>
+                                        <option value="users">People / Group</option>
+                                        <option value="custom">Upload Custom Icon...</option>
+                                    </select>
+                                    <input type="color" id="iconColor3" value="#eab308" oninput="updatePreview()" class="h-8 w-10 p-0 border-0 rounded cursor-pointer shrink-0">
+                                    <input type="file" id="customIconUpload3" accept="image/*" onchange="handleCustomIcon(event, 3)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+                                </div>
                             </div>
-                            <input type="file" id="customIconUpload" accept="image/*" onchange="handleCustomIcon(event)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
+
+                            <!-- NEW: Icon Size Control -->
+                            <div class="mt-4 pt-4 border-t border-slate-100">
+                                <label class="flex justify-between text-xs font-semibold text-slate-500 uppercase mb-1">
+                                    <span>Icon Scale / Size</span>
+                                    <span id="iconSizeLabel" class="text-blue-600">120px</span>
+                                </label>
+                                <input type="range" id="iconSize" min="50" max="300" value="120" oninput="updatePreview()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
                         </div>
 
                         <!-- Main Image Control -->
@@ -232,7 +332,7 @@
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Main Image (Optional)</label>
                             <input type="file" id="mainImageUpload" accept="image/*" onchange="handleMainImage(event)" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 mb-2">
                             
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Image Position</label>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1 mt-3">Image Position</label>
                             <select id="imagePosition" onchange="updatePreview()" class="w-full p-2 border border-slate-300 rounded text-sm">
                                 <option value="top">Above Text</option>
                                 <option value="bottom">Below Text</option>
@@ -248,13 +348,21 @@
                         <i data-lucide="file-text" class="w-5 h-5 text-slate-500"></i> Message Body
                     </h2>
                     
-                    <div class="mb-2 flex gap-1 bg-slate-50 p-1 rounded border border-slate-200">
-                        <button onclick="formatDoc('bold')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="bold" class="w-4 h-4"></i></button>
-                        <button onclick="formatDoc('italic')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="italic" class="w-4 h-4"></i></button>
-                        <button onclick="formatDoc('underline')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="underline" class="w-4 h-4"></i></button>
+                    <div class="mb-2 flex flex-wrap gap-1 bg-slate-50 p-1.5 rounded border border-slate-200 items-center">
+                        <button onclick="formatDoc('bold')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Bold"><i data-lucide="bold" class="w-4 h-4"></i></button>
+                        <button onclick="formatDoc('italic')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Italic"><i data-lucide="italic" class="w-4 h-4"></i></button>
+                        <button onclick="formatDoc('underline')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Underline"><i data-lucide="underline" class="w-4 h-4"></i></button>
                         <div class="w-px h-6 bg-slate-300 mx-1"></div>
-                        <button onclick="formatDoc('insertUnorderedList')" class="p-1 hover:bg-slate-200 rounded"><i data-lucide="list" class="w-4 h-4"></i></button>
-                        <button onclick="formatDoc('removeFormat')" class="p-1 hover:bg-slate-200 rounded ml-auto"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+                        <button onclick="formatDoc('insertUnorderedList')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Bullet List"><i data-lucide="list" class="w-4 h-4"></i></button>
+                        <div class="w-px h-6 bg-slate-300 mx-1"></div>
+                        
+                        <!-- NEW: Specific Text Color Formatting -->
+                        <div class="flex items-center gap-1 p-1 hover:bg-slate-200 rounded cursor-pointer border border-transparent hover:border-slate-300" title="Change highlight text colour">
+                            <i data-lucide="palette" class="w-4 h-4 text-slate-700"></i>
+                            <input type="color" onchange="formatColor(this.value)" class="w-5 h-5 p-0 border-0 rounded cursor-pointer bg-transparent">
+                        </div>
+
+                        <button onclick="formatDoc('removeFormat')" class="p-1.5 hover:bg-slate-200 rounded ml-auto text-slate-500" title="Clear Formatting"><i data-lucide="eraser" class="w-4 h-4"></i></button>
                     </div>
 
                     <div id="contentEditor" contenteditable="true" class="rich-text-editor p-3 border border-slate-300 rounded bg-white text-slate-700 mb-3" oninput="updatePreview()">
@@ -274,7 +382,6 @@
                                 <option value="justify">Justify</option>
                             </select>
                         </div>
-                        <!-- New Vertical Alignment Control -->
                         <div class="col-span-4">
                             <label class="block text-xs text-slate-500">Vert. Align</label>
                             <select id="contentVerticalAlign" onchange="updatePreview()" class="w-full border rounded p-1">
@@ -302,7 +409,6 @@
                             <input type="text" id="qrUrl" oninput="updatePreview()" placeholder="https://..." class="w-full p-2 border border-slate-300 rounded">
                         </div>
                         
-                        <!-- NEW QR Controls -->
                         <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                              <div>
                                 <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">QR Position</label>
@@ -348,13 +454,13 @@
                     <!-- Headline -->
                     <div id="previewHeadline" class="font-bold mb-6 break-words leading-tight shrink-0"></div>
 
-                    <!-- Dynamic Content Area (ID Added for Vertical Align) -->
-                    <div id="dynamicContentArea" class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden">
+                    <!-- Dynamic Content Area -->
+                    <div id="dynamicContentArea" class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden w-full">
                         
-                        <!-- Icon -->
-                        <div id="previewIcon" class="shrink-0 transition-all duration-300"></div>
+                        <!-- Multi-Icon Container -->
+                        <div id="previewIcon" class="flex flex-row justify-center items-center gap-8 shrink-0 transition-all duration-300 w-full flex-wrap"></div>
 
-                        <!-- Image (Position Controlled via JS) -->
+                        <!-- Image -->
                         <div id="previewImageContainer" class="hidden shrink-0">
                             <img id="previewImage" src="" class="max-h-[300px] max-w-full object-contain shadow-sm rounded">
                         </div>
@@ -376,7 +482,7 @@
             <!-- Overflow Warning -->
             <div id="overflowWarning" class="no-print hidden mt-4 bg-red-100 text-red-700 px-4 py-2 rounded-lg flex items-center gap-2">
                 <i data-lucide="alert-circle" class="w-5 h-5"></i>
-                <strong>Warning:</strong> Content is overflowing. Try reducing font size or image size.
+                <strong>Warning:</strong> Content is overflowing. Try reducing font size, icon size, or image size.
             </div>
         </div>
     </div>
@@ -385,13 +491,25 @@
 <script>
     // State
     let mainImageData = null;
-    let customIconData = null;
+    let customIconData1 = null;
+    let customIconData2 = null;
+    let customIconData3 = null;
 
     // Assets
     const logos = {
         crac: "https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/98325202cc3f831a80e250d16d0c56168515c40a/CRAC%20Large%20Wordmark2.png",
         ycp: "https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/aec03b349e712519927321f47dade540f2b5bce9/YCP%20Wordmark%20-%20Full%20Horizontal.png",
         none: ""
+    };
+
+    // Custom built-in SVGs for specific safety icons not natively in Lucide
+    // Converted to raw paths to render as unbreakable data-URI images
+    const standardSafetyPaths = {
+        'wheelchair': 'M192 96a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm-71.5 161.3c-20.8-21.1-54.6-21.5-76-1s-21.8 54.9-1 76l61.2 61.2c20.8 21.1 54.6 21.5 76 1l14.4-14.4c17.1-17.1 17.1-44.9 0-62s-44.9-17.1-62 0l-12.6 12.6zM256 224v-64H192c-17.7 0-32-14.3-32-32s14.3-32 32-32h96c17.7 0 32 14.3 32 32v128h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H288c-17.7 0-32-14.3-32-32v-64H256zm-104.6 111.6c-7.9 7.9-10.3 19.8-6.1 30.3C158.4 398.9 191.9 416 224 416c44.2 0 80-35.8 80-80c0-11-2.1-21.5-5.9-31.2c-4-10.2-15-16.1-25.9-14.5s-19.3 9.4-19.3 20.4c0 14.1-11.5 25.6-25.6 25.6c-11.4 0-21-7.5-24.5-17.8c-2.9-8.5-11.8-13.4-20.5-11.4s-14.8 10.9-12.8 19.6l-31 34.2z',
+        'slippery': 'M192 112a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm-95.6 156.4c-8-11.4-23.6-14.2-35-6.2s-14.2 23.6-6.2 35l74.5 106.5c17.2 24.5 45.4 39.3 75.5 39.3h32.9l-37.8 103.9c-4.8 13.2 2.1 27.7 15.3 32.5s27.7-2.1 32.5-15.3l46.1-126.7c4.5-12.4 1.5-26.3-7.8-35.8l-34.8-35.5 44.5-61.2L357.6 311c16.5 10.6 38.6 5.8 49.3-10.8s5.8-38.6-10.8-49.3L324.4 160c-15.3-9.9-35.1-10.2-50.7-.7l-57.1 34.8c-5.7 3.5-11.2 7.2-16.5 11.2l-79.7-93.5c-9.6-11.3-26.5-12.7-37.8-3.1s-12.7 26.5-3.1 37.8l60.9 71.5zM32 448c-17.7 0-32 14.3-32 32s14.3 32 32 32h448c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z',
+        'triangle-alert': 'M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7.1-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z',
+        'ban': 'M367.2 412.5L99.5 144.8C77.1 176.1 64 214.5 64 256c0 106 86 192 192 192c41.5 0 79.9-13.1 111.2-35.5zm45.3-45.3C434.9 335.9 448 297.5 448 256c0-106-86-192-192-192c-41.5 0-79.9 13.1-111.2 35.5L412.5 367.2zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z',
+        'info': 'M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z'
     };
 
     const safetyStyles = {
@@ -415,8 +533,6 @@
             controls.classList.add('hidden');
         } else {
             controls.classList.remove('hidden');
-            // Pre-fill controls with defaults if not already modified or if switching types
-            // We use the safetyStyles map to get defaults
             if (safetyStyles[signType]) {
                 textInput.value = safetyStyles[signType].text;
                 colorInput.value = safetyStyles[signType].bg;
@@ -426,7 +542,7 @@
     }
 
     function updatePreview() {
-        // 1. Safety Header (Z-Index 50 - Above Border)
+        // Z-Index 50: Header
         const signType = document.getElementById('signType').value;
         const headerEl = document.getElementById('safetyHeader');
         const headerTextEl = document.getElementById('safetyHeaderText');
@@ -435,15 +551,12 @@
             headerEl.classList.add('hidden');
         } else {
             headerEl.classList.remove('hidden');
-            
-            // Get values from custom controls
             const customText = document.getElementById('headerTextInput').value;
             const customColor = document.getElementById('headerColorInput').value;
             
             headerTextEl.innerText = customText || safetyStyles[signType].text;
             headerEl.style.backgroundColor = customColor;
             
-            // Auto-detect text color based on brightness (simple check)
             if (customColor.toLowerCase() === '#eab308' || signType === 'warning') {
                 headerEl.style.color = 'black';
             } else {
@@ -451,10 +564,10 @@
             }
         }
 
-        // 2. Borders (Z-Index 40 - Below Header)
+        // Z-Index 40: Borders
         const borderStyle = document.getElementById('borderStyle').value;
         const borderEl = document.getElementById('previewBorder');
-        borderEl.style.border = 'none'; // reset
+        borderEl.style.border = 'none';
         borderEl.style.borderImage = 'none';
 
         if (borderStyle === 'thin') borderEl.style.border = '1px solid #cbd5e1';
@@ -465,16 +578,14 @@
             borderEl.style.borderImage = 'repeating-linear-gradient(45deg, #facc15, #facc15 15px, #000 15px, #000 30px) 60';
         }
         
-        // Add specific class for print forcing
         if (borderStyle !== 'thin' && borderStyle !== 'none') {
             borderEl.classList.add('border-print-force');
         } else {
             borderEl.classList.remove('border-print-force');
         }
 
-        // 3. Background & Branding
+        // Background & Logo
         document.getElementById('previewContentContainer').style.backgroundColor = document.getElementById('bgColor').value;
-        
         const logoVal = document.getElementById('logoSelect').value;
         const logoImg = document.getElementById('previewLogo');
         if (logoVal !== 'none') {
@@ -484,36 +595,67 @@
             logoImg.style.display = 'none';
         }
 
-        // 4. Headline
+        // Headline
         const hl = document.getElementById('previewHeadline');
-        // Use innerHTML to allow breaks
         hl.innerHTML = document.getElementById('headlineInput').value.replace(/\n/g, '<br>');
         hl.style.color = document.getElementById('headlineColor').value;
         hl.style.fontSize = document.getElementById('headlineSize').value + 'px';
         hl.style.textAlign = document.getElementById('headlineAlign').value;
 
-        // 5. Icons
-        const iconVal = document.getElementById('iconSelect').value;
+        // Multiple Icons Logic
         const iconContainer = document.getElementById('previewIcon');
         iconContainer.innerHTML = '';
         
-        if (iconVal === 'custom' && customIconData) {
-            const img = document.createElement('img');
-            img.src = customIconData;
-            img.style.height = '120px';
-            img.style.width = 'auto';
-            iconContainer.appendChild(img);
-        } else if (iconVal !== 'none' && iconVal !== 'custom') {
-            const i = document.createElement('i');
-            i.setAttribute('data-lucide', iconVal);
-            i.style.color = document.getElementById('iconColor').value;
-            iconContainer.appendChild(i);
-            lucide.createIcons({
-                attrs: { width: 120, height: 120, 'stroke-width': 1.5 }
-            });
-        }
+        const iconSize = document.getElementById('iconSize').value;
+        document.getElementById('iconSizeLabel').innerText = iconSize + 'px';
 
-        // 6. Main Image
+        for(let i = 1; i <= 3; i++) {
+            const val = document.getElementById('iconSelect' + i).value;
+            const col = document.getElementById('iconColor' + i).value;
+            
+            // Map custom vars cleanly
+            let customData = null;
+            if(i === 1) customData = customIconData1;
+            if(i === 2) customData = customIconData2;
+            if(i === 3) customData = customIconData3;
+
+            if (val === 'custom' && customData) {
+                const img = document.createElement('img');
+                img.src = customData;
+                img.style.height = iconSize + 'px';
+                img.style.width = 'auto';
+                iconContainer.appendChild(img);
+            } else if (standardSafetyPaths[val]) {
+                // Force the standard path into an unstyled <img> so NO external CSS can ever affect its shape or stroke
+                const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="${col}"><path d="${standardSafetyPaths[val]}"/></svg>`;
+                const img = document.createElement('img');
+                img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(rawSvg);
+                img.style.height = iconSize + 'px';
+                img.style.width = iconSize + 'px';
+                img.className = "shrink-0";
+                iconContainer.appendChild(img);
+            } else if (val !== 'none' && val !== 'custom') {
+                const wrapper = document.createElement('div');
+                wrapper.style.color = col;
+                wrapper.className = "flex shrink-0";
+                
+                const iEl = document.createElement('i');
+                iEl.setAttribute('data-lucide', val);
+                wrapper.appendChild(iEl);
+                iconContainer.appendChild(wrapper);
+            }
+        }
+        
+        // Re-init lucide icons and apply explicit sizes for the preview container
+        lucide.createIcons();
+        const previewLucideIcons = iconContainer.querySelectorAll('.lucide');
+        previewLucideIcons.forEach(svg => {
+            svg.style.width = iconSize + 'px';
+            svg.style.height = iconSize + 'px';
+            svg.style.strokeWidth = '1.5';
+        });
+
+        // Main Image
         const imgContainer = document.getElementById('previewImageContainer');
         const imgPos = document.getElementById('imagePosition').value;
         const bodyText = document.getElementById('previewBody');
@@ -521,7 +663,6 @@
         if (mainImageData && imgPos !== 'hidden') {
             document.getElementById('previewImage').src = mainImageData;
             imgContainer.classList.remove('hidden');
-            // Logic to swap order
             if (imgPos === 'top') {
                 imgContainer.parentNode.insertBefore(imgContainer, bodyText);
             } else {
@@ -531,18 +672,17 @@
             imgContainer.classList.add('hidden');
         }
 
-        // 7. Body Content & Alignment
+        // Body Content & Alignment
         bodyText.innerHTML = document.getElementById('contentEditor').innerHTML;
         bodyText.style.fontSize = document.getElementById('contentSize').value + 'px';
         bodyText.style.textAlign = document.getElementById('contentAlign').value;
 
-        // Apply Vertical Alignment
         const vertAlign = document.getElementById('contentVerticalAlign').value;
         const dynamicArea = document.getElementById('dynamicContentArea');
         dynamicArea.classList.remove('justify-start', 'justify-center', 'justify-end');
         dynamicArea.classList.add('justify-' + vertAlign);
 
-        // 8. Footer & QR
+        // Footer & QR
         const footerContainer = document.getElementById('footerContainer');
         const footerText = document.getElementById('previewFooter');
         const qrImg = document.getElementById('previewQr');
@@ -553,25 +693,23 @@
 
         footerText.innerText = footerTextVal;
         
-        // QR Logic
         if (qrUrl.trim()) {
             qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
             qrImg.classList.remove('hidden');
             qrImg.style.width = qrSize + 'px';
             qrImg.style.height = qrSize + 'px';
             
-            // Positioning Logic
-            footerContainer.className = 'mt-auto pt-8 border-t border-slate-300/50 flex shrink-0'; // Reset base classes
+            footerContainer.className = 'mt-auto pt-8 border-t border-slate-300/50 flex shrink-0 w-full';
             
             if (qrPos === 'right') {
                 footerContainer.classList.add('justify-between', 'items-end', 'flex-row');
-                footerContainer.appendChild(footerText); // Ensure text is first
-                footerContainer.appendChild(qrImg); // QR second
+                footerContainer.appendChild(footerText);
+                footerContainer.appendChild(qrImg);
                 footerText.style.textAlign = 'left';
             } else if (qrPos === 'left') {
                 footerContainer.classList.add('justify-between', 'items-end', 'flex-row');
-                footerContainer.appendChild(qrImg); // QR first
-                footerContainer.appendChild(footerText); // Text second
+                footerContainer.appendChild(qrImg);
+                footerContainer.appendChild(footerText);
                 footerText.style.textAlign = 'right';
             } else if (qrPos === 'center') {
                 footerContainer.classList.add('flex-col', 'items-center', 'justify-center', 'gap-4');
@@ -579,12 +717,10 @@
                 footerContainer.appendChild(qrImg);
                 footerText.style.textAlign = 'center';
             }
-
         } else {
             qrImg.classList.add('hidden');
-            // Reset footer alignment if no QR
-            footerContainer.className = 'mt-auto pt-8 border-t border-slate-300/50 flex justify-center items-end shrink-0';
-            footerContainer.appendChild(footerText); // Just text
+            footerContainer.className = 'mt-auto pt-8 border-t border-slate-300/50 flex justify-center items-end shrink-0 w-full';
+            footerContainer.appendChild(footerText);
             footerText.style.textAlign = 'center';
         }
 
@@ -593,9 +729,9 @@
 
     // --- Logic Functions ---
 
-    function handleIconSelect() {
-        const val = document.getElementById('iconSelect').value;
-        const upload = document.getElementById('customIconUpload');
+    function handleIconSelect(index) {
+        const val = document.getElementById('iconSelect' + index).value;
+        const upload = document.getElementById('customIconUpload' + index);
         if (val === 'custom') {
             upload.classList.remove('hidden');
         } else {
@@ -604,10 +740,12 @@
         }
     }
 
-    function handleCustomIcon(e) {
+    function handleCustomIcon(e, index) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            customIconData = e.target.result;
+        reader.onload = (ev) => {
+            if(index === 1) customIconData1 = ev.target.result;
+            if(index === 2) customIconData2 = ev.target.result;
+            if(index === 3) customIconData3 = ev.target.result;
             updatePreview();
         };
         if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
@@ -615,11 +753,19 @@
 
     function handleMainImage(e) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            mainImageData = e.target.result;
+        reader.onload = (ev) => {
+            mainImageData = ev.target.result;
             updatePreview();
         };
         if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    }
+
+    // New Text Color Function
+    function formatColor(color) {
+        document.execCommand('styleWithCSS', false, true); 
+        document.execCommand('foreColor', false, color);
+        document.getElementById('contentEditor').focus();
+        updatePreview();
     }
 
     function formatDoc(cmd) {
@@ -630,8 +776,7 @@
 
     function checkOverflow() {
         const pane = document.getElementById('previewPane');
-        // Simple check: is scrollHeight > offsetHeight?
-        if (pane.scrollHeight > pane.clientHeight + 2) { // +2 buffer
+        if (pane.scrollHeight > pane.clientHeight + 2) {
             document.getElementById('overflowWarning').classList.remove('hidden');
         } else {
             document.getElementById('overflowWarning').classList.add('hidden');
@@ -648,28 +793,32 @@
         crac_general: {
             type: 'none', border: 'none', logo: 'crac', 
             hlText: 'Pool Closure', hlColor: '#1e293b', hlSize: 48,
-            icon: 'ban', iconColor: '#dc2626', bg: '#ffffff',
+            icon1: 'ban', iconColor1: '#dc2626', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
+            iconSize: 120, bg: '#ffffff',
             body: 'The 50m Pool is closed for maintenance.',
             footer: 'Clarence Regional Aquatic Centre'
         },
         ycp_friendly: {
             type: 'none', border: 'thick-blue', logo: 'ycp',
             hlText: 'Lane Reserved', hlColor: '#2563eb', hlSize: 42,
-            icon: 'clock', iconColor: '#2563eb', bg: '#eff6ff',
+            icon1: 'clock', iconColor1: '#2563eb', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
+            iconSize: 120, bg: '#eff6ff',
             body: 'This lane is reserved for swim squad training.<br>Please use alternative lanes.',
             footer: 'Yamba Community Pool'
         },
         danger_stop: {
             type: 'danger', border: 'hazard', logo: 'none',
             hlText: 'DO NOT ENTER', hlColor: '#000000', hlSize: 60,
-            icon: 'triangle-alert', iconColor: '#dc2626', bg: '#ffffff',
+            icon1: 'triangle-alert', iconColor1: '#dc2626', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
+            iconSize: 160, bg: '#ffffff',
             body: 'Chemical handling in progress.<br>Authorised Personnel Only.',
             footer: 'Clarence Valley Council'
         },
         cleaning: {
             type: 'warning', border: 'none', logo: 'crac',
             hlText: 'Cleaning In Progress', hlColor: '#000000', hlSize: 42,
-            icon: 'sparkles', iconColor: '#eab308', bg: '#fefce8',
+            icon1: 'sparkles', iconColor1: '#eab308', icon2: 'slippery', iconColor2: '#2563eb', icon3: 'none', iconColor3: '#000000',
+            iconSize: 100, bg: '#fefce8',
             body: 'Floors may be slippery. Please watch your step.',
             footer: 'Clarence Regional Aquatic Centre'
         }
@@ -683,14 +832,21 @@
         document.getElementById('headlineInput').value = t.hlText;
         document.getElementById('headlineColor').value = t.hlColor;
         document.getElementById('headlineSize').value = t.hlSize;
-        document.getElementById('iconSelect').value = t.icon;
-        document.getElementById('iconColor').value = t.iconColor;
+        
+        document.getElementById('iconSelect1').value = t.icon1 || t.icon || 'none';
+        document.getElementById('iconColor1').value = t.iconColor1 || t.iconColor || '#000000';
+        document.getElementById('iconSelect2').value = t.icon2 || 'none';
+        document.getElementById('iconColor2').value = t.iconColor2 || '#000000';
+        document.getElementById('iconSelect3').value = t.icon3 || 'none';
+        document.getElementById('iconColor3').value = t.iconColor3 || '#000000';
+        document.getElementById('iconSize').value = t.iconSize || 120;
+
         document.getElementById('bgColor').value = t.bg;
         document.getElementById('contentEditor').innerHTML = t.body;
         document.getElementById('footerText').value = t.footer;
         
-        handleIconSelect(); // Reset custom upload visibility
-        handleSignTypeChange(); // Ensure header controls update
+        handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
+        handleSignTypeChange(); 
         updatePreview();
     }
 
@@ -705,10 +861,17 @@
             content: document.getElementById('contentEditor').innerHTML,
             signType: document.getElementById('signType').value,
             logo: document.getElementById('logoSelect').value,
-            // We only save the key configurations, not images (too big for localstorage usually)
             footer: document.getElementById('footerText').value,
             headerText: document.getElementById('headerTextInput').value,
-            headerColor: document.getElementById('headerColorInput').value
+            headerColor: document.getElementById('headerColorInput').value,
+            // Icons
+            icon1: document.getElementById('iconSelect1').value,
+            iconColor1: document.getElementById('iconColor1').value,
+            icon2: document.getElementById('iconSelect2').value,
+            iconColor2: document.getElementById('iconColor2').value,
+            icon3: document.getElementById('iconSelect3').value,
+            iconColor3: document.getElementById('iconColor3').value,
+            iconSize: document.getElementById('iconSize').value
         };
 
         const saves = JSON.parse(localStorage.getItem('mySignPresets') || '{}');
@@ -729,6 +892,23 @@
             if(s.headerText) document.getElementById('headerTextInput').value = s.headerText;
             if(s.headerColor) document.getElementById('headerColorInput').value = s.headerColor;
             
+            // Icon Backwards compatibility with V1 saves
+            if(s.icon && !s.icon1) {
+                document.getElementById('iconSelect1').value = s.icon;
+                document.getElementById('iconColor1').value = s.iconColor || '#000000';
+                document.getElementById('iconSelect2').value = 'none';
+                document.getElementById('iconSelect3').value = 'none';
+            } else {
+                document.getElementById('iconSelect1').value = s.icon1 || 'none';
+                document.getElementById('iconColor1').value = s.iconColor1 || '#000000';
+                document.getElementById('iconSelect2').value = s.icon2 || 'none';
+                document.getElementById('iconColor2').value = s.iconColor2 || '#000000';
+                document.getElementById('iconSelect3').value = s.icon3 || 'none';
+                document.getElementById('iconColor3').value = s.iconColor3 || '#000000';
+            }
+            if(s.iconSize) document.getElementById('iconSize').value = s.iconSize;
+            
+            handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
             handleSignTypeChange();
             updatePreview();
         }
@@ -771,7 +951,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
         refreshSavedList();
-        handleSignTypeChange(); // Initialize controls
+        handleSignTypeChange();
         updatePreview();
     });
 
