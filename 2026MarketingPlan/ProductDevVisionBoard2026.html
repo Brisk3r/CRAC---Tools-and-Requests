@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarence Regional Aquatic Centre - Vision Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,700;1,500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ocean: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        amber: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                        },
+                        slate: {
+                            950: '#020617',
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        body: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #0ea5e9 0%, #fbbf24 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+        .section-tag {
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .media-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 lg:p-12">
+
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto mb-16 space-y-4">
+        <div class="flex items-center gap-3 animate-pulse-slow">
+            <div class="h-1 w-12 bg-ocean-500 rounded-full"></div>
+            <span class="section-tag text-ocean-500">2026 Strategy & Vision</span>
+        </div>
+        <h1 class="text-5xl md:text-7xl font-display font-extrabold leading-tight">
+            Clarence Regional <br/>
+            <span class="gradient-text">Aquatic Centre</span>
+        </h1>
+        <p class="text-slate-400 max-w-2xl text-lg md:text-xl font-light leading-relaxed">
+            Elevating community wellness through storytelling, digital innovation, and strategic local partnerships. This vision board outlines our roadmap for excellence.
+        </p>
+    </header>
+
+    <main class="max-w-7xl mx-auto space-y-24">
+
+        <!-- 1. Content Marketing Section -->
+        <section id="storytelling" class="space-y-8">
+            <div class="bento-grid">
+                <!-- Media Card (Large) -->
+                <div class="col-span-12 lg:col-span-7 h-[400px] md:h-[500px] relative rounded-3xl overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10 opacity-60"></div>
+                    <div class="media-container h-full w-full">
+                        <img src='https://opal.google/board/blobs/01d3a371-633a-4981-9509-3a8737b0daec' alt='The Path to the Podium' />
+                    </div>
+                    <div class="absolute bottom-8 left-8 z-20">
+                        <span class="px-3 py-1 bg-amber-500 text-slate-950 text-xs font-bold rounded-full mb-2 inline-block">VISION BOARD 01</span>
+                        <h2 class="text-3xl font-display font-bold">The Path to the Podium</h2>
+                    </div>
+                </div>
+
+                <!-- Text Content Card -->
+                <div class="col-span-12 lg:col-span-5 glass-card p-8 rounded-3xl flex flex-col justify-center">
+                    <span class="section-tag text-amber-500 mb-4">Content Marketing Strategy</span>
+                    <h3 class="text-2xl font-display font-semibold mb-4">"The Path to the Podium" Storytelling Series</h3>
+                    <p class="text-slate-300 mb-6 leading-relaxed">
+                        High-quality narratives capturing the diverse journey of our community. From competitive youths to seniors in rehabilitation, we showcase personal milestones that define our facility.
+                    </p>
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <div class="p-4 bg-white/5 rounded-2xl">
+                            <h4 class="text-xs font-bold text-ocean-500 uppercase mb-1">Impact</h4>
+                            <p class="text-sm">Deep Emotional Resonance</p>
+                        </div>
+                        <div class="p-4 bg-white/5 rounded-2xl">
+                            <h4 class="text-xs font-bold text-ocean-500 uppercase mb-1">Channel</h4>
+                            <p class="text-sm">Web & Social Video</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Steps (Small Cards) -->
+                <div class="col-span-12 md:col-span-4 glass-card p-6 rounded-2xl border-l-4 border-l-ocean-500">
+                    <h4 class="font-bold mb-2">Identify Champions</h4>
+                    <p class="text-sm text-slate-400">Profiling youth swimmers, seniors, and adult learners to reflect our diverse user base.</p>
+                </div>
+                <div class="col-span-12 md:col-span-4 glass-card p-6 rounded-2xl border-l-4 border-l-ocean-500">
+                    <h4 class="font-bold mb-2">Production Quality</h4>
+                    <p class="text-sm text-slate-400">Partnering with local videographers for authentic "day in the life" storytelling.</p>
+                </div>
+                <div class="col-span-12 md:col-span-4 glass-card p-6 rounded-2xl border-l-4 border-l-ocean-500">
+                    <h4 class="font-bold mb-2">Targeted Launch</h4>
+                    <p class="text-sm text-slate-400">Strategic distribution via website and newsletters with localized ad spend.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Social Media Campaigns Section -->
+        <section id="gamification" class="space-y-8">
+            <div class="bento-grid">
+                <!-- Text Content Card -->
+                <div class="col-span-12 lg:col-span-5 glass-card p-8 rounded-3xl flex flex-col justify-center order-2 lg:order-1">
+                    <span class="section-tag text-green-400 mb-4">Digital Innovation</span>
+                    <h3 class="text-2xl font-display font-semibold mb-4">"Morning Laps" Virtual Leaderboard</h3>
+                    <p class="text-slate-300 mb-6 leading-relaxed">
+                        A digital-physical hybrid gamification strategy. Patrons log weekly distances via QR codes, creating organic "bragging rights" and driving retention.
+                    </p>
+                    
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 text-sm text-slate-400">
+                            <div class="h-1.5 w-1.5 rounded-full bg-green-400"></div>
+                            Increases repeat visitation
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-400">
+                            <div class="h-1.5 w-1.5 rounded-full bg-green-400"></div>
+                            Rich demographic usage data
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-400">
+                            <div class="h-1.5 w-1.5 rounded-full bg-green-400"></div>
+                            Local business sponsorship integration
+                        </li>
+                    </ul>
+
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                        <p class="text-xs italic text-slate-500">Next Step: Secure local café sponsor for weekly "Most Improved" rewards.</p>
+                    </div>
+                </div>
+
+                <!-- Media Card -->
+                <div class="col-span-12 lg:col-span-7 h-[400px] md:h-[500px] relative rounded-3xl overflow-hidden group order-1 lg:order-2">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10 opacity-60"></div>
+                    <div class="media-container h-full w-full">
+                        <img src='https://opal.google/board/blobs/ff6635e1-432e-42a3-a27d-37464c1a4647' alt='Morning Laps Leaderboard' />
+                    </div>
+                    <div class="absolute bottom-8 right-8 z-20 text-right">
+                        <span class="px-3 py-1 bg-green-500 text-slate-950 text-xs font-bold rounded-full mb-2 inline-block">VISION BOARD 02</span>
+                        <h2 class="text-3xl font-display font-bold">Community Gamification</h2>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Partnership Opportunities Section -->
+        <section id="partnerships" class="space-y-8 pb-12">
+            <div class="bento-grid">
+                <!-- Full Width Media Banner -->
+                <div class="col-span-12 h-[300px] md:h-[450px] relative rounded-3xl overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent z-10 opacity-80"></div>
+                    <div class="media-container h-full w-full">
+                        <img src='https://opal.google/board/blobs/7e0a8079-291f-4828-897a-5165dfed6379' alt='Local Sports Club Recovery' />
+                    </div>
+                    <div class="absolute inset-y-0 left-0 flex flex-col justify-center p-8 md:p-12 z-20 max-w-xl">
+                        <span class="section-tag text-ocean-400 mb-2">B2B Partnership Program</span>
+                        <h2 class="text-3xl md:text-5xl font-display font-extrabold mb-4">Local Sports Club Recovery</h2>
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed hidden md:block">
+                            Formalized outreach for regional sports teams—football, netball, and cricket. Tapping into heated pools for professional-grade post-match hydrotherapy and injury prevention.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Strategy Detail Cards -->
+                <div class="col-span-12 md:col-span-6 lg:col-span-4 glass-card p-8 rounded-3xl">
+                    <div class="h-10 w-10 bg-ocean-500/20 rounded-lg flex items-center justify-center mb-6 text-ocean-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3">Active Recovery Pitch</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        A structured pitch deck highlighting hydrotherapy benefits for injury prevention, specifically tailored for regional club presidents and coaches.
+                    </p>
+                </div>
+
+                <div class="col-span-12 md:col-span-6 lg:col-span-4 glass-card p-8 rounded-3xl">
+                    <div class="h-10 w-10 bg-amber-500/20 rounded-lg flex items-center justify-center mb-6 text-amber-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3">The "First Session Free"</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Low-barrier entry for the top five local clubs to experience the facilities firsthand, creating immediate buy-in and relationship building.
+                    </p>
+                </div>
+
+                <div class="col-span-12 lg:col-span-4 glass-card p-8 rounded-3xl">
+                    <div class="h-10 w-10 bg-green-500/20 rounded-lg flex items-center justify-center mb-6 text-green-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold mb-3">Club Pass Billing</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Moving away from individual entries to a seasonal subscription model, ensuring guaranteed revenue and high-volume off-peak usage.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Visual Accents -->
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+        <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-ocean-600/10 blur-[120px] rounded-full animate-float"></div>
+        <div class="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-amber-500/5 blur-[100px] rounded-full animate-pulse-slow"></div>
+    </div>
+
+    <script>
+        // Interactive Scroll Effects
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.glass-card');
+            
+            const observerOptions = {
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
