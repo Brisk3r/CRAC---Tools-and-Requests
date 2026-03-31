@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Studio | Clarence Regional Aquatic Centre</title>
+    <title>CRAC Print Studio | Clarence Regional Aquatic Centre</title>
     
     <!-- Tailwind CSS v2 -->
     <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -83,23 +83,23 @@
             .print-header { margin-bottom: 4px !important; padding-bottom: 2px !important; }
             .print-footer { margin-top: 4px !important; padding-bottom: 0 !important; }
 
-            /* Table Compression Rules */
+            /* STRICT TABLE GRID FIX */
             table { 
                 border-collapse: collapse !important; 
                 width: 100% !important; 
-                height: 130mm !important; /* Reduced to leave room for the taller stacked header */
+                height: 135mm !important; /* Fixed height for the grid */
+                table-layout: fixed !important; /* Force strict column widths */
             }
-            tr { page-break-inside: avoid !important; page-break-after: auto !important; }
-            th, td { padding: 2px !important; }
+            
+            /* Hack to make rows divide height equally and never stretch */
+            tr { page-break-inside: avoid !important; page-break-after: auto !important; height: 1% !important; }
+            th, td { padding: 0 !important; height: 1px !important; overflow: hidden !important; }
             
             .print-cell-wrapper {
-                min-height: 20px !important; 
-                padding: 1px !important;
+                height: 100% !important; 
                 overflow: hidden !important;
-                line-height: 1.1 !important;
+                box-sizing: border-box !important;
             }
-
-            .print-text-sm { font-size: 9px !important; }
             
             /* Ink Saver overrides */
             .ink-saver-active .bg-green-50, .ink-saver-active .bg-yellow-100, .ink-saver-active .bg-red-100 { 
@@ -155,7 +155,6 @@
 
         const HIDDEN_ADMIN_EMAIL = "info@clarenceregionalaquaticcentre.com.au";
 
-        // Accurate opening hours specific to CRAC (start visually from 5 to catch 5:30)
         const CRAC_DEFAULTS = { 
             zones: [ 
                 { id: '50m Pool', children: Array.from({length: 8}, (_, i) => ({id: `Lane ${i+1}`})) }, 
@@ -287,13 +286,11 @@
 
             // Print State
             const [weekOffset, setWeekOffset] = useState(0);
-            const [printMode, setPrintMode] = useState('separate');
             const [printTypeFilter, setPrintTypeFilter] = useState('all');
             const [inkSaver, setInkSaver] = useState(false);
             const [selectedZones, setSelectedZones] = useState([]);
             const [customStartHour, setCustomStartHour] = useState(''); 
             const [customEndHour, setCustomEndHour] = useState('');
-            const [fontSize, setFontSize] = useState('normal'); 
             const [publicHolidays, setPublicHolidays] = useState([]);
 
             const paths = useMemo(() => ({ events: 'calendar_events', settings: 'calendar_settings' }), []);
@@ -307,7 +304,6 @@
                     const data = doc.exists ? doc.data() : CRAC_DEFAULTS;
                     setSettings(data);
                     
-                    // Auto select all zones on first successful fetch
                     if (!window.__zonesInitialized) {
                         setSelectedZones(data.zones.map(z => z.id));
                         window.__zonesInitialized = true;
@@ -459,7 +455,7 @@
                     
                     {/* LEFT SIDEBAR: Print Controls */}
                     <div className="w-full md:w-80 bg-gray-900 text-gray-200 flex flex-col flex-shrink-0 print-hide h-screen overflow-y-auto shadow-2xl z-20">
-                        <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-950 sticky top-0">
+                        <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-950 sticky top-0 z-30">
                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                 <Icons.Printer size={20} /> Print Studio
                             </h2>
@@ -526,15 +522,6 @@
                                 </div>
                             </div>
 
-                            {/* Output Layout */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Page Layout</label>
-                                <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
-                                    <button onClick={() => setPrintMode('separate')} className={`flex-1 px-2 py-2 text-xs rounded font-medium transition-colors ${printMode === 'separate' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>1 Per Page</button>
-                                    <button onClick={() => setPrintMode('consolidated')} className={`flex-1 px-2 py-2 text-xs rounded font-medium transition-colors ${printMode === 'consolidated' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>Consolidated</button>
-                                </div>
-                            </div>
-
                             {/* Public Holidays */}
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mark Public Holidays</label>
@@ -551,15 +538,6 @@
                                 </div>
                             </div>
 
-                            {/* Accessibility Options */}
-                            <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Font Size</label>
-                                <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
-                                    <button onClick={() => setFontSize('normal')} className={`flex-1 px-2 py-2 text-xs rounded font-medium transition-colors ${fontSize === 'normal' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>Normal</button>
-                                    <button onClick={() => setFontSize('large')} className={`flex-1 px-2 py-2 text-xs rounded font-medium transition-colors ${fontSize === 'large' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>Large</button>
-                                </div>
-                            </div>
-
                             <label className="flex items-center gap-3 p-3 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer hover:bg-gray-700/80 transition-colors">
                                 <input type="checkbox" checked={inkSaver} onChange={e => setInkSaver(e.target.checked)} className="w-5 h-5 rounded border-gray-500 text-blue-600 focus:ring-blue-500 bg-gray-900" />
                                 <div>
@@ -569,7 +547,7 @@
                             </label>
                         </div>
 
-                        <div className="p-5 bg-gray-950 border-t border-gray-700 sticky bottom-0">
+                        <div className="p-5 bg-gray-950 border-t border-gray-700 sticky bottom-0 z-30">
                             <button onClick={() => window.print()} className="w-full flex justify-center items-center gap-2 bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-200 transition-colors shadow-lg">
                                 <Icons.Printer size={20} /> Send to Printer
                             </button>
@@ -578,10 +556,6 @@
 
                     {/* RIGHT AREA: Live Print Preview */}
                     <div className={`flex-1 h-screen overflow-y-auto p-4 md:p-8 print-preview-area ${inkSaver ? 'ink-saver-active' : ''}`}>
-                        <div className="max-w-[1122px] mx-auto print-hide mb-4 flex items-center justify-between text-gray-500 text-sm font-medium">
-                            <span>Live Paper Preview</span>
-                            <span>A4 Landscape ({zonesToPrint.length} Pages)</span>
-                        </div>
                         
                         {zonesToPrint.length === 0 && (
                             <div className="flex flex-col items-center justify-center text-gray-400 mt-20 print-hide">
@@ -592,27 +566,26 @@
 
                         {zonesToPrint.map((zone, idx) => (
                             <div key={zone.id} 
-                                 className={`print-page bg-white shadow-xl mx-auto border border-gray-200 
-                                            ${printMode === 'separate' ? 'mb-12' : 'mb-6'}`}
+                                 className={`print-page bg-white shadow-xl mx-auto border border-gray-200 mb-12`}
                                  style={{ width: '287mm', height: '190mm', padding: '5mm 15mm', boxSizing: 'border-box', overflow: 'hidden' }}
                             >
                                 <div className="print-header mb-3 flex justify-between items-end border-b-2 border-gray-800 pb-3">
                                     {/* Left Column: Stacked Title and Dates */}
                                     <div>
-                                        <h1 className={`${printMode === 'consolidated' ? 'text-2xl' : 'text-3xl'} font-extrabold text-gray-900 tracking-tight`}>
+                                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none">
                                             Clarence Regional Aquatic Centre
                                         </h1>
-                                        <h2 className={`${printMode === 'consolidated' ? 'text-xl' : 'text-2xl'} font-bold text-gray-700 mt-0.5`}>
+                                        <h2 className="text-2xl font-bold text-gray-700 mt-1 leading-none">
                                             {zone.id} {printTypeFilter === 'all' ? 'Availability' : `- ${printTypeFilter}`}
                                         </h2>
-                                        <p className={`text-gray-500 font-medium mt-1 ${printMode === 'consolidated' ? 'text-sm' : 'text-base'}`}>
+                                        <p className="text-gray-500 font-medium mt-2 text-base leading-none">
                                             Week of {startOfWeek.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                                         </p>
                                     </div>
                                     
                                     {/* Right Column: QR Code above Legend */}
                                     <div className="flex flex-col items-end gap-3">
-                                        <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-3 p-1 rounded-lg">
                                             <div className="text-right pl-1">
                                                 <p className="font-bold text-gray-900 leading-none text-xs">Live Availability</p>
                                                 <p className="text-blue-600 font-semibold text-[10px] mt-1">clarence.nsw.gov.au/crac</p>
@@ -641,18 +614,22 @@
                                     <table className="w-full text-sm text-left border-collapse bg-white table-fixed">
                                         <thead className="bg-gray-100 text-gray-700 uppercase font-bold text-xs border-b border-gray-400">
                                             <tr>
-                                                <th className={`px-2 py-2 border-r border-gray-400 w-16 sm:w-20 text-center bg-gray-200 ${printMode === 'consolidated' || fontSize === 'normal' ? 'text-10' : 'text-xs'}`}>Time</th>
+                                                <th className="border-r border-gray-400 w-16 sm:w-20 text-center bg-gray-200 p-0 h-[1px]">
+                                                    <div className="w-full h-full flex flex-col items-center justify-center p-1">Time</div>
+                                                </th>
                                                 {daysInWeek.map(day => {
                                                     const dateStr = day.toISOString().split('T')[0];
                                                     const isHoliday = publicHolidays.includes(dateStr);
                                                     return (
-                                                        <th key={day.toISOString()} className={`px-1 py-2 border-r border-gray-400 text-center ${isHoliday ? 'bg-orange-50' : ''}`} style={{width: '12%'}}>
-                                                            <div className={`font-extrabold ${isHoliday ? 'text-orange-600' : 'text-gray-900'} ${printMode === 'consolidated' || fontSize === 'normal' ? 'text-10' : 'text-xs'}`}>
-                                                                {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                                                                {isHoliday && <span className="block text-[8px] uppercase tracking-tighter text-orange-500 mt-0.5">Holiday</span>}
-                                                            </div>
-                                                            <div className={`font-semibold ${isHoliday ? 'text-orange-500' : 'text-gray-500'} ${fontSize === 'large' ? 'text-sm' : (printMode === 'consolidated' ? 'text-9' : 'text-xs')}`}>
-                                                                {day.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                                                        <th key={day.toISOString()} className={`border-r border-gray-400 text-center p-0 h-[1px] ${isHoliday ? 'bg-orange-50' : ''}`} style={{width: '12%'}}>
+                                                            <div className="w-full h-full flex flex-col items-center justify-center p-1 py-1.5">
+                                                                <div className={`font-extrabold ${isHoliday ? 'text-orange-600' : 'text-gray-900'} text-xs leading-tight`}>
+                                                                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                                                                    {isHoliday && <span className="block text-[8px] uppercase tracking-tighter text-orange-500 mt-0.5">Holiday</span>}
+                                                                </div>
+                                                                <div className={`font-semibold ${isHoliday ? 'text-orange-500' : 'text-gray-500'} text-xs mt-0.5 leading-tight`}>
+                                                                    {day.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                                                                </div>
                                                             </div>
                                                         </th>
                                                     );
@@ -662,8 +639,10 @@
                                         <tbody>
                                             {displayHours.map((hour, rowIdx) => (
                                                 <tr key={hour} className={`border-b ${rowIdx === displayHours.length - 1 ? 'border-none' : 'border-gray-300'}`}>
-                                                    <td className={`px-1 py-1 border-r border-gray-400 font-bold text-gray-700 text-center bg-gray-50 align-middle ${printMode === 'consolidated' || fontSize === 'normal' ? 'text-10' : 'text-xs'}`}>
-                                                        {hour === 12 ? '12 PM' : hour > 12 ? `${hour-12} PM` : `${hour} AM`}
+                                                    <td className="border-r border-gray-400 font-bold text-gray-700 text-center bg-gray-50 p-0 h-[1px]">
+                                                        <div className="w-full h-full flex flex-col items-center justify-center text-xs">
+                                                            {hour === 12 ? '12 PM' : hour > 12 ? `${hour-12} PM` : `${hour} AM`}
+                                                        </div>
                                                     </td>
                                                     {daysInWeek.map(day => {
                                                         const dateStr = day.toISOString().split('T')[0];
@@ -682,9 +661,11 @@
 
                                                         if (!isOpen) {
                                                             return (
-                                                                <td key={day.toISOString()} className="border-r border-gray-300 bg-gray-100 transition-colors align-middle" style={{padding: '2px'}}>
-                                                                    <div className={`print-cell-wrapper w-full h-full flex items-center justify-center rounded bg-gray-200/50 border border-gray-200 text-gray-400 font-semibold ${fontSize === 'large' ? 'text-xs' : 'text-[10px]'}`}>
-                                                                        Closed
+                                                                <td key={day.toISOString()} className="border-r border-gray-300 bg-gray-100 p-0 h-[1px]">
+                                                                    <div className="p-[2px] w-full h-full box-border">
+                                                                        <div className="print-cell-wrapper w-full h-full flex items-center justify-center rounded bg-gray-200/50 border border-gray-200 text-gray-400 font-semibold text-xs">
+                                                                            Closed
+                                                                        </div>
                                                                     </div>
                                                                 </td>
                                                             );
@@ -716,13 +697,12 @@
                                                         let isFullyBooked = false;
                                                         let bookedLanes = new Set();
                                                         let mainEventTitle = "";
-                                                        let mainEventType = "";
 
                                                         cellEvents.forEach(e => {
                                                             const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
                                                             if (eZones.includes(zone.id)) {
                                                                 isFullyBooked = true;
-                                                                if(!mainEventTitle) { mainEventTitle = e.title; mainEventType = e.type; }
+                                                                if(!mainEventTitle) { mainEventTitle = e.title; }
                                                             } else {
                                                                 eZones.forEach(z => {
                                                                     if(zone.children?.some(c => c.id === z || z === `${zone.id} - ${c.id}`)) {
@@ -746,7 +726,7 @@
                                                             borderClass = "border-red-300";
                                                             textContent = (
                                                                 <div className="flex flex-col items-center justify-center text-center">
-                                                                    <span className="text-red-900 font-bold leading-tight line-clamp-2">{mainEventTitle || 'Fully Booked'}</span>
+                                                                    <span className="text-red-900 font-bold leading-tight px-1" style={{ display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{mainEventTitle || 'Fully Booked'}</span>
                                                                 </div>
                                                             );
                                                         } else if (totalChildren > 0 && bookedLanes.size > 0) {
@@ -763,17 +743,17 @@
                                                             borderClass = "border-yellow-400";
                                                             textContent = (
                                                                 <div className="flex flex-col items-center justify-center text-center">
-                                                                    <span className="text-yellow-900 font-bold leading-tight line-clamp-2">{cellEvents[0].title}</span>
+                                                                    <span className="text-yellow-900 font-bold leading-tight px-1" style={{ display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cellEvents[0].title}</span>
                                                                 </div>
                                                             );
                                                         }
 
                                                         return (
-                                                            <td key={day.toISOString()} className={`border-r border-gray-300 transition-colors align-middle`} style={{padding: '2px'}}>
-                                                                <div 
-                                                                    className={`print-cell-wrapper w-full h-full flex flex-col items-center justify-center rounded border ${borderClass} ${bgClass} ${printMode === 'consolidated' || fontSize === 'normal' ? 'text-[10px] leading-tight' : 'text-xs'}`}
-                                                                >
-                                                                    {textContent}
+                                                            <td key={day.toISOString()} className="border-r border-gray-300 p-0 h-[1px]">
+                                                                <div className="p-[2px] w-full h-full box-border">
+                                                                    <div className={`print-cell-wrapper w-full h-full flex flex-col items-center justify-center rounded border ${borderClass} ${bgClass} text-xs leading-tight`}>
+                                                                        {textContent}
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                         );
@@ -783,8 +763,8 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div className="print-footer mt-4 flex justify-between items-end border-t border-gray-200 pt-2">
-                                    <div className={`text-gray-500 font-bold tracking-wide w-full text-center ${printMode === 'consolidated' || fontSize === 'normal' ? 'text-[10px]' : 'text-xs'}`}>
+                                <div className="print-footer mt-2 pt-1 border-t border-gray-200">
+                                    <div className="text-gray-500 font-bold tracking-wide w-full text-center text-xs">
                                         *All times subject to change
                                     </div>
                                 </div>
