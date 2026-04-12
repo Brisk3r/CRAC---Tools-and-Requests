@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Request Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans p-8">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-blue-900">Marketing & Content Requests</h1>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-100 border-b">
+                        <th class="p-3">Staff Name</th>
+                        <th class="p-3">Request</th>
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Same Firebase Config as index.html
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Fetch and display data
+        const requestsCol = collection(db, 'requests');
+        onSnapshot(requestsCol, (snapshot) => {
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = ''; // Clear current
+
+            snapshot.forEach((firestoreDoc) => {
+                const data = firestoreDoc.data();
+                const id = firestoreDoc.id;
+                
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50";
+                
+                tr.innerHTML = `
+                    <td class="p-3">${data.staffName}</td>
+                    <td class="p-3 font-medium">${data.title}</td>
+                    <td class="p-3">${data.date}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-sm text-white ${data.status === 'Approved' ? 'bg-green-500' : 'bg-slate-500'}">${data.status}</span>
+                    </td>
+                    <td class="p-3 space-x-2">
+                        <button onclick="window.updateStatus('${id}', 'Approved')" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm">Approve</button>
+                        <button onclick="window.deleteRequest('${id}')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+        // Global functions for inline button clicks
+        window.updateStatus = async (id, newStatus) => {
+            const requestRef = doc(db, "requests", id);
+            await updateDoc(requestRef, {
+                status: newStatus
+            });
+        };
+
+        window.deleteRequest = async (id) => {
+            if(confirm("Are you sure you want to remove this request?")) {
+                const requestRef = doc(db, "requests", id);
+                await deleteDoc(requestRef);
+            }
+        };
+    </script>
+</body>
+</html>
