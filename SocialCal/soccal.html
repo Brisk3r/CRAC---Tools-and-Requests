@@ -179,11 +179,12 @@
                     </div>
                 </div>
 
-                <!-- Draft / Approved Post -->
+                <!-- Final Post Display -->
                 <div>
                     <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">Final / Approved Post</h4>
                     <div class="bg-blue-50 p-4 rounded border border-blue-200">
-                        <p id="modalRewrittenPost" class="text-sm text-slate-800 whitespace-pre-wrap italic">Awaiting Admin review...</p>
+                        <!-- We use a div instead of a p tag here so the rich HTML from the admin dashboard renders correctly -->
+                        <div id="modalRewrittenPost" class="text-sm text-slate-800 whitespace-pre-wrap italic">Awaiting Admin review...</div>
                     </div>
                 </div>
             </div>
@@ -195,7 +196,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Replace with your Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
             authDomain: "opsf---comms-task-tracker.firebaseapp.com",
@@ -225,7 +225,7 @@
                     const props = info.event.extendedProps;
                     
                     // Populate Modal Fields
-                    document.getElementById('modalTitle').innerText = info.event.title.split(' (')[0]; // Remove the appended facility
+                    document.getElementById('modalTitle').innerText = info.event.title.split(' (')[0]; 
                     document.getElementById('modalStaffName').innerText = props.staffName;
                     document.getElementById('modalFacility').innerText = props.facility;
                     document.getElementById('modalPlatform').innerText = props.platform;
@@ -236,12 +236,17 @@
                     // Status Badge Coloring
                     const statusBadge = document.getElementById('modalStatus');
                     statusBadge.innerText = props.status;
-                    statusBadge.className = `px-2 py-1 text-xs font-bold rounded-full text-white ${props.status === 'Approved' ? 'bg-green-500' : 'bg-slate-500'}`;
+                    statusBadge.className = `px-2 py-1 text-xs font-bold rounded-full text-white ${props.status === 'Approved' ? 'bg-emerald-500' : 'bg-slate-500'}`;
 
-                    // Final Post Display Logic
+                    // Final Post Display Logic (Using innerHTML to support rich text formatting from admin)
                     const rewrittenPostEl = document.getElementById('modalRewrittenPost');
                     if (props.rewrittenPost && props.rewrittenPost.trim() !== "") {
-                        rewrittenPostEl.innerText = props.rewrittenPost;
+                        // Support Quill's rich HTML output
+                        if(props.rewrittenPost.includes('<')) {
+                            rewrittenPostEl.innerHTML = props.rewrittenPost;
+                        } else {
+                            rewrittenPostEl.innerText = props.rewrittenPost;
+                        }
                         rewrittenPostEl.classList.remove('italic', 'text-slate-500');
                         rewrittenPostEl.classList.add('text-slate-800');
                     } else {
@@ -261,7 +266,6 @@
                 document.getElementById('eventModal').classList.add('hidden');
             });
             
-            // Close on background click
             document.getElementById('eventModal').addEventListener('click', (e) => {
                 if (e.target.id === 'eventModal') {
                     document.getElementById('eventModal').classList.add('hidden');
@@ -275,19 +279,17 @@
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     
-                    // Color coding: CRAC (Blue), Yamba (Teal), Pending (Gray), Approved (Green)
-                    let eventColor = '#64748b'; // Default pending gray
-                    
+                    let eventColor = '#94a3b8'; // Default pending gray
                     if (data.status === 'Approved') {
                         eventColor = '#10b981'; // Green for approved
-                    } else if (data.status === 'Pending') {
-                        // Keep it gray so it's obvious it hasn't been actioned yet
-                        eventColor = '#94a3b8'; 
                     }
+
+                    // FIX applied here: Checks for 'Clarence' instead of 'CRAC' to match the saved value
+                    const isCRAC = data.facility && (data.facility.includes('CRAC') || data.facility.includes('Clarence'));
 
                     calendar.addEvent({
                         id: doc.id,
-                        title: `${data.title} (${data.facility.includes('CRAC') ? 'CRAC' : 'Yamba'})`,
+                        title: `${data.title} (${isCRAC ? 'CRAC' : 'Yamba'})`,
                         start: data.date,
                         color: eventColor,
                         extendedProps: {
@@ -308,7 +310,6 @@
             document.getElementById('requestForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                // Gather all expanded data
                 const requestData = {
                     staffName: document.getElementById('staffName').value,
                     date: document.getElementById('requestDate').value,
@@ -323,20 +324,18 @@
                 };
 
                 try {
-                    // Disable button during submission
                     const submitBtn = e.target.querySelector('button[type="submit"]');
                     submitBtn.disabled = true;
-                    submitBtn.innerText = "Submitting...";
+                    submitBtn.innerHTML = `Submitting... <svg class="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
                     await addDoc(collection(db, "requests"), requestData);
                     
-                    // Reset form and UI
                     document.getElementById('requestForm').reset();
                     document.getElementById('successMessage').classList.remove('hidden');
                     setTimeout(() => document.getElementById('successMessage').classList.add('hidden'), 4000);
                     
                     submitBtn.disabled = false;
-                    submitBtn.innerText = "Submit Request";
+                    submitBtn.innerHTML = `Submit Request <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>`;
 
                 } catch (error) {
                     console.error("Error adding document: ", error);
