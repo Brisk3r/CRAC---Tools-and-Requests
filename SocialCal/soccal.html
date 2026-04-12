@@ -4,54 +4,207 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Request Calendar</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FullCalendar CSS & JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
-</head>
-<body class="bg-slate-50 text-slate-800 font-sans p-8">
-
-    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+    
+    <style>
+        /* Custom CSS to make the calendar look modern and sleek */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        <div class="bg-white p-6 rounded-lg shadow-md h-fit">
-            <h2 class="text-xl font-bold mb-4 text-blue-900">Submit Request</h2>
-            <form id="requestForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium">Staff Name</label>
-                    <input type="text" id="staffName" required class="w-full border rounded p-2 mt-1">
+        .fc { font-family: inherit; }
+        .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; font-size: 1.5rem !important; }
+        .fc .fc-button-primary { 
+            background-color: #ffffff; border-color: #e2e8f0; color: #475569; 
+            text-transform: capitalize; border-radius: 0.75rem; font-weight: 600;
+            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .fc .fc-button-primary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+        .fc .fc-button-primary:not(:disabled).fc-button-active { 
+            background-color: #f1f5f9; color: #0f172a; border-color: #cbd5e1; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05); 
+        }
+        .fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9; }
+        .fc-theme-standard .fc-scrollgrid { border-color: transparent; border-radius: 1rem; overflow: hidden; }
+        .fc-day-today { background-color: #f0fdfa !important; } /* Soft teal for today */
+        .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-weight: 600; font-size: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s;}
+        .fc-event:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body class="bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-cyan-50 text-slate-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Expanded Request Form Sidebar -->
+        <div class="bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-xl shadow-blue-900/5 ring-1 ring-slate-100 h-fit max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-cyan-600">Submit Content Request</h2>
+            <p class="text-sm text-slate-500 mb-8 font-medium">Fill out the details below to submit the marketing brief.</p>
+            
+            <form id="requestForm" class="space-y-5">
+                
+                <!-- Basic Info -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700">Staff Name</label>
+                        <input type="text" id="staffName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700">Date Needed</label>
+                        <input type="date" id="requestDate" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none">
+                    </div>
                 </div>
+
                 <div>
-                    <label class="block text-sm font-medium">Request Title / Campaign</label>
-                    <input type="text" id="requestTitle" required class="w-full border rounded p-2 mt-1">
+                    <label class="block text-sm font-semibold text-slate-700">Request Title / Campaign</label>
+                    <input type="text" id="requestTitle" placeholder="e.g., Term 2 Squad Updates" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium">Date Needed</label>
-                    <input type="date" id="requestDate" required class="w-full border rounded p-2 mt-1">
+
+                <!-- Prompt Drivers -->
+                <div class="border-t border-slate-100 pt-5 mt-2">
+                    <label class="block text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Campaign Details
+                    </label>
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Facility</label>
+                        <select id="facility" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                            <option value="" disabled selected>Select facility...</option>
+                            <option value="Clarence Regional Aquatic Centre">Clarence Regional Aquatic Centre (CRAC)</option>
+                            <option value="Yamba Community Pool">Yamba Community Pool</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Platform</label>
+                            <select id="platform" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                                <option value="Facebook & Instagram">Facebook & Instagram</option>
+                                <option value="Facebook Only">Facebook Only</option>
+                                <option value="Instagram Only">Instagram Only</option>
+                                <option value="Website Update">Website Update</option>
+                                <option value="Newsletter">Newsletter</option>
+                                <option value="Other">Other (Please specify in message)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Target Audience</label>
+                            <select id="audience" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                                <option value="Families and Parents">Families & Parents</option>
+                                <option value="Adult Fitness/Squad Swimmers">Adult Fitness/Squads</option>
+                                <option value="Seniors/Aqua Aerobics">Seniors/Aqua Aerobics</option>
+                                <option value="General Community">General Community</option>
+                                <option value="Other">Other (Please specify in message)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Key Information / Message</label>
+                        <textarea id="keyMessage" rows="3" required placeholder="What are the exact details? (e.g., Waterslides open 9am-12pm this weekend, new aqua aerobics instructor...)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none resize-none"></textarea>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Call To Action (CTA)</label>
+                        <select id="cta" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                            <option value="Link to Learn to Swim Portal">Link to Learn to Swim Portal</option>
+                            <option value="Check Zone Availability Calendar">Check Zone Availability Calendar</option>
+                            <option value="Visit Website for Info">Visit Website for Info</option>
+                            <option value="Call the Centre">Call the Centre</option>
+                            <option value="Email info@">Email info@...</option>
+                            <option value="No Specific CTA">No Specific CTA</option>
+                            <option value="Other">Other (Please specify in message)</option>
+                        </select>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
-                    Submit to Admin
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-cyan-500/30 transform hover:-translate-y-0.5 transition-all duration-200 mt-6 flex justify-center items-center gap-2">
+                    Submit Request
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                 </button>
             </form>
-            <div id="successMessage" class="hidden mt-4 text-green-600 font-medium">Request submitted successfully!</div>
+            
+            <div id="successMessage" class="hidden mt-6 bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-200 text-sm font-bold flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Request submitted successfully!
+            </div>
         </div>
 
-        <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
+        <!-- Calendar Display -->
+        <div class="lg:col-span-2 bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-xl shadow-blue-900/5 ring-1 ring-slate-100 z-0">
             <div id='calendar'></div>
         </div>
     </div>
 
+    <!-- Event Detail Modal (Hidden by default) -->
+    <div id="eventModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col transform transition-all">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50 rounded-t-2xl">
+                <div>
+                    <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900">Request Title</h3>
+                    <div class="flex gap-2 mt-2 flex-wrap">
+                        <span id="modalStatus" class="px-2 py-1 text-xs font-bold rounded-full text-white bg-slate-500">Pending</span>
+                        <span id="modalFacility" class="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">Facility</span>
+                        <span id="modalPlatform" class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">Platform</span>
+                    </div>
+                </div>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6 flex-grow">
+                <!-- Original Request Details -->
+                <div>
+                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Original Request Details</h4>
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-xs font-semibold text-slate-500">Staff Member</span>
+                            <span id="modalStaffName" class="text-sm text-slate-800">Name</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-semibold text-slate-500">Target Audience</span>
+                            <span id="modalAudience" class="text-sm text-slate-800">Audience</span>
+                        </div>
+                        <div class="md:col-span-2">
+                            <span class="block text-xs font-semibold text-slate-500">Key Information</span>
+                            <p id="modalKeyMessage" class="text-sm text-slate-800 whitespace-pre-wrap mt-1">Message...</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <span class="block text-xs font-semibold text-slate-500">Call To Action</span>
+                            <span id="modalCTA" class="text-sm text-slate-800">CTA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Draft / Approved Post -->
+                <div>
+                    <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">Final / Approved Post</h4>
+                    <div class="bg-blue-50 p-4 rounded border border-blue-200">
+                        <p id="modalRewrittenPost" class="text-sm text-slate-800 whitespace-pre-wrap italic">Awaiting Admin review...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // Replace with your Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
-  authDomain: "opsf---comms-task-tracker.firebaseapp.com",
-  projectId: "opsf---comms-task-tracker",
-  storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
-  messagingSenderId: "489224390639",
-  appId: "1:489224390639:web:c5da72d0dc302d8332581a",
-  measurementId: "G-CBJK0070Z1"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+            authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+            projectId: "opsf---comms-task-tracker",
+            storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
+            messagingSenderId: "489224390639",
+            appId: "1:489224390639:web:c5da72d0dc302d8332581a",
+            measurementId: "G-CBJK0070Z1"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -60,15 +213,60 @@ const firebaseConfig = {
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
+                initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek'
+                    right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek'
                 },
-                events: [] 
+                height: 'auto',
+                events: [],
+                eventClick: function(info) {
+                    const props = info.event.extendedProps;
+                    
+                    // Populate Modal Fields
+                    document.getElementById('modalTitle').innerText = info.event.title.split(' (')[0]; // Remove the appended facility
+                    document.getElementById('modalStaffName').innerText = props.staffName;
+                    document.getElementById('modalFacility').innerText = props.facility;
+                    document.getElementById('modalPlatform').innerText = props.platform;
+                    document.getElementById('modalAudience').innerText = props.audience;
+                    document.getElementById('modalKeyMessage').innerText = props.keyMessage;
+                    document.getElementById('modalCTA').innerText = props.cta;
+                    
+                    // Status Badge Coloring
+                    const statusBadge = document.getElementById('modalStatus');
+                    statusBadge.innerText = props.status;
+                    statusBadge.className = `px-2 py-1 text-xs font-bold rounded-full text-white ${props.status === 'Approved' ? 'bg-green-500' : 'bg-slate-500'}`;
+
+                    // Final Post Display Logic
+                    const rewrittenPostEl = document.getElementById('modalRewrittenPost');
+                    if (props.rewrittenPost && props.rewrittenPost.trim() !== "") {
+                        rewrittenPostEl.innerText = props.rewrittenPost;
+                        rewrittenPostEl.classList.remove('italic', 'text-slate-500');
+                        rewrittenPostEl.classList.add('text-slate-800');
+                    } else {
+                        rewrittenPostEl.innerText = "Awaiting Admin review...";
+                        rewrittenPostEl.classList.add('italic', 'text-slate-500');
+                        rewrittenPostEl.classList.remove('text-slate-800');
+                    }
+
+                    // Show Modal
+                    document.getElementById('eventModal').classList.remove('hidden');
+                }
             });
             calendar.render();
+
+            // Modal Close Logic
+            document.getElementById('closeModalBtn').addEventListener('click', () => {
+                document.getElementById('eventModal').classList.add('hidden');
+            });
+            
+            // Close on background click
+            document.getElementById('eventModal').addEventListener('click', (e) => {
+                if (e.target.id === 'eventModal') {
+                    document.getElementById('eventModal').classList.add('hidden');
+                }
+            });
 
             // Listen for Firestore Updates in Real-Time
             const requestsCol = collection(db, 'requests');
@@ -76,14 +274,32 @@ const firebaseConfig = {
                 calendar.removeAllEvents();
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    // Set color based on status to avoid confusion
-                    const eventColor = data.status === 'Approved' ? '#10b981' : '#64748b'; // Green for approved, Slate Gray for pending
                     
+                    // Color coding: CRAC (Blue), Yamba (Teal), Pending (Gray), Approved (Green)
+                    let eventColor = '#64748b'; // Default pending gray
+                    
+                    if (data.status === 'Approved') {
+                        eventColor = '#10b981'; // Green for approved
+                    } else if (data.status === 'Pending') {
+                        // Keep it gray so it's obvious it hasn't been actioned yet
+                        eventColor = '#94a3b8'; 
+                    }
+
                     calendar.addEvent({
                         id: doc.id,
-                        title: `${data.title} (${data.status})`,
+                        title: `${data.title} (${data.facility.includes('CRAC') ? 'CRAC' : 'Yamba'})`,
                         start: data.date,
-                        color: eventColor
+                        color: eventColor,
+                        extendedProps: {
+                            status: data.status,
+                            staffName: data.staffName || 'Unknown',
+                            facility: data.facility || 'Unknown',
+                            platform: data.platform || 'Unknown',
+                            audience: data.audience || 'Unknown',
+                            keyMessage: data.keyMessage || 'No details provided',
+                            cta: data.cta || 'None',
+                            rewrittenPost: data.rewrittenPost || ''
+                        }
                     });
                 });
             });
@@ -91,23 +307,40 @@ const firebaseConfig = {
             // Handle Form Submission
             document.getElementById('requestForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const name = document.getElementById('staffName').value;
-                const title = document.getElementById('requestTitle').value;
-                const date = document.getElementById('requestDate').value;
+                
+                // Gather all expanded data
+                const requestData = {
+                    staffName: document.getElementById('staffName').value,
+                    date: document.getElementById('requestDate').value,
+                    title: document.getElementById('requestTitle').value,
+                    facility: document.getElementById('facility').value,
+                    platform: document.getElementById('platform').value,
+                    audience: document.getElementById('audience').value,
+                    keyMessage: document.getElementById('keyMessage').value,
+                    cta: document.getElementById('cta').value,
+                    status: "Pending",
+                    timestamp: new Date()
+                };
 
                 try {
-                    await addDoc(collection(db, "requests"), {
-                        staffName: name,
-                        title: title,
-                        date: date,
-                        status: "Pending",
-                        timestamp: new Date()
-                    });
+                    // Disable button during submission
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "Submitting...";
+
+                    await addDoc(collection(db, "requests"), requestData);
+                    
+                    // Reset form and UI
                     document.getElementById('requestForm').reset();
                     document.getElementById('successMessage').classList.remove('hidden');
-                    setTimeout(() => document.getElementById('successMessage').classList.add('hidden'), 3000);
+                    setTimeout(() => document.getElementById('successMessage').classList.add('hidden'), 4000);
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Submit Request";
+
                 } catch (error) {
                     console.error("Error adding document: ", error);
+                    alert("There was an error submitting your request. Please check console.");
                 }
             });
         });
