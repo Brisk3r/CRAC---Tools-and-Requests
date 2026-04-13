@@ -389,10 +389,10 @@
                 signBtn.classList.add('flex');
                 
                 // Use the AI generated text if available, otherwise fall back to the staff brief
-                const safeHeadline = data.signHeadline || data.title || 'NOTICE';
-                const safeBody = data.signBody || data.keyMessage || '';
+                const safeHeadline = data.signHeadline || data.signHeadline || 'NOTICE';
+                const safeBody = data.signBody || data.signBody || '';
                 
-                const signUrl = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(signHeadline)}&body=${encodeURIComponent(signBody)}`;
+                const signUrl = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(safeHeadline)}&body=${encodeURIComponent(safeBody)}`;
                 signBtn.href = signUrl;
             } else {
                 signBtn.classList.add('hidden');
