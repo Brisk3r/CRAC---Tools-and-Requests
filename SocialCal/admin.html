@@ -17,15 +17,15 @@
         
         /* Auth Styles */
         #authOverlay { transition: all 0.4s ease-in-out; }
-        .dashboard-locked { filter: blur(10px); pointer-events: none; user-select: none; }
+        .dashboard-locked { filter: blur(15px); pointer-events: none; user-select: none; }
         
         .fc { font-family: inherit; }
         .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; }
         
-        /* Newsletter & Rich Text Styles */
-        .ql-editor { min-height: 300px; line-height: 1.6; color: #1e293b; }
-        .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-        .ql-editor h3 { font-size: 1.25rem; font-weight: 700; color: #334155; margin-top: 1rem; margin-bottom: 0.5rem; }
+        /* Newsletter & Rich Text Styles for Editor */
+        .ql-editor { min-height: 300px; line-height: 1.6; color: #1e293b; font-size: 0.95rem; }
+        .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; }
+        .ql-editor h3 { font-size: 1.2rem; font-weight: 700; color: #334155; margin-top: 1.25rem; margin-bottom: 0.25rem; }
         .ql-editor hr { border: none; border-top: 2px dashed #e2e8f0; margin: 1.5rem 0; }
         .ql-editor strong { font-weight: 700; color: #1e3a8a; }
     </style>
@@ -36,15 +36,18 @@
     <div id="authOverlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
             <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
                 <h2 class="text-3xl font-extrabold text-blue-900">Admin Login</h2>
-                <p class="text-slate-500 text-sm mt-2">Marketing Supervisor access only.</p>
+                <p class="text-slate-500 text-sm mt-2 font-medium">Marketing Supervisor access only.</p>
             </div>
             <div class="space-y-4">
-                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="password" id="loginPass" placeholder="Password" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none">
-                <button id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all transform active:scale-95">Sign In</button>
+                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <input type="password" id="loginPass" placeholder="Password" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <button id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all transform active:scale-95">Sign In</button>
             </div>
-            <p id="authError" class="text-red-500 text-xs mt-4 text-center hidden font-bold"></p>
+            <p id="authError" class="text-red-500 text-xs mt-4 text-center hidden font-bold bg-red-50 py-2 rounded-lg"></p>
         </div>
     </div>
 
@@ -52,8 +55,11 @@
     <div id="mainDashboard" class="dashboard-locked max-w-7xl mx-auto p-4 md:p-8">
         <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-cyan-600">Marketing Admin</h1>
-                <p class="text-sm text-slate-500 font-medium mt-1">Review, format, and approve staff content requests.</p>
+                <div class="flex items-center gap-3 mb-1">
+                    <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-cyan-600">Marketing Admin</h1>
+                    <span id="userBadge" class="hidden px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[10px] font-bold border border-blue-100"></span>
+                </div>
+                <p class="text-sm text-slate-500 font-medium">Review, format, and approve staff content requests.</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
@@ -65,13 +71,13 @@
                     <button id="viewGridBtn" class="bg-white px-4 py-2 rounded-lg text-sm font-bold text-blue-700 shadow-sm transition-all">Grid View</button>
                     <button id="viewCalBtn" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">Calendar</button>
                 </div>
-                <button id="logoutBtn" class="text-slate-400 hover:text-red-500 text-xs font-bold uppercase tracking-widest ml-2">Logout</button>
+                <button id="logoutBtn" class="text-slate-400 hover:text-red-500 text-[10px] font-black uppercase tracking-[0.2em] ml-2 transition-colors">Logout</button>
             </div>
         </div>
 
         <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100">
             <div id="requestsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="col-span-full text-center py-20 text-slate-400 animate-pulse">Loading secure dashboard...</div>
+                <div class="col-span-full text-center py-20 text-slate-400 animate-pulse font-bold tracking-widest uppercase text-xs">Decrypting Secure Data...</div>
             </div>
             <div id="calendarContainer" class="hidden"><div id="calendar"></div></div>
         </div>
@@ -79,13 +85,13 @@
 
     <!-- Edit Modal -->
     <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] flex flex-col">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] flex flex-col transform transition-all">
             <div class="p-6 border-b flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
                 <div>
                     <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900 leading-tight">Request Title</h3>
-                    <p id="modalStaffInfo" class="text-xs text-slate-400 font-bold uppercase mt-1 tracking-widest">Submitted by <span id="staffNameDisplay" class="text-blue-600">Name</span></p>
+                    <p id="modalStaffInfo" class="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-[0.2em]">Submitted by <span id="staffNameDisplay" class="text-blue-600">Name</span></p>
                 </div>
-                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 bg-white rounded-full p-1 border shadow-sm">
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 bg-white rounded-full p-1 border shadow-sm transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -96,48 +102,48 @@
                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b pb-2">Staff Request Details</h4>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Target Date</span>
-                            <input type="date" id="editDate" class="w-full bg-transparent font-bold text-blue-800 focus:outline-none">
+                            <span class="block text-[9px] text-slate-400 font-black uppercase mb-1">Target Date</span>
+                            <input type="date" id="editDate" class="w-full bg-transparent font-bold text-blue-800 focus:outline-none text-sm">
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">Platform</span>
-                            <span id="platformDisplay" class="font-bold text-slate-700">Newsletter</span>
+                            <span class="block text-[9px] text-slate-400 font-black uppercase mb-1">Platform</span>
+                            <span id="platformDisplay" class="font-bold text-slate-700 text-sm tracking-tight">Newsletter</span>
                         </div>
                     </div>
                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <span class="block text-[10px] font-bold text-blue-600 mb-2 uppercase tracking-wider">Staff Key Information</span>
-                        <textarea id="editKeyMessage" rows="8" class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white focus:ring-2 focus:ring-blue-300 outline-none resize-none leading-relaxed"></textarea>
+                        <span class="block text-[10px] font-black text-blue-600 mb-2 uppercase tracking-widest">Original Key Information</span>
+                        <textarea id="editKeyMessage" rows="8" class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white focus:ring-2 focus:ring-blue-300 outline-none resize-none leading-relaxed text-slate-700"></textarea>
                     </div>
                     <div id="ctaBox" class="bg-amber-50 p-3 rounded-xl border border-amber-200">
-                        <span class="block text-[10px] font-bold text-amber-700 mb-1 uppercase">Requested CTA</span>
-                        <span id="modalCTA" class="text-sm font-bold text-amber-900 leading-snug"></span>
+                        <span class="block text-[9px] font-black text-amber-700 mb-1 uppercase tracking-widest">Requested CTA</span>
+                        <span id="modalCTA" class="text-xs font-bold text-amber-900 leading-snug"></span>
                     </div>
                 </div>
 
                 <!-- Editor Column -->
                 <div class="lg:col-span-3 space-y-4 flex flex-col h-full">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Final Copy & Formatting</h4>
-                        <span id="statusIndicator" class="px-3 py-1 text-[10px] font-black rounded-full text-white bg-slate-500 uppercase tracking-tighter">Pending</span>
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Formatted Approved Content</h4>
+                        <span id="statusIndicator" class="px-3 py-1 text-[10px] font-black rounded-full text-white bg-slate-500 uppercase tracking-tighter shadow-sm">Pending</span>
                     </div>
-                    <div class="flex-grow flex flex-col overflow-hidden rounded-xl border border-slate-200">
+                    <div class="flex-grow flex flex-col overflow-hidden rounded-xl border border-slate-200 shadow-inner">
                         <div id="quillEditor" class="bg-white"></div>
                     </div>
                 </div>
             </div>
 
             <div class="p-6 border-t bg-slate-50/50 rounded-b-2xl flex justify-between items-center">
-                <button id="deleteBtn" class="text-red-500 hover:text-red-700 font-bold text-sm flex items-center gap-2 px-4 py-2 hover:bg-red-50 rounded-xl transition-all">
+                <button id="deleteBtn" class="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-widest flex items-center gap-2 px-4 py-2 hover:bg-red-50 rounded-xl transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     Delete Request
                 </button>
                 <div class="flex items-center gap-3">
-                    <a id="signLinkBtn" target="_blank" class="hidden bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl text-sm font-bold items-center gap-2 shadow-sm transition-all">
+                    <a id="signLinkBtn" target="_blank" class="hidden bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl text-xs font-bold items-center gap-2 shadow-sm transition-all uppercase tracking-wide">
                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-2h6a2 2 0 002-2v-4a2 2 0 012-2H5a2 2 0 012 2v4a2 2 0 002 2m2-2h2m-4-3h4"></path></svg>
-                        Print Sign
+                        Print Physical Sign
                     </a>
-                    <button id="saveDraftBtn" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm">Save as Pending</button>
-                    <button id="approveBtn" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5 transition-all">Approve & Publish</button>
+                    <button id="saveDraftBtn" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm">Save Pending</button>
+                    <button id="approveBtn" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5 transition-all">Approve & Publish</button>
                 </div>
             </div>
         </div>
@@ -166,10 +172,10 @@
         let globalRequestsArray = [];
         let firestoreUnsubscribe = null;
 
-        // Initialize Quill with Newsletter options
+        // Initialize Quill with Newsletter options (H2, H3)
         const quill = new Quill('#quillEditor', {
             theme: 'snow',
-            placeholder: 'AI draft will appear here...',
+            placeholder: 'AI draft will appear here after triggering automator...',
             modules: { toolbar: [['bold', 'italic', 'underline'], [{ 'header': [2, 3, false] }], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'clean']] }
         });
 
@@ -178,6 +184,7 @@
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             height: 'auto',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
             eventClick: (info) => openModal(info.event.id, globalRequestsArray.find(r => r.id === info.event.id))
         });
         calendar.render();
@@ -186,6 +193,7 @@
         const authOverlay = document.getElementById('authOverlay');
         const mainDashboard = document.getElementById('mainDashboard');
         const authError = document.getElementById('authError');
+        const userBadge = document.getElementById('userBadge');
 
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('loginEmail').value;
@@ -193,7 +201,7 @@
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (err) {
-                authError.innerText = "Access Denied: Check credentials.";
+                authError.innerText = "ACCESS DENIED: Please check credentials.";
                 authError.classList.remove('hidden');
             }
         });
@@ -204,10 +212,13 @@
             if (user) {
                 authOverlay.classList.add('hidden');
                 mainDashboard.classList.remove('dashboard-locked');
+                userBadge.innerText = user.email;
+                userBadge.classList.remove('hidden');
                 startFirestoreListener();
             } else {
                 authOverlay.classList.remove('hidden');
                 mainDashboard.classList.add('dashboard-locked');
+                userBadge.classList.add('hidden');
                 if (firestoreUnsubscribe) firestoreUnsubscribe();
             }
         });
@@ -223,10 +234,14 @@
                 globalRequestsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
                 // Sort Pending to top
-                globalRequestsArray.sort((a, b) => (a.status === 'Pending' ? -1 : 1));
+                globalRequestsArray.sort((a, b) => {
+                    if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+                    if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+                    return new Date(a.date) - new Date(b.date);
+                });
 
                 if (globalRequestsArray.length === 0) {
-                    gridView.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 italic">No requests found. You are all caught up!</div>';
+                    gridView.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 italic">No requests found. All caught up!</div>';
                     return;
                 }
 
@@ -238,15 +253,15 @@
                     card.className = "bg-white p-6 rounded-2xl border border-slate-100 shadow-md hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group";
                     card.innerHTML = `
                         <div class="flex justify-between items-start mb-4">
-                            <span class="px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-tighter ${isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}">${data.status}</span>
-                            <span class="text-[10px] font-bold text-slate-300 uppercase">${data.date}</span>
+                            <span class="px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase tracking-tighter ${isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}">${data.status}</span>
+                            <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest">${data.date}</span>
                         </div>
-                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 line-clamp-2">${data.title}</h3>
+                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 line-clamp-2 text-lg">${data.title}</h3>
                         <div class="flex gap-2 mb-6">
-                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase tracking-widest">${data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
-                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase tracking-widest">${data.platform}</span>
+                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100">${data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-slate-200">${data.platform}</span>
                         </div>
-                        <button class="w-full bg-slate-900 group-hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-[10px] uppercase tracking-[0.15em] transition-colors">Review & Edit</button>
+                        <button class="w-full bg-slate-900 group-hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all">Review & Edit</button>
                     `;
                     card.onclick = () => openModal(data.id, data);
                     gridView.appendChild(card);
@@ -259,11 +274,11 @@
         function openModal(id, data) {
             currentEditingId = id;
             document.getElementById('modalTitle').innerText = data.title;
-            document.getElementById('staffNameDisplay').innerText = data.staffName || "Unknown";
+            document.getElementById('staffNameDisplay').innerText = data.staffName || "Staff Member";
             document.getElementById('editDate').value = data.date;
             document.getElementById('platformDisplay').innerText = data.platform || "Social Media";
             document.getElementById('editKeyMessage').value = data.keyMessage;
-            document.getElementById('modalCTA').innerText = data.cta || "Check Client Portal";
+            document.getElementById('modalCTA').innerText = data.cta || "Standard Website Link";
             
             // Signage Bridge Logic with Markdown Cleaner
             const signBtn = document.getElementById('signLinkBtn');
@@ -273,7 +288,7 @@
                 let h = data.signHeadline || data.title || 'NOTICE';
                 let b = data.signBody || data.keyMessage || '';
                 
-                // Clean AI Markdown Formatting
+                // Clean AI Markdown Formatting for Printable Signs
                 h = h.replace(/\*\*/g, '');
                 b = b.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 b = b.replace(/\n/g, '<br>');
@@ -312,7 +327,7 @@
             if(!currentEditingId) return;
             const btn = status === 'Approved' ? document.getElementById('approveBtn') : document.getElementById('saveDraftBtn');
             const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = "Saving...";
+            btn.disabled = true; btn.innerText = "PROCESSING...";
             
             try {
                 await updateDoc(doc(db, "requests", currentEditingId), {
@@ -335,7 +350,7 @@
         
         document.getElementById('deleteBtn').onclick = async () => {
             if(!currentEditingId) return;
-            if(confirm("Permanently delete this request?")) {
+            if(confirm("Permanently delete this marketing request? This cannot be undone.")) {
                 await deleteDoc(doc(db, "requests", currentEditingId));
                 document.getElementById('adminModal').classList.add('hidden');
             }
