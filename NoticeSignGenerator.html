@@ -317,7 +317,6 @@
                                 </div>
                             </div>
 
-                            <!-- NEW: Icon Size Control -->
                             <div class="mt-4 pt-4 border-t border-slate-100">
                                 <label class="flex justify-between text-xs font-semibold text-slate-500 uppercase mb-1">
                                     <span>Icon Scale / Size</span>
@@ -356,7 +355,6 @@
                         <button onclick="formatDoc('insertUnorderedList')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Bullet List"><i data-lucide="list" class="w-4 h-4"></i></button>
                         <div class="w-px h-6 bg-slate-300 mx-1"></div>
                         
-                        <!-- NEW: Specific Text Color Formatting -->
                         <div class="flex items-center gap-1 p-1 hover:bg-slate-200 rounded cursor-pointer border border-transparent hover:border-slate-300" title="Change highlight text colour">
                             <i data-lucide="palette" class="w-4 h-4 text-slate-700"></i>
                             <input type="color" onchange="formatColor(this.value)" class="w-5 h-5 p-0 border-0 rounded cursor-pointer bg-transparent">
@@ -947,11 +945,28 @@
         }
     }
 
-    // Init
+    // Init & Check URL Parameters
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
         refreshSavedList();
-        handleSignTypeChange();
+
+        // NEW LOGIC: Catch AI data from the URL
+        const params = new URLSearchParams(window.location.search);
+        const headlineParam = params.get('headline');
+        const bodyParam = params.get('body');
+
+        if (headlineParam || bodyParam) {
+            if (headlineParam) document.getElementById('headlineInput').value = headlineParam;
+            if (bodyParam) document.getElementById('contentEditor').innerHTML = bodyParam;
+
+            // Automatically select "Notice" style to make it look good right away
+            document.getElementById('signType').value = 'notice';
+            handleSignTypeChange();
+        } else {
+            // Default load
+            handleSignTypeChange();
+        }
+
         updatePreview();
     });
 
