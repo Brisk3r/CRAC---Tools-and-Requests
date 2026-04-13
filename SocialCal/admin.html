@@ -382,17 +382,24 @@
             document.getElementById('editDate').value = data.date;
             document.getElementById('editKeyMessage').value = data.keyMessage;
 
-            // NEW: Signage Bridge Logic
+// NEW: Signage Bridge Logic
             const signBtn = document.getElementById('signLinkBtn');
             if (data.generateSign) {
                 signBtn.classList.remove('hidden');
                 signBtn.classList.add('flex');
-                const signUrl = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(data.title)}&body=${encodeURIComponent(data.keyMessage)}`;
+                
+                // Use the AI generated text if available, otherwise fall back to the staff brief
+                const safeHeadline = data.signHeadline || data.title || 'NOTICE';
+                const safeBody = data.signBody || data.keyMessage || '';
+                
+                const signUrl = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(safeHeadline)}&body=${encodeURIComponent(safeBody)}`;
                 signBtn.href = signUrl;
             } else {
                 signBtn.classList.add('hidden');
                 signBtn.classList.remove('flex');
             }
+
+**Why this is great:** By adding `data.signHeadline || data.title`, the dashboard will automatically pull the short, punchy 5-word AI generated summary if it exists! If the AI hasn't run yet, it will just use the staff member's original text as a fallback.
             
             // Load content into Quill (supports HTML from previous saves)
             if (data.rewrittenPost) {
