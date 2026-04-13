@@ -430,7 +430,7 @@
             btn.innerHTML = `<div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div> Processing...`;
             
             try {
-                const webHookUrl = "https://script.google.com/macros/s/AKfycbz7uTQtPH3TCB5A2nwsVSgW13V1YUbmOpGwmNGpHdcRigC-9X58QC8lMPCZNL8mlmQ_/exec";
+                const webHookUrl = "https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec";
                 await fetch(webHookUrl, { mode: 'no-cors' });
                 alert("AI sequence triggered. Check grid for updates in 30-60 seconds.");
             } catch (error) {
