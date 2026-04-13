@@ -12,9 +12,7 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     
     <style>
-        /* Custom CSS to make the calendar look modern and sleek */
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
         .fc { font-family: inherit; }
         .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; font-size: 1.5rem !important; }
         .fc .fc-button-primary { 
@@ -23,16 +21,9 @@
             transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         .fc .fc-button-primary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-        .fc .fc-button-primary:not(:disabled).fc-button-active { 
-            background-color: #f1f5f9; color: #0f172a; border-color: #cbd5e1; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05); 
-        }
-        .fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9; }
-        .fc-theme-standard .fc-scrollgrid { border-color: transparent; border-radius: 1rem; overflow: hidden; }
-        .fc-day-today { background-color: #f0fdfa !important; } /* Soft teal for today */
-        .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-weight: 600; font-size: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s;}
+        .fc-day-today { background-color: #f0fdfa !important; }
+        .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-weight: 600; font-size: 0.75rem; cursor: pointer; transition: transform 0.1s;}
         .fc-event:hover { transform: scale(1.02); }
-        
-        /* List view styling to match admin feel */
         .fc-list-event:hover td { background-color: #f8fafc !important; cursor: pointer; }
         .fc-list-day-sidetext, .fc-list-day-text { font-weight: 800; color: #1e3a8a; }
     </style>
@@ -41,31 +32,30 @@
 
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Expanded Request Form Sidebar -->
+        <!-- Updated Request Form Sidebar -->
         <div class="bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-xl shadow-blue-900/5 ring-1 ring-slate-100 h-fit max-h-[90vh] overflow-y-auto">
             <h2 class="text-2xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-cyan-600">Submit Content Request</h2>
-            <p class="text-sm text-slate-500 mb-8 font-medium">Fill out the details below to submit the marketing brief.</p>
+            <p class="text-sm text-slate-500 mb-8 font-medium">Brief the marketing team on your upcoming post or campaign.</p>
             
             <form id="requestForm" class="space-y-5">
                 
-                <!-- Basic Info -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700">Staff Name</label>
-                        <input type="text" id="staffName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none">
+                        <input type="text" id="staffName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700">Date Needed</label>
-                        <input type="date" id="requestDate" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none">
+                        <input type="date" id="requestDate" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                     </div>
                 </div>
 
+                <!-- Updated Field: Theme / Goal -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700">Request Title / Campaign</label>
-                    <input type="text" id="requestTitle" placeholder="e.g., Term 2 Squad Updates" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none">
+                    <label class="block text-sm font-semibold text-slate-700">Post Theme or Key Goal</label>
+                    <input type="text" id="requestTitle" placeholder="e.g. Increase Term 2 Re-enrolments" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                 </div>
 
-                <!-- Prompt Drivers -->
                 <div class="border-t border-slate-100 pt-5 mt-2">
                     <label class="block text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -74,7 +64,7 @@
                     
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Facility</label>
-                        <select id="facility" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                        <select id="facility" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                             <option value="" disabled selected>Select facility...</option>
                             <option value="Clarence Regional Aquatic Centre">Clarence Regional Aquatic Centre (CRAC)</option>
                             <option value="Yamba Community Pool">Yamba Community Pool</option>
@@ -84,43 +74,49 @@
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Platform</label>
-                            <select id="platform" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                            <select id="platform" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                                 <option value="Facebook & Instagram">Facebook & Instagram</option>
                                 <option value="Facebook Only">Facebook Only</option>
                                 <option value="Instagram Only">Instagram Only</option>
                                 <option value="Website Update">Website Update</option>
                                 <option value="Newsletter">Newsletter</option>
-                                <option value="Other">Other (Please specify in message)</option>
+                                <option value="Other">Other</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Target Audience</label>
-                            <select id="audience" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                            <select id="audience" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                                 <option value="Families and Parents">Families & Parents</option>
                                 <option value="Adult Fitness/Squad Swimmers">Adult Fitness/Squads</option>
                                 <option value="Seniors/Aqua Aerobics">Seniors/Aqua Aerobics</option>
                                 <option value="General Community">General Community</option>
-                                <option value="Other">Other (Please specify in message)</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Key Information / Message</label>
-                        <textarea id="keyMessage" rows="3" required placeholder="What are the exact details? (e.g., Waterslides open 9am-12pm this weekend, new aqua aerobics instructor...)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none resize-none"></textarea>
+                        <textarea id="keyMessage" rows="3" required placeholder="Details like specific times, dates or instructor names..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none resize-none"></textarea>
                     </div>
 
-                    <div class="mb-2">
+                    <div class="mb-4">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Call To Action (CTA)</label>
-                        <select id="cta" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 outline-none cursor-pointer">
+                        <select id="cta" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
                             <option value="Link to Learn to Swim Portal">Link to Learn to Swim Portal</option>
                             <option value="Check Zone Availability Calendar">Check Zone Availability Calendar</option>
                             <option value="Visit Website for Info">Visit Website for Info</option>
                             <option value="Call the Centre">Call the Centre</option>
                             <option value="Email info@">Email info@...</option>
                             <option value="No Specific CTA">No Specific CTA</option>
-                            <option value="Other">Other (Please specify in message)</option>
                         </select>
+                    </div>
+
+                    <!-- New Field: Signage Tick Box -->
+                    <div class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 mb-2">
+                        <input type="checkbox" id="generateSign" class="w-5 h-5 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer">
+                        <label for="generateSign" class="text-sm font-bold text-slate-700 cursor-pointer select-none">
+                            Also make a notice sign for front desk?
+                        </label>
                     </div>
                 </div>
 
@@ -136,22 +132,20 @@
             </div>
         </div>
 
-        <!-- Calendar Display -->
         <div class="lg:col-span-2 bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-xl shadow-blue-900/5 ring-1 ring-slate-100 z-0">
             <div id='calendar'></div>
         </div>
     </div>
 
-    <!-- Event Detail Modal (Hidden by default) -->
-    <div id="eventModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4 transition-opacity">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col transform transition-all">
+    <!-- Modal for details -->
+    <div id="eventModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
             <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50 rounded-t-2xl">
                 <div>
                     <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900">Request Title</h3>
                     <div class="flex gap-2 mt-2 flex-wrap">
                         <span id="modalStatus" class="px-2 py-1 text-xs font-bold rounded-full text-white bg-slate-500">Pending</span>
                         <span id="modalFacility" class="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">Facility</span>
-                        <span id="modalPlatform" class="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-800">Platform</span>
                     </div>
                 </div>
                 <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 transition">
@@ -159,43 +153,31 @@
                 </button>
             </div>
             
-            <div class="p-6 space-y-6 flex-grow">
-                <!-- Original Request Details -->
-                <div>
-                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Original Request Details</h4>
-                    <div class="bg-slate-50 p-4 rounded border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <span class="block text-xs font-semibold text-slate-500">Staff Member</span>
-                            <span id="modalStaffName" class="text-sm text-slate-800">Name</span>
-                        </div>
-                        <div>
-                            <span class="block text-xs font-semibold text-slate-500">Target Audience</span>
-                            <span id="modalAudience" class="text-sm text-slate-800">Audience</span>
-                        </div>
-                        <div class="md:col-span-2">
-                            <span class="block text-xs font-semibold text-slate-500">Key Information</span>
-                            <p id="modalKeyMessage" class="text-sm text-slate-800 whitespace-pre-wrap mt-1">Message...</p>
-                        </div>
-                        <div class="md:col-span-2">
-                            <span class="block text-xs font-semibold text-slate-500">Call To Action</span>
-                            <span id="modalCTA" class="text-sm text-slate-800">CTA</span>
-                        </div>
+            <div class="p-6 space-y-4 flex-grow">
+                <div class="bg-slate-50 p-4 rounded border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <span class="block text-xs font-semibold text-slate-500 uppercase">Staff Member</span>
+                        <span id="modalStaffName" class="text-sm text-slate-800 font-medium">-</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-semibold text-slate-500 uppercase">Platform</span>
+                        <span id="modalPlatform" class="text-sm text-slate-800 font-medium">-</span>
+                    </div>
+                    <div class="md:col-span-2">
+                        <span class="block text-xs font-semibold text-slate-500 uppercase">Key Message</span>
+                        <p id="modalKeyMessage" class="text-sm text-slate-800 mt-1 whitespace-pre-wrap">-</p>
                     </div>
                 </div>
-
-                <!-- Final Post Display -->
-                <div>
-                    <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">Final / Approved Post</h4>
-                    <div class="bg-blue-50 p-4 rounded border border-blue-200">
-                        <!-- Only render the post if the status is officially 'Approved' -->
-                        <div id="modalRewrittenPost" class="text-sm text-slate-800 whitespace-pre-wrap italic">Awaiting Admin review...</div>
+                <div class="mt-2">
+                    <h4 class="text-sm font-bold text-blue-600 uppercase mb-2">Approved Content</h4>
+                    <div id="modalRewrittenPost" class="bg-blue-50 p-4 rounded border border-blue-200 text-sm text-slate-800 italic">
+                        Awaiting Admin review...
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -206,18 +188,15 @@
             projectId: "opsf---comms-task-tracker",
             storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
             messagingSenderId: "489224390639",
-            appId: "1:489224390639:web:c5da72d0dc302d8332581a",
-            measurementId: "G-CBJK0070Z1"
+            appId: "1:489224390639:web:c5da72d0dc302d8332581a"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Initialize Calendar
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
-                // Defaulting to listWeek for a cleaner "Upcoming" feel
                 initialView: window.innerWidth < 768 ? 'listMonth' : 'listWeek',
                 headerToolbar: {
                     left: 'prev,next today',
@@ -228,127 +207,78 @@
                     listWeek: 'Upcoming Week',
                     dayGridMonth: 'Month View'
                 },
-                height: 'auto',
                 events: [],
                 eventClick: function(info) {
                     const props = info.event.extendedProps;
-                    
-                    // Populate Modal Fields
                     document.getElementById('modalTitle').innerText = info.event.title.split(' (')[0]; 
                     document.getElementById('modalStaffName').innerText = props.staffName;
                     document.getElementById('modalFacility').innerText = props.facility;
                     document.getElementById('modalPlatform').innerText = props.platform;
-                    document.getElementById('modalAudience').innerText = props.audience;
                     document.getElementById('modalKeyMessage').innerText = props.keyMessage;
-                    document.getElementById('modalCTA').innerText = props.cta;
                     
-                    // Status Badge Coloring
                     const statusBadge = document.getElementById('modalStatus');
                     statusBadge.innerText = props.status;
                     statusBadge.className = `px-2 py-1 text-xs font-bold rounded-full text-white ${props.status === 'Approved' ? 'bg-emerald-500' : 'bg-slate-500'}`;
 
-                    // Final Post Display Logic
                     const rewrittenPostEl = document.getElementById('modalRewrittenPost');
-                    
-                    // FIXED: Now checks if status is 'Approved' before showing AI content to staff
-                    if (props.status === 'Approved' && props.rewrittenPost && props.rewrittenPost.trim() !== "") {
-                        if(props.rewrittenPost.includes('<')) {
-                            rewrittenPostEl.innerHTML = props.rewrittenPost;
-                        } else {
-                            rewrittenPostEl.innerText = props.rewrittenPost;
-                        }
+                    if (props.status === 'Approved' && props.rewrittenPost) {
+                        rewrittenPostEl.innerHTML = props.rewrittenPost;
                         rewrittenPostEl.classList.remove('italic', 'text-slate-500');
-                        rewrittenPostEl.classList.add('text-slate-800');
                     } else {
                         rewrittenPostEl.innerText = "Awaiting Admin review...";
                         rewrittenPostEl.classList.add('italic', 'text-slate-500');
-                        rewrittenPostEl.classList.remove('text-slate-800');
                     }
-
-                    // Show Modal
                     document.getElementById('eventModal').classList.remove('hidden');
                 }
             });
             calendar.render();
 
-            // Modal Close Logic
-            document.getElementById('closeModalBtn').addEventListener('click', () => {
-                document.getElementById('eventModal').classList.add('hidden');
-            });
-            
-            document.getElementById('eventModal').addEventListener('click', (e) => {
-                if (e.target.id === 'eventModal') {
-                    document.getElementById('eventModal').classList.add('hidden');
-                }
-            });
+            document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('eventModal').classList.add('hidden'));
 
-            // Listen for Firestore Updates in Real-Time
             const requestsCol = collection(db, 'requests');
             onSnapshot(requestsCol, (snapshot) => {
                 calendar.removeAllEvents();
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    
-                    let eventColor = '#94a3b8'; // Default pending gray
-                    if (data.status === 'Approved') {
-                        eventColor = '#10b981'; // Green for approved
-                    }
-
-                    const isCRAC = data.facility && (data.facility.includes('CRAC') || data.facility.includes('Clarence'));
-
+                    const isCRAC = data.facility && data.facility.includes('Clarence');
                     calendar.addEvent({
                         id: doc.id,
                         title: `${data.title} (${isCRAC ? 'CRAC' : 'Yamba'})`,
                         start: data.date,
-                        color: eventColor,
-                        extendedProps: {
-                            status: data.status,
-                            staffName: data.staffName || 'Unknown',
-                            facility: data.facility || 'Unknown',
-                            platform: data.platform || 'Unknown',
-                            audience: data.audience || 'Unknown',
-                            keyMessage: data.keyMessage || 'No details provided',
-                            cta: data.cta || 'None',
-                            rewrittenPost: data.rewrittenPost || ''
-                        }
+                        color: data.status === 'Approved' ? '#10b981' : '#94a3b8',
+                        extendedProps: { ...data }
                     });
                 });
             });
 
-            // Handle Form Submission
             document.getElementById('requestForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+
                 const requestData = {
                     staffName: document.getElementById('staffName').value,
                     date: document.getElementById('requestDate').value,
-                    title: document.getElementById('requestTitle').value,
+                    title: document.getElementById('requestTitle').value, // Used for Theme/Goal
                     facility: document.getElementById('facility').value,
                     platform: document.getElementById('platform').value,
                     audience: document.getElementById('audience').value,
                     keyMessage: document.getElementById('keyMessage').value,
                     cta: document.getElementById('cta').value,
+                    generateSign: document.getElementById('generateSign').checked,
                     status: "Pending",
                     timestamp: new Date()
                 };
 
                 try {
-                    const submitBtn = e.target.querySelector('button[type="submit"]');
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = `Submitting... <svg class="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
                     await addDoc(collection(db, "requests"), requestData);
-                    
                     document.getElementById('requestForm').reset();
                     document.getElementById('successMessage').classList.remove('hidden');
                     setTimeout(() => document.getElementById('successMessage').classList.add('hidden'), 4000);
-                    
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = `Submit Request <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>`;
-
                 } catch (error) {
-                    console.error("Error adding document: ", error);
-                    alert("There was an error submitting your request.");
+                    console.error("Error: ", error);
+                } finally {
+                    submitBtn.disabled = false;
                 }
             });
         });
