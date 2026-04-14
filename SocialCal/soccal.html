@@ -60,7 +60,6 @@
                     </div>
                 </div>
 
-                <!-- Updated Field: Theme / Goal -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700">Post Theme or Key Goal</label>
                     <input type="text" id="requestTitle" placeholder="e.g. Increase Term 2 Re-enrolments" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 mt-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 transition-all outline-none">
@@ -121,7 +120,13 @@
                         </select>
                     </div>
 
-                    <!-- New Field: Signage Tick Box -->
+                    <!-- NEW FIELD: Image/Asset Upload -->
+                    <div class="mb-4 pt-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">Attach Image/Graphic (Optional)</label>
+                        <p class="text-[10px] text-slate-400 mb-2">Upload a photo or Canva export (Max size 3MB).</p>
+                        <input type="file" id="assetUpload" accept="image/*,.pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    </div>
+
                     <div class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 mb-2">
                         <input type="checkbox" id="generateSign" class="w-5 h-5 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer">
                         <label for="generateSign" class="text-sm font-bold text-slate-700 cursor-pointer select-none">
@@ -130,8 +135,8 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-cyan-500/30 transform hover:-translate-y-0.5 transition-all duration-200 mt-6 flex justify-center items-center gap-2">
-                    Submit Request
+                <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-cyan-500/30 transform hover:-translate-y-0.5 transition-all duration-200 mt-6 flex justify-center items-center gap-2">
+                    <span>Submit Request</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                 </button>
             </form>
@@ -177,6 +182,13 @@
                         <span class="block text-xs font-semibold text-slate-500 uppercase">Key Message</span>
                         <p id="modalKeyMessage" class="text-sm text-slate-800 mt-1 whitespace-pre-wrap">-</p>
                     </div>
+                    <!-- View Image Link in Staff View -->
+                    <div id="modalAssetWrapper" class="md:col-span-2 hidden pt-2 border-t border-slate-200">
+                        <a id="modalAssetLink" href="#" target="_blank" class="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            View Attached Asset
+                        </a>
+                    </div>
                 </div>
                 <div class="mt-2">
                     <h4 class="text-sm font-bold text-blue-600 uppercase mb-2">Approved Content</h4>
@@ -191,6 +203,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // =================================================================
+        // IMPORTANT: PASTE YOUR NEW DRIVE UPLOAD SCRIPT URL HERE
+        // =================================================================
+        const UPLOAD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWDWX8ioKgdeUhkuqVS0YGYdIB9ygWrtSYxVOPV01ItNhvQI4xhcPwBQBt4Y5HXwb_/exec"; 
 
         const firebaseConfig = {
             apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
@@ -225,6 +242,15 @@
                     document.getElementById('modalFacility').innerText = props.facility;
                     document.getElementById('modalPlatform').innerText = props.platform;
                     document.getElementById('modalKeyMessage').innerText = props.keyMessage;
+                    
+                    const assetLink = document.getElementById('modalAssetLink');
+                    const assetWrapper = document.getElementById('modalAssetWrapper');
+                    if(props.assetUrl) {
+                        assetLink.href = props.assetUrl;
+                        assetWrapper.classList.remove('hidden');
+                    } else {
+                        assetWrapper.classList.add('hidden');
+                    }
                     
                     const statusBadge = document.getElementById('modalStatus');
                     statusBadge.innerText = props.status;
@@ -261,15 +287,61 @@
                 });
             });
 
+            // Convert file to Base64 to safely post to Apps Script without CORS issues
+            const getBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = error => reject(error);
+                });
+            };
+
             document.getElementById('requestForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const submitBtn = document.getElementById('submitBtn');
+                const btnText = submitBtn.querySelector('span');
+                
                 submitBtn.disabled = true;
+                btnText.innerText = "Processing...";
+
+                let uploadedUrl = null;
+                const fileInput = document.getElementById('assetUpload');
+                
+                // If there's a file, send it to Google Drive first
+                if (fileInput.files.length > 0) {
+                    btnText.innerText = "Uploading asset to Drive...";
+                    try {
+                        const file = fileInput.files[0];
+                        if (file.size > 5000000) throw new Error("File too large (Max 5MB)");
+                        
+                        const base64Data = await getBase64(file);
+                        
+                        const response = await fetch(UPLOAD_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                filename: file.name,
+                                mimeType: file.type,
+                                base64: base64Data
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        if(result.status === 'success') {
+                            uploadedUrl = result.url;
+                        }
+                    } catch (error) {
+                        console.error("Upload error:", error);
+                        alert("File upload failed. Submitting request without file.");
+                    }
+                }
+
+                btnText.innerText = "Saving Request...";
 
                 const requestData = {
                     staffName: document.getElementById('staffName').value,
                     date: document.getElementById('requestDate').value,
-                    title: document.getElementById('requestTitle').value, // Used for Theme/Goal
+                    title: document.getElementById('requestTitle').value,
                     facility: document.getElementById('facility').value,
                     platform: document.getElementById('platform').value,
                     audience: document.getElementById('audience').value,
@@ -280,6 +352,11 @@
                     timestamp: new Date()
                 };
 
+                // Add the Drive URL if upload succeeded
+                if (uploadedUrl) {
+                    requestData.assetUrl = uploadedUrl;
+                }
+
                 try {
                     await addDoc(collection(db, "requests"), requestData);
                     document.getElementById('requestForm').reset();
@@ -289,6 +366,7 @@
                     console.error("Error: ", error);
                 } finally {
                     submitBtn.disabled = false;
+                    btnText.innerText = "Submit Request";
                 }
             });
         });
