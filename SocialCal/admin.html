@@ -4,26 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marketing Admin Dashboard</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FullCalendar CSS & JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    
+    <!-- Quill.js Rich Text Editor -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         /* Auth Styles */
         #authOverlay { transition: all 0.4s ease-in-out; }
         .dashboard-locked { filter: blur(15px); pointer-events: none; user-select: none; }
-        
+
+        /* Calendar Styling */
         .fc { font-family: inherit; }
-        .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; }
-        
+        .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; font-size: 1.5rem !important; }
+        .fc .fc-button-primary { 
+            background-color: #ffffff; border-color: #e2e8f0; color: #475569; 
+            text-transform: capitalize; border-radius: 0.75rem; font-weight: 600;
+            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .fc .fc-button-primary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+        .fc .fc-button-primary:not(:disabled).fc-button-active { 
+            background-color: #f1f5f9; color: #0f172a; border-color: #cbd5e1; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05); 
+        }
+        .fc-theme-standard td, .fc-theme-standard th { border-color: #e2e8f0; }
+        .fc-day-today { background-color: #f0fdfa !important; }
+        .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-weight: 600; font-size: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s;}
+        .fc-event:hover { transform: scale(1.02); }
+
         /* Newsletter & Rich Text Styles for Editor */
-        .ql-editor { min-height: 300px; line-height: 1.6; color: #1e293b; font-size: 0.95rem; }
+        .ql-toolbar.ql-snow { border: 1px solid #cbd5e1; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; background-color: #f8fafc; }
+        .ql-container.ql-snow { border: 1px solid #cbd5e1; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; }
+        .ql-editor { min-height: 300px; color: #1e293b; line-height: 1.6; font-size: 0.95rem; }
         .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; }
         .ql-editor h3 { font-size: 1.2rem; font-weight: 700; color: #334155; margin-top: 1.25rem; margin-bottom: 0.25rem; }
         .ql-editor hr { border: none; border-top: 2px dashed #e2e8f0; margin: 1.5rem 0; }
@@ -53,6 +79,8 @@
 
     <!-- Dashboard Content -->
     <div id="mainDashboard" class="dashboard-locked max-w-7xl mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
         <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
@@ -75,17 +103,21 @@
             </div>
         </div>
 
+        <!-- Main Content Area -->
         <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100">
             <div id="requestsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="col-span-full text-center py-20 text-slate-400 animate-pulse font-bold tracking-widest uppercase text-xs">Decrypting Secure Data...</div>
             </div>
-            <div id="calendarContainer" class="hidden"><div id="calendar"></div></div>
+            <div id="calendarContainer" class="hidden">
+                <div id="calendar"></div>
+            </div>
         </div>
     </div>
 
     <!-- Edit Modal -->
     <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] flex flex-col transform transition-all">
+            
             <div class="p-6 border-b flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
                 <div>
                     <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900 leading-tight">Request Title</h3>
@@ -97,9 +129,11 @@
             </div>
             
             <div class="p-6 overflow-y-auto flex-grow grid grid-cols-1 lg:grid-cols-5 gap-8">
+                
                 <!-- Brief Column -->
                 <div class="lg:col-span-2 space-y-4">
                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b pb-2">Staff Request Details</h4>
+                    
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
                             <span class="block text-[9px] text-slate-400 font-black uppercase mb-1">Target Date</span>
@@ -110,13 +144,24 @@
                             <span id="platformDisplay" class="font-bold text-slate-700 text-sm tracking-tight">Newsletter</span>
                         </div>
                     </div>
+
                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                         <span class="block text-[10px] font-black text-blue-600 mb-2 uppercase tracking-widest">Original Key Information</span>
                         <textarea id="editKeyMessage" rows="8" class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white focus:ring-2 focus:ring-blue-300 outline-none resize-none leading-relaxed text-slate-700"></textarea>
                     </div>
+
                     <div id="ctaBox" class="bg-amber-50 p-3 rounded-xl border border-amber-200">
                         <span class="block text-[9px] font-black text-amber-700 mb-1 uppercase tracking-widest">Requested CTA</span>
                         <span id="modalCTA" class="text-xs font-bold text-amber-900 leading-snug"></span>
+                    </div>
+
+                    <!-- NEW: Asset Download Link -->
+                    <div id="assetBox" class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 hidden">
+                        <span class="block text-[9px] font-black text-indigo-700 mb-2 uppercase tracking-widest">Staff Attached File</span>
+                        <a id="modalAssetLink" href="#" target="_blank" class="inline-flex w-full justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-lg shadow-sm transition-colors items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            View / Download Asset
+                        </a>
                     </div>
                 </div>
 
@@ -149,6 +194,7 @@
         </div>
     </div>
 
+    <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -172,11 +218,18 @@
         let globalRequestsArray = [];
         let firestoreUnsubscribe = null;
 
-        // Initialize Quill with Newsletter options (H2, H3)
+        // Initialize Quill Editor
         const quill = new Quill('#quillEditor', {
             theme: 'snow',
             placeholder: 'AI draft will appear here after triggering automator...',
-            modules: { toolbar: [['bold', 'italic', 'underline'], [{ 'header': [2, 3, false] }], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'clean']] }
+            modules: { 
+                toolbar: [
+                    ['bold', 'italic', 'underline'], 
+                    [{ 'header': [2, 3, false] }], 
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }], 
+                    ['link', 'clean']
+                ] 
+            }
         });
 
         // Initialize Calendar
@@ -233,7 +286,7 @@
                 
                 globalRequestsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                // Sort Pending to top
+                // Sort Pending to top, then by Date
                 globalRequestsArray.sort((a, b) => {
                     if (a.status === 'Pending' && b.status !== 'Pending') return -1;
                     if (a.status !== 'Pending' && b.status === 'Pending') return 1;
@@ -241,22 +294,35 @@
                 });
 
                 if (globalRequestsArray.length === 0) {
-                    gridView.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 italic">No requests found. All caught up!</div>';
+                    gridView.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 italic font-bold">No requests found. All caught up!</div>';
                     return;
                 }
 
                 globalRequestsArray.forEach(data => {
                     const isApproved = data.status === 'Approved';
-                    calendar.addEvent({ id: data.id, title: data.title, start: data.date, color: isApproved ? '#10b981' : '#94a3b8' });
                     
+                    // Add to Calendar
+                    calendar.addEvent({ 
+                        id: data.id, 
+                        title: data.title, 
+                        start: data.date, 
+                        color: isApproved ? '#10b981' : '#94a3b8' 
+                    });
+                    
+                    // Add to Grid View
                     const card = document.createElement('div');
                     card.className = "bg-white p-6 rounded-2xl border border-slate-100 shadow-md hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group";
+                    
+                    // Paperclip icon if asset attached
+                    const attachIcon = data.assetUrl ? `<svg class="w-4 h-4 text-indigo-500 absolute top-5 right-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>` : '';
+
                     card.innerHTML = `
-                        <div class="flex justify-between items-start mb-4">
+                        <div class="flex justify-between items-start mb-4 relative">
                             <span class="px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase tracking-tighter ${isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}">${data.status}</span>
-                            <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest">${data.date}</span>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${data.date}</span>
+                            ${attachIcon}
                         </div>
-                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 line-clamp-2 text-lg">${data.title}</h3>
+                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 line-clamp-2 text-lg pr-4">${data.title}</h3>
                         <div class="flex gap-2 mb-6">
                             <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100">${data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
                             <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-slate-200">${data.platform}</span>
@@ -271,8 +337,11 @@
             });
         }
 
+        // --- MODAL LOGIC ---
         function openModal(id, data) {
             currentEditingId = id;
+            
+            // Populate Brief
             document.getElementById('modalTitle').innerText = data.title;
             document.getElementById('staffNameDisplay').innerText = data.staffName || "Staff Member";
             document.getElementById('editDate').value = data.date;
@@ -280,33 +349,48 @@
             document.getElementById('editKeyMessage').value = data.keyMessage;
             document.getElementById('modalCTA').innerText = data.cta || "Standard Website Link";
             
-            // Signage Bridge Logic with Markdown Cleaner
+            // Populate Asset Box if it exists
+            const assetBox = document.getElementById('assetBox');
+            const assetLink = document.getElementById('modalAssetLink');
+            if (data.assetUrl) {
+                assetLink.href = data.assetUrl;
+                assetBox.classList.remove('hidden');
+            } else {
+                assetBox.classList.add('hidden');
+            }
+
+            // Signage Bridge Link Generation
             const signBtn = document.getElementById('signLinkBtn');
             if (data.generateSign) {
-                signBtn.classList.remove('hidden'); signBtn.classList.add('flex');
+                signBtn.classList.remove('hidden'); 
+                signBtn.classList.add('flex');
                 
                 let h = data.signHeadline || data.title || 'NOTICE';
                 let b = data.signBody || data.keyMessage || '';
                 
-                // Clean AI Markdown Formatting for Printable Signs
+                // Cleanup AI markdown from signage text
                 h = h.replace(/\*\*/g, '');
                 b = b.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                 b = b.replace(/\n/g, '<br>');
                 
                 signBtn.href = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(h)}&body=${encodeURIComponent(b)}`;
-            } else { signBtn.classList.add('hidden'); }
+            } else { 
+                signBtn.classList.add('hidden'); 
+                signBtn.classList.remove('flex');
+            }
 
             // Load Content into Quill
             quill.root.innerHTML = data.rewrittenPost || '';
             
+            // Status Styling
             const statusIndicator = document.getElementById('statusIndicator');
             statusIndicator.innerText = data.status;
-            statusIndicator.className = `px-3 py-1 text-[10px] font-black rounded-full text-white uppercase tracking-tighter ${data.status === 'Approved' ? 'bg-emerald-500' : 'bg-slate-500'}`;
+            statusIndicator.className = `px-3 py-1 text-[10px] font-black rounded-full text-white uppercase tracking-tighter shadow-sm ${data.status === 'Approved' ? 'bg-emerald-500' : 'bg-slate-500'}`;
             
             document.getElementById('adminModal').classList.remove('hidden');
         }
 
-        // View Toggles
+        // --- VIEW TOGGLES ---
         document.getElementById('viewGridBtn').onclick = () => {
             document.getElementById('requestsGrid').classList.remove('hidden');
             document.getElementById('calendarContainer').classList.add('hidden');
@@ -322,7 +406,7 @@
             calendar.updateSize();
         };
 
-        // Action Handlers
+        // --- DATABASE ACTIONS ---
         const saveAction = async (status) => {
             if(!currentEditingId) return;
             const btn = status === 'Approved' ? document.getElementById('approveBtn') : document.getElementById('saveDraftBtn');
@@ -356,6 +440,7 @@
             }
         };
 
+        // --- TRIGGER AI AUTOMATOR WEBHOOK ---
         document.getElementById('runAiBtn').onclick = async (e) => {
             const btn = e.currentTarget;
             btn.disabled = true;
