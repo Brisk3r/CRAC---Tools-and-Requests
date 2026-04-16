@@ -6,140 +6,107 @@
     <title>Marketing Admin Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- FullCalendar CSS & JS -->
+    <!-- FullCalendar -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
     
-    <!-- Quill.js Rich Text Editor -->
+    <!-- Quill.js - Robust Editor -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* Auth Styles */
+        
         #authOverlay { transition: all 0.4s ease-in-out; }
-        .dashboard-locked { filter: blur(15px); pointer-events: none; user-select: none; }
-
-        /* Calendar Styling */
-        .fc { font-family: inherit; }
-        .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; font-size: 1.5rem !important; }
-        .fc .fc-button-primary { 
-            background-color: #ffffff; border-color: #e2e8f0; color: #475569; 
-            text-transform: capitalize; border-radius: 0.75rem; font-weight: 600;
-            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        }
-        .fc .fc-button-primary:hover { background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-        .fc .fc-button-primary:not(:disabled).fc-button-active { 
-            background-color: #f1f5f9; color: #0f172a; border-color: #cbd5e1; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05); 
-        }
-        .fc-theme-standard td, .fc-theme-standard th { border-color: #e2e8f0; }
-        .fc-day-today { background-color: #f0fdfa !important; }
-        .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-weight: 600; font-size: 0.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s;}
-        .fc-event:hover { transform: scale(1.02); }
-
-        /* Newsletter & Rich Text Styles for Editor */
-        .ql-toolbar.ql-snow { border: 1px solid #cbd5e1; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; background-color: #f8fafc; }
-        .ql-container.ql-snow { border: 1px solid #cbd5e1; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; }
-        .ql-editor { min-height: 300px; color: #1e293b; line-height: 1.6; font-size: 0.95rem; }
-        .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; }
-        .ql-editor h3 { font-size: 1.2rem; font-weight: 700; color: #334155; margin-top: 1.25rem; margin-bottom: 0.25rem; }
-        .ql-editor hr { border: none; border-top: 2px dashed #e2e8f0; margin: 1.5rem 0; }
+        .dashboard-locked { filter: blur(15px); pointer-events: none; }
+        
+        /* Full Robust Editor Styles */
+        .ql-toolbar.ql-snow { border: 1px solid #e2e8f0; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; background-color: #f8fafc; }
+        .ql-container.ql-snow { border: 1px solid #e2e8f0; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; font-family: inherit; }
+        .ql-editor { min-height: 350px; color: #1e293b; line-height: 1.6; font-size: 0.95rem; }
+        .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.25rem; }
         .ql-editor strong { font-weight: 700; color: #1e3a8a; }
+
+        .fc { font-family: inherit; }
+        .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; }
     </style>
 </head>
 <body class="bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50 via-slate-50 to-cyan-50 text-slate-800 min-h-screen">
 
-    <!-- Auth Overlay -->
+    <!-- Auth Layer -->
     <div id="authOverlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 </div>
-                <h2 class="text-3xl font-extrabold text-blue-900">Admin Login</h2>
-                <p class="text-slate-500 text-sm mt-2 font-medium">Marketing Supervisor access only.</p>
+                <h2 class="text-3xl font-extrabold text-blue-900">Admin Access</h2>
             </div>
             <div class="space-y-4">
-                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                <input type="password" id="loginPass" placeholder="Password" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                <button id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all transform active:scale-95">Sign In</button>
+                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                <input type="password" id="loginPass" placeholder="Password" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                <button id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg transform active:scale-95 transition-all hover:bg-blue-700">Sign In</button>
             </div>
-            <p id="authError" class="text-red-500 text-xs mt-4 text-center hidden font-bold bg-red-50 py-2 rounded-lg"></p>
         </div>
     </div>
 
-    <!-- Dashboard Content -->
+    <!-- Main Dashboard -->
     <div id="mainDashboard" class="dashboard-locked max-w-7xl mx-auto p-4 md:p-8">
-        
-        <!-- Header -->
         <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
                     <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-cyan-600">Marketing Admin</h1>
-                    <span id="userBadge" class="hidden px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[10px] font-bold border border-blue-100"></span>
+                    <span id="userBadge" class="hidden px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[10px] font-bold border border-blue-100 uppercase tracking-widest"></span>
                 </div>
-                <p class="text-sm text-slate-500 font-medium">Review, format, and approve staff content requests.</p>
+                <p class="text-sm text-slate-500 font-medium">Review and finalize drafted content.</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-4 items-center w-full md:w-auto">
-                
-                <!-- NEW: Process Dropdown -->
                 <div class="relative">
                     <button id="processMenuBtn" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         Process
                         <svg class="w-4 h-4 ml-1 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    
-                    <!-- Dropdown Menu -->
-                    <div id="processDropdown" class="hidden absolute top-full mt-2 right-0 md:left-0 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
-                        <button id="processAutoBtn" class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 border-b border-slate-100 flex items-center gap-3 transition-colors">
-                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <div id="processDropdown" class="hidden absolute top-full mt-2 right-0 md:left-0 w-56 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
+                        <button id="processAutoBtn" class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 border-b flex items-center gap-3">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             Auto (Background)
                         </button>
-                        <button id="processManualBtn" class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
-                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <button id="processManualBtn" class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3">
+                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                             Manual (One-by-One)
                         </button>
                     </div>
                 </div>
-
                 <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button id="viewGridBtn" class="bg-white px-4 py-2 rounded-lg text-sm font-bold text-blue-700 shadow-sm transition-all">Grid View</button>
+                    <button id="viewGridBtn" class="bg-white px-4 py-2 rounded-lg text-sm font-bold text-blue-700 shadow-sm transition-all">Grid</button>
                     <button id="viewCalBtn" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">Calendar</button>
                 </div>
-                <button id="logoutBtn" class="text-slate-400 hover:text-red-500 text-[10px] font-black uppercase tracking-[0.2em] ml-2 transition-colors">Logout</button>
+                <button id="logoutBtn" class="text-slate-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest ml-2 transition-colors">Logout</button>
             </div>
         </div>
 
-        <!-- Main Content Area -->
-        <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100">
+        <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100 min-h-[60vh]">
             <div id="requestsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="col-span-full text-center py-20 text-slate-400 animate-pulse font-bold tracking-widest uppercase text-xs">Decrypting Secure Data...</div>
+                <div class="col-span-full text-center py-20 text-slate-400 animate-pulse font-bold tracking-widest uppercase text-xs">Syncing Database...</div>
             </div>
-            <div id="calendarContainer" class="hidden">
-                <div id="calendar"></div>
-            </div>
+            <div id="calendarContainer" class="hidden"><div id="calendar"></div></div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Robust Edit Modal -->
     <div id="adminModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] flex flex-col transform transition-all">
-            
+            <!-- Modal Header -->
             <div class="p-6 border-b flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
                 <div>
-                    <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900 leading-tight">Request Title</h3>
-                    <p id="modalStaffInfo" class="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-[0.2em]">Submitted by <span id="staffNameDisplay" class="text-blue-600">Name</span></p>
+                    <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900 leading-tight">Request</h3>
+                    <p id="modalStaffInfo" class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Submitted by <span id="staffNameDisplay" class="text-blue-600">Name</span></p>
                 </div>
                 <div class="flex items-center gap-4">
                     <span id="queueCounter" class="hidden px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200"></span>
@@ -149,115 +116,84 @@
                 </div>
             </div>
             
-            <div class="p-6 overflow-y-auto flex-grow grid grid-cols-1 lg:grid-cols-5 gap-8">
-                
-                <!-- Brief Column -->
-                <div class="lg:col-span-2 space-y-4">
-                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b pb-2">Staff Request Details</h4>
+            <div class="p-6 overflow-y-auto flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Left Sidebar: The Brief -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">The Brief</h4>
+                        <span id="statusIndicator" class="px-2 py-0.5 text-[9px] font-black rounded-full text-white uppercase bg-slate-500">Pending</span>
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <span class="block text-[9px] text-slate-400 font-black uppercase mb-1">Target Date</span>
-                            <input type="date" id="editDate" class="w-full bg-transparent font-bold text-blue-800 focus:outline-none text-sm">
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-1">Target Date</span>
+                            <input type="date" id="editDate" class="w-full bg-transparent font-bold text-blue-800 text-sm outline-none">
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                            <span class="block text-[9px] text-slate-400 font-black uppercase mb-1">Platform</span>
-                            <span id="platformDisplay" class="font-bold text-slate-700 text-sm tracking-tight">Newsletter</span>
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-1">Facility</span>
+                            <span id="facilityDisplay" class="font-bold text-slate-700 text-sm block truncate">-</span>
                         </div>
                     </div>
 
                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <span class="block text-[10px] font-black text-blue-600 mb-2 uppercase tracking-widest">Original Key Information</span>
-                        <textarea id="editKeyMessage" rows="8" class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white focus:ring-2 focus:ring-blue-300 outline-none resize-none leading-relaxed text-slate-700"></textarea>
+                        <label class="block text-[9px] font-black text-blue-600 uppercase mb-2">Original Message</label>
+                        <textarea id="editKeyMessage" rows="6" class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white outline-none resize-none leading-relaxed text-slate-700"></textarea>
                     </div>
 
-                    <div id="ctaBox" class="bg-amber-50 p-3 rounded-xl border border-amber-200">
-                        <span class="block text-[9px] font-black text-amber-700 mb-1 uppercase tracking-widest">Requested CTA</span>
-                        <span id="modalCTA" class="text-xs font-bold text-amber-900 leading-snug"></span>
-                    </div>
-
-                    <!-- Asset Download Link -->
                     <div id="assetBox" class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 hidden">
-                        <span class="block text-[9px] font-black text-indigo-700 mb-2 uppercase tracking-widest">Staff Attached File</span>
-                        <a id="modalAssetLink" href="#" target="_blank" class="inline-flex w-full justify-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-lg shadow-sm transition-colors items-center gap-2">
+                        <a id="modalAssetLink" href="#" target="_blank" class="inline-flex w-full justify-center bg-indigo-600 text-white text-xs font-bold py-3 rounded-lg shadow-sm items-center gap-2 hover:bg-indigo-700 transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            View / Download Asset
+                            View Attached Asset
                         </a>
                     </div>
                 </div>
 
-                <!-- Editor Column -->
-                <div class="lg:col-span-3 space-y-4 flex flex-col h-full">
-                    <div class="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
-                        <div class="flex items-center gap-3">
-                            <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Approved Content</h4>
-                            
-                            <!-- Editor vs Preview Toggle Buttons -->
-                            <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                                <button id="tabEditor" class="bg-white px-3 py-1 rounded text-[9px] font-bold text-blue-700 shadow-sm transition-all uppercase tracking-wider">Editor</button>
-                                <button id="tabPreview" class="px-3 py-1 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-all uppercase tracking-wider">Preview</button>
-                            </div>
-                        </div>
-                        <span id="statusIndicator" class="px-3 py-1 text-[10px] font-black rounded-full text-white bg-slate-500 uppercase tracking-tighter shadow-sm">Pending</span>
+                <!-- Right Sidebar: Robust Editor & Signage -->
+                <div class="lg:col-span-8 flex flex-col h-full space-y-4">
+                    <div class="border-b pb-2">
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Drafter Workspace</h4>
                     </div>
                     
-                    <div class="flex-grow relative overflow-hidden rounded-xl border border-slate-200 shadow-inner bg-slate-50/50 min-h-[450px]">
-                        <div id="quillEditor" class="bg-white absolute inset-0 z-10"></div>
+                    <div class="flex-grow flex flex-col min-h-[450px] space-y-4">
+                        <div id="quillEditor" class="bg-white rounded-xl shadow-inner"></div>
                         
-                        <!-- Social Preview Container -->
-                        <div id="socialPreviewWrapper" class="hidden absolute inset-0 z-20 overflow-y-auto p-4 md:p-8 flex items-start justify-center bg-slate-200">
-                            <!-- Phone Frame -->
-                            <div class="w-full max-w-[360px] bg-white border-[6px] border-slate-800 rounded-[2rem] shadow-xl overflow-hidden flex flex-col">
-                                <!-- Social Header -->
-                                <div class="flex items-center gap-3 p-4">
-                                    <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-inner" id="fbAvatar">CR</div>
-                                    <div class="flex flex-col">
-                                        <span class="font-bold text-[13px] leading-tight text-slate-900" id="fbPageName">Clarence Regional Aquatic Centre</span>
-                                        <div class="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
-                                            <span>Just now</span> • <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Post Text -->
-                                <div class="px-4 pb-3 text-[13px] text-slate-800 leading-relaxed [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-3 [&>h2]:font-bold [&>h2]:text-base [&>h2]:mb-1 [&>h3]:font-bold [&>h3]:mb-1" id="fbPostText"></div>
-                                <!-- Attached Image Display -->
-                                <div id="fbPostImageWrapper" class="w-full bg-slate-100 hidden min-h-[150px] flex items-center justify-center border-y border-slate-100">
-                                    <img id="fbPostImage" class="w-full h-auto max-h-[350px] object-cover hidden" alt="Post graphic" onerror="this.classList.add('hidden'); document.getElementById('fbImageFallback').classList.remove('hidden');">
-                                    <div id="fbImageFallback" class="p-6 text-center text-slate-400 flex flex-col items-center gap-2 hidden">
-                                        <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider">File Attached<br>(Click download button to view)</span>
-                                    </div>
-                                </div>
-                                <!-- Social Footer -->
-                                <div class="p-3 border-t border-slate-200 text-slate-500 flex justify-between px-6 text-xs font-semibold bg-slate-50/50">
-                                    <div class="flex items-center gap-1.5 hover:bg-slate-100 p-1.5 rounded cursor-pointer transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg> Like</div>
-                                    <div class="flex items-center gap-1.5 hover:bg-slate-100 p-1.5 rounded cursor-pointer transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg> Comment</div>
-                                    <div class="flex items-center gap-1.5 hover:bg-slate-100 p-1.5 rounded cursor-pointer transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> Share</div>
-                                </div>
+                        <!-- Signage Control Panel -->
+                        <div id="signageControls" class="bg-slate-100 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-3 border-b border-slate-200 pb-2 mb-1 flex justify-between items-center">
+                                <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Signage Tool Parameters</h5>
+                                <a id="signLinkBtn" target="_blank" class="hidden bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded-lg text-[9px] font-bold items-center gap-1.5 shadow-sm transition-all uppercase hover:bg-slate-50">
+                                    <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-2h6a2 2 0 002-2v-4a2 2 0 012-2H5a2 2 0 012 2v4a2 2 0 002 2m2-2h2m-4-3h4"></path></svg>
+                                    Launch Sign Tool
+                                </a>
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Headline</label>
+                                <input type="text" id="signHeadline" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" placeholder="e.g. POOL CLOSURE">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Sign Body Summary</label>
+                                <input type="text" id="signBody" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-700" placeholder="A short 1-2 sentence version for signage...">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Footer Actions -->
             <div class="p-6 border-t bg-slate-50/50 rounded-b-2xl flex justify-between items-center">
                 <button id="deleteBtn" class="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-widest flex items-center gap-2 px-4 py-2 hover:bg-red-50 rounded-xl transition-all">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Delete Request
+                    Delete
                 </button>
                 <div class="flex items-center gap-3">
-                    <a id="signLinkBtn" target="_blank" class="hidden bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl text-xs font-bold items-center gap-2 shadow-sm transition-all uppercase tracking-wide">
-                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-2h6a2 2 0 002-2v-4a2 2 0 012-2H5a2 2 0 012 2v4a2 2 0 002 2m2-2h2m-4-3h4"></path></svg>
-                        Create Printable Sign
-                    </a>
-                    <button id="saveDraftBtn" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm">Save Pending</button>
-                    <button id="approveBtn" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/30 transform hover:-translate-y-0.5 transition-all">Approve & Publish</button>
+                    <button id="saveDraftBtn" class="bg-white border text-slate-700 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">Save Draft</button>
+                    <button id="approveBtn" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 text-white px-10 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transform hover:-translate-y-0.5 transition-all">Approve & Publish</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Firebase Logic -->
+    <!-- Firebase & Application Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -269,8 +205,7 @@
             projectId: "opsf---comms-task-tracker",
             storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
             messagingSenderId: "489224390639",
-            appId: "1:489224390639:web:c5da72d0dc302d8332581a",
-            measurementId: "G-CBJK0070Z1"
+            appId: "1:489224390639:web:c5da72d0dc302d8332581a"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -279,48 +214,24 @@
 
         let currentEditingId = null;
         let globalRequestsArray = [];
-        let firestoreUnsubscribe = null;
-        
-        // --- MANUAL QUEUE STATE ---
         let isManualReviewMode = false;
         let pendingReviewQueue = [];
 
-        // --- PREVIEW TAB LOGIC ---
-        const tabEditor = document.getElementById('tabEditor');
-        const tabPreview = document.getElementById('tabPreview');
-
-        tabEditor.onclick = () => {
-            document.getElementById('quillEditor').classList.remove('hidden');
-            document.getElementById('socialPreviewWrapper').classList.add('hidden');
-            tabEditor.className = "bg-white px-3 py-1 rounded text-[9px] font-bold text-blue-700 shadow-sm transition-all uppercase tracking-wider";
-            tabPreview.className = "px-3 py-1 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-all uppercase tracking-wider";
-        };
-
-        tabPreview.onclick = () => {
-            document.getElementById('quillEditor').classList.add('hidden');
-            document.getElementById('socialPreviewWrapper').classList.remove('hidden');
-            tabPreview.className = "bg-white px-3 py-1 rounded text-[9px] font-bold text-blue-700 shadow-sm transition-all uppercase tracking-wider";
-            tabEditor.className = "px-3 py-1 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-all uppercase tracking-wider";
-            
-            // Sync text from Quill to the Preview phone
-            document.getElementById('fbPostText').innerHTML = quill.root.innerHTML || '<span class="text-slate-400 italic">No content generated yet.</span>';
-        };
-
-        // Initialize Quill Editor
+        // Robust Quill Editor Toolbar
         const quill = new Quill('#quillEditor', {
             theme: 'snow',
             placeholder: 'Drafted content will appear here after processing...',
             modules: { 
                 toolbar: [
-                    ['bold', 'italic', 'underline'], 
-                    [{ 'header': [2, 3, false] }], 
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }], 
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'header': [2, 3, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
                     ['link', 'clean']
                 ] 
             }
         });
 
-        // Initialize Calendar
         const calendarEl = document.getElementById('calendar');
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -330,317 +241,173 @@
         });
         calendar.render();
 
-        // --- AUTH LOGIC ---
-        const authOverlay = document.getElementById('authOverlay');
-        const mainDashboard = document.getElementById('mainDashboard');
-        const authError = document.getElementById('authError');
-        const userBadge = document.getElementById('userBadge');
-
+        // Auth
         document.getElementById('loginBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (err) {
-                authError.innerText = "ACCESS DENIED: Please check credentials.";
-                authError.classList.remove('hidden');
-            }
+            try { await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value); } 
+            catch (err) { alert("Access Denied."); }
         });
-
         document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                authOverlay.classList.add('hidden');
-                mainDashboard.classList.remove('dashboard-locked');
-                userBadge.innerText = user.email;
-                userBadge.classList.remove('hidden');
+                document.getElementById('authOverlay').classList.add('hidden');
+                document.getElementById('mainDashboard').classList.remove('dashboard-locked');
+                document.getElementById('userBadge').innerText = user.email;
+                document.getElementById('userBadge').classList.remove('hidden');
                 startFirestoreListener();
             } else {
-                authOverlay.classList.remove('hidden');
-                mainDashboard.classList.add('dashboard-locked');
-                userBadge.classList.add('hidden');
-                if (firestoreUnsubscribe) firestoreUnsubscribe();
+                document.getElementById('authOverlay').classList.remove('hidden');
+                document.getElementById('mainDashboard').classList.add('dashboard-locked');
             }
         });
 
-        // --- DATABASE LISTENER ---
         function startFirestoreListener() {
-            const requestsCol = collection(db, 'requests');
-            firestoreUnsubscribe = onSnapshot(requestsCol, (snapshot) => {
+            onSnapshot(collection(db, 'requests'), (snapshot) => {
                 const gridView = document.getElementById('requestsGrid');
                 gridView.innerHTML = '';
                 calendar.removeAllEvents();
-                
                 globalRequestsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                // Sort Pending to top, then by Date
-                globalRequestsArray.sort((a, b) => {
-                    if (a.status === 'Pending' && b.status !== 'Pending') return -1;
-                    if (a.status !== 'Pending' && b.status === 'Pending') return 1;
-                    return new Date(a.date) - new Date(b.date);
-                });
-
-                if (globalRequestsArray.length === 0) {
-                    gridView.innerHTML = '<div class="col-span-full py-20 text-center text-slate-400 italic font-bold">No requests found. All caught up!</div>';
-                    return;
-                }
-
+                globalRequestsArray.sort((a, b) => (a.status === 'Pending' ? -1 : 1) || new Date(a.date) - new Date(b.date));
                 globalRequestsArray.forEach(data => {
                     const isApproved = data.status === 'Approved';
-                    
-                    // Add to Calendar
-                    calendar.addEvent({ 
-                        id: data.id, 
-                        title: data.title, 
-                        start: data.date, 
-                        color: isApproved ? '#10b981' : '#94a3b8' 
-                    });
-                    
-                    // Add to Grid View
+                    calendar.addEvent({ id: data.id, title: data.title, start: data.date, color: isApproved ? '#10b981' : '#94a3b8' });
                     const card = document.createElement('div');
-                    card.className = "bg-white p-6 rounded-2xl border border-slate-100 shadow-md hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer group";
-                    
-                    // Paperclip icon if asset attached
-                    const attachIcon = data.assetUrl ? `<svg class="w-4 h-4 text-indigo-500 absolute top-5 right-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>` : '';
-
+                    card.className = "bg-white p-6 rounded-2xl border border-slate-100 shadow-md hover:shadow-xl transition-all cursor-pointer group relative";
+                    const attachIcon = data.assetUrl ? `<svg class="w-4 h-4 text-indigo-500 absolute top-5 right-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>` : '';
                     card.innerHTML = `
-                        <div class="flex justify-between items-start mb-4 relative">
-                            <span class="px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase tracking-tighter ${isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}">${data.status}</span>
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${data.date}</span>
-                            ${attachIcon}
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase ${isApproved ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-400'}">${data.status}</span>
+                            <span class="text-[9px] font-black text-slate-300 uppercase">${data.date}</span>
                         </div>
-                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 line-clamp-2 text-lg pr-4">${data.title}</h3>
+                        ${attachIcon}
+                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 text-lg line-clamp-2">${data.title}</h3>
                         <div class="flex gap-2 mb-6">
-                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100">${data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
-                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-slate-200">${data.platform}</span>
+                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100">${data.facility && data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-slate-200">Request</span>
                         </div>
-                        <button class="w-full bg-slate-900 group-hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all">Review & Edit</button>
+                        <button class="w-full bg-slate-900 group-hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-[10px] uppercase transition-all">Review & Edit</button>
                     `;
                     card.onclick = () => openModal(data.id, data);
                     gridView.appendChild(card);
                 });
-            }, (error) => {
-                console.error("Firestore error:", error);
             });
         }
 
-        // --- MANUAL QUEUE LOGIC ---
         function loadNextInQueue() {
             if (pendingReviewQueue.length === 0) {
                 isManualReviewMode = false;
                 document.getElementById('adminModal').classList.add('hidden');
                 document.getElementById('queueCounter').classList.add('hidden');
-                alert("Queue complete! You are all caught up.");
                 return;
             }
-            
-            const nextId = pendingReviewQueue.shift(); // Get next ID
+            const nextId = pendingReviewQueue.shift();
             const data = globalRequestsArray.find(r => r.id === nextId);
-            
             if (data) {
                 document.getElementById('queueCounter').innerText = `${pendingReviewQueue.length + 1} Remaining`;
                 document.getElementById('queueCounter').classList.remove('hidden');
                 openModal(nextId, data);
-            } else {
-                // Failsafe if ID disappeared
-                loadNextInQueue(); 
-            }
+            } else loadNextInQueue();
         }
 
-        // --- MODAL LOGIC ---
         function openModal(id, data) {
             currentEditingId = id;
-            
-            // Populate Brief
             document.getElementById('modalTitle').innerText = data.title;
             document.getElementById('staffNameDisplay').innerText = data.staffName || "Staff Member";
             document.getElementById('editDate').value = data.date;
-            document.getElementById('platformDisplay').innerText = data.platform || "Social Media";
+            document.getElementById('facilityDisplay').innerText = data.facility && data.facility.includes('Clarence') ? 'CRAC Facility' : 'Yamba Facility';
             document.getElementById('editKeyMessage').value = data.keyMessage;
-            document.getElementById('modalCTA').innerText = data.cta || "Standard Website Link";
             
-            // Populate Asset Box if it exists
+            // Asset Box
             const assetBox = document.getElementById('assetBox');
-            const assetLink = document.getElementById('modalAssetLink');
             if (data.assetUrl) {
-                assetLink.href = data.assetUrl;
+                document.getElementById('modalAssetLink').href = data.assetUrl;
                 assetBox.classList.remove('hidden');
-            } else {
-                assetBox.classList.add('hidden');
-            }
-
-            // Signage Bridge Link Generation
+            } else assetBox.classList.add('hidden');
+            
+            // Signage Bridge Controls
+            document.getElementById('signHeadline').value = data.signHeadline || '';
+            document.getElementById('signBody').value = data.signBody || '';
+            
             const signBtn = document.getElementById('signLinkBtn');
             if (data.generateSign) {
-                signBtn.classList.remove('hidden'); 
-                signBtn.classList.add('flex');
-                
-                let h = data.signHeadline || data.title || 'NOTICE';
-                let b = data.signBody || data.keyMessage || '';
-                
-                // Cleanup markdown from signage text
-                h = h.replace(/\*\*/g, '');
-                b = b.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                b = b.replace(/\n/g, '<br>');
-                
-                signBtn.href = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(h)}&body=${encodeURIComponent(b)}`;
-            } else { 
-                signBtn.classList.add('hidden'); 
-                signBtn.classList.remove('flex');
-            }
+                signBtn.classList.remove('hidden'); signBtn.classList.add('flex');
+                updateSignLink(data);
+            } else signBtn.classList.add('hidden');
 
-            // Load Content into Quill
             quill.root.innerHTML = data.rewrittenPost || '';
-
-            // --- SETUP SOCIAL MOCKUP ASSETS ---
-            const isCrac = data.facility && data.facility.includes('Clarence');
-            document.getElementById('fbPageName').innerText = isCrac ? 'Clarence Regional Aquatic Centre' : 'Yamba Community Pool';
-            document.getElementById('fbAvatar').innerText = isCrac ? 'CR' : 'YC';
             
-            const fbImgWrapper = document.getElementById('fbPostImageWrapper');
-            const fbImg = document.getElementById('fbPostImage');
-            const fbImgFallback = document.getElementById('fbImageFallback');
-            
-            if (data.assetUrl) {
-                fbImgWrapper.classList.remove('hidden');
-                
-                // Try to extract Google Drive ID to create a direct display link automatically
-                const match = data.assetUrl.match(/\/d\/(.*?)\//);
-                if (match && match[1]) {
-                    fbImg.src = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-                    fbImg.classList.remove('hidden');
-                    fbImgFallback.classList.add('hidden');
-                } else {
-                    fbImg.classList.add('hidden');
-                    fbImgFallback.classList.remove('hidden');
-                }
-            } else {
-                fbImgWrapper.classList.add('hidden');
-            }
-            
-            // Ensure Modal opens on the Editor tab
-            tabEditor.click();
-            
-            // Status Styling
-            const statusIndicator = document.getElementById('statusIndicator');
-            statusIndicator.innerText = data.status;
-            statusIndicator.className = `px-3 py-1 text-[10px] font-black rounded-full text-white uppercase tracking-tighter shadow-sm ${data.status === 'Approved' ? 'bg-emerald-500' : 'bg-slate-500'}`;
-            
+            const statusInd = document.getElementById('statusIndicator');
+            statusInd.innerText = data.status;
+            statusInd.className = `px-2 py-0.5 text-[9px] font-black rounded-full text-white uppercase tracking-tighter ${data.status === 'Approved' ? 'bg-emerald-500' : 'bg-slate-500'}`;
             document.getElementById('adminModal').classList.remove('hidden');
         }
 
-        // --- VIEW TOGGLES ---
-        document.getElementById('viewGridBtn').onclick = () => {
-            document.getElementById('requestsGrid').classList.remove('hidden');
-            document.getElementById('calendarContainer').classList.add('hidden');
-            document.getElementById('viewGridBtn').className = "bg-white px-4 py-2 rounded-lg text-sm font-bold text-blue-700 shadow-sm transition-all";
-            document.getElementById('viewCalBtn').className = "px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all";
-        };
+        function updateSignLink(data) {
+            let h = document.getElementById('signHeadline').value || data.title || 'NOTICE';
+            let b = document.getElementById('signBody').value || data.keyMessage || '';
+            h = h.replace(/\*\*/g, '');
+            b = b.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            document.getElementById('signLinkBtn').href = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(h)}&body=${encodeURIComponent(b)}`;
+        }
 
-        document.getElementById('viewCalBtn').onclick = () => {
-            document.getElementById('requestsGrid').classList.add('hidden');
-            document.getElementById('calendarContainer').classList.remove('hidden');
-            document.getElementById('viewCalBtn').className = "bg-white px-4 py-2 rounded-lg text-sm font-bold text-blue-700 shadow-sm transition-all";
-            document.getElementById('viewGridBtn').className = "px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all";
-            calendar.updateSize();
-        };
+        // Live update sign link when inputs change
+        document.getElementById('signHeadline').oninput = () => updateSignLink(globalRequestsArray.find(r => r.id === currentEditingId));
+        document.getElementById('signBody').oninput = () => updateSignLink(globalRequestsArray.find(r => r.id === currentEditingId));
 
-        // --- PROCESS DROPDOWN MENU LOGIC ---
-        const processMenuBtn = document.getElementById('processMenuBtn');
-        const processDropdown = document.getElementById('processDropdown');
-        
-        processMenuBtn.onclick = (e) => {
-            e.stopPropagation();
-            processDropdown.classList.toggle('hidden');
-        };
-        
-        document.addEventListener('click', () => {
-            processDropdown.classList.add('hidden');
-        });
+        const menuBtn = document.getElementById('processMenuBtn');
+        const dropdown = document.getElementById('processDropdown');
+        menuBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); };
+        document.addEventListener('click', () => dropdown.classList.add('hidden'));
 
         document.getElementById('processAutoBtn').onclick = async () => {
-            // Standard Webhook execution
-            const iconOrig = `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`;
             const btn = document.getElementById('processAutoBtn');
-            btn.innerHTML = `<div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div> Processing Background...`;
-            
+            btn.innerHTML = `<div class="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full inline-block mr-2"></div> Running...`;
             try {
                 await fetch("https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec", {mode: 'no-cors'});
-                setTimeout(() => {
-                    btn.innerHTML = `${iconOrig} Auto (Background)`;
-                    alert("Content Engine triggered successfully.");
-                }, 2000);
-            } catch (err) {
-                btn.innerHTML = `${iconOrig} Auto (Background)`;
-            }
+                setTimeout(() => { alert("Background Sequence Triggered."); btn.innerHTML = "Auto (Background)"; }, 2000);
+            } catch (err) { btn.innerHTML = "Auto (Background)"; }
         };
 
         document.getElementById('processManualBtn').onclick = () => {
-            // Manual Queue Logic
-            const pendingRequests = globalRequestsArray.filter(r => r.status === 'Pending');
-            
-            if (pendingRequests.length === 0) {
-                alert("You are all caught up! There are no pending requests to process.");
-                return;
-            }
-            
-            // Build the queue array with IDs and start review mode
-            pendingReviewQueue = pendingRequests.map(r => r.id);
+            const pending = globalRequestsArray.filter(r => r.status === 'Pending');
+            if (pending.length === 0) return alert("Nothing to review.");
+            pendingReviewQueue = pending.map(r => r.id);
             isManualReviewMode = true;
             loadNextInQueue();
         };
 
-        // --- DATABASE ACTIONS ---
-        const saveAction = async (status) => {
+        async function save(status) {
             if(!currentEditingId) return;
             const btn = status === 'Approved' ? document.getElementById('approveBtn') : document.getElementById('saveDraftBtn');
-            const originalText = btn.innerText;
-            btn.disabled = true; btn.innerText = "PROCESSING...";
-            
+            const orig = btn.innerText;
+            btn.innerText = "...";
             try {
                 await updateDoc(doc(db, "requests", currentEditingId), {
                     status: status,
                     rewrittenPost: quill.root.innerHTML,
                     date: document.getElementById('editDate').value,
-                    keyMessage: document.getElementById('editKeyMessage').value
+                    keyMessage: document.getElementById('editKeyMessage').value,
+                    signHeadline: document.getElementById('signHeadline').value,
+                    signBody: document.getElementById('signBody').value
                 });
-                
-                // If in manual review mode, load next instead of closing
-                if (isManualReviewMode) {
-                    loadNextInQueue();
-                } else {
-                    document.getElementById('adminModal').classList.add('hidden');
-                }
-            } catch (err) {
-                console.error("Save failed:", err);
-            } finally {
-                btn.disabled = false; btn.innerText = originalText;
+                btn.innerText = orig;
+                if (isManualReviewMode) loadNextInQueue();
+                else document.getElementById('adminModal').classList.add('hidden');
+            } catch (err) { console.error(err); btn.innerText = orig; }
+        }
+
+        document.getElementById('approveBtn').onclick = () => save('Approved');
+        document.getElementById('saveDraftBtn').onclick = () => save('Pending');
+        document.getElementById('closeModalBtn').onclick = () => { isManualReviewMode = false; document.getElementById('adminModal').classList.add('hidden'); };
+        document.getElementById('deleteBtn').onclick = async () => {
+            if(confirm("Delete permanently?") && currentEditingId) {
+                await deleteDoc(doc(db, "requests", currentEditingId));
+                if (isManualReviewMode) loadNextInQueue();
+                else document.getElementById('adminModal').classList.add('hidden');
             }
         };
 
-        document.getElementById('approveBtn').onclick = () => saveAction('Approved');
-        document.getElementById('saveDraftBtn').onclick = () => saveAction('Pending');
-        
-        document.getElementById('closeModalBtn').onclick = () => {
-            // Cancel review mode if user manually closes the window
-            isManualReviewMode = false;
-            pendingReviewQueue = [];
-            document.getElementById('queueCounter').classList.add('hidden');
-            document.getElementById('adminModal').classList.add('hidden');
-        };
-        
-        document.getElementById('deleteBtn').onclick = async () => {
-            if(!currentEditingId) return;
-            if(confirm("Permanently delete this marketing request? This cannot be undone.")) {
-                await deleteDoc(doc(db, "requests", currentEditingId));
-                if (isManualReviewMode) {
-                    loadNextInQueue();
-                } else {
-                    document.getElementById('adminModal').classList.add('hidden');
-                }
-            }
-        };
+        document.getElementById('viewGridBtn').onclick = () => { document.getElementById('requestsGrid').classList.remove('hidden'); document.getElementById('calendarContainer').classList.add('hidden'); };
+        document.getElementById('viewCalBtn').onclick = () => { document.getElementById('requestsGrid').classList.add('hidden'); document.getElementById('calendarContainer').classList.remove('hidden'); calendar.updateSize(); };
     </script>
 </body>
 </html>
