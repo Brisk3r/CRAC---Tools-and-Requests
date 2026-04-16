@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRAC 2026 Schedule & Availability Projections</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-cyan: #00b4d8;
+            --accent-red: #e63946;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-dark: #2b2d42;
+            --text-light: #8d99ae;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-cyan));
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary-blue);
+            font-size: 20px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        select, input[type=range] {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            outline: none;
+            background-color: white;
+            color: var(--text-dark);
+        }
+        select[multiple] {
+            padding: 5px;
+            min-height: 120px;
+        }
+        select[multiple] option {
+            padding: 6px 10px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+        }
+        select:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        /* New Combo View Styles */
+        .combo-toggles {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .combo-toggles label {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .combo-toggles input[type="checkbox"] {
+            display: none;
+        }
+
+        /* Color-coded toggle states */
+        .combo-toggles label:has(input[value="Program Pool"]:checked) {
+            background-color: rgba(230, 57, 70, 0.1);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+        .combo-toggles label:has(input[value="25m Lap Pool"]:checked) {
+            background-color: rgba(0, 86, 179, 0.1);
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+        .combo-toggles label:has(input[value="50m Pool"]:checked) {
+            background-color: rgba(0, 180, 216, 0.1);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .stack-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-light);
+            margin-left: auto; /* Push to right */
+        }
+        .stack-toggle input {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--accent-cyan);
+        }
+        .stat-box h3 { margin: 0; font-size: 14px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-box p { margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: var(--primary-blue); }
+        
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+        }
+        .slider-group label {
+            font-weight: bold;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        @media (max-width: 768px) {
+            .stack-toggle {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Clarence Regional Aquatic Centre</h1>
+            <p>2026 Facility Utilisation & Availability Projections</p>
+        </div>
+
+        <!-- 1. Monthly Baseline & H2 Forecasting Simulator -->
+        <div class="card">
+            <h2>Annual Baseline & H2 Forecasting Simulator</h2>
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">Tracking the static volume of structured program bookings. Project second-half (H2) booking volumes based on H1 actuals. Adjust the sliders below to simulate retention drops or enrollment spikes.</p>
+            
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <h3>H1 Actuals (Total Hrs)</h3>
+                    <p id="statH1Total">0 hrs</p>
+                </div>
+                <div class="stat-box">
+                    <h3>H2 Projected (Total Hrs)</h3>
+                    <p id="statH2Total">0 hrs</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Variance from H1</h3>
+                    <p id="statVariance">0 hrs</p>
+                </div>
+            </div>
+
+            <div class="controls" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <div class="slider-group">
+                    <label>Term 3 (Jul-Sep) Variance: <span id="t3Val" style="color: var(--primary-blue)">0%</span></label>
+                    <input type="range" id="t3Slider" min="-30" max="30" value="0">
+                </div>
+                <div class="slider-group">
+                    <label>Term 4 (Oct-Dec) Variance: <span id="t4Val" style="color: var(--primary-blue)">0%</span></label>
+                    <input type="range" id="t4Slider" min="-30" max="30" value="0">
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. Interactive Weekly Explorer (UPDATED COMBO VIEW) -->
+        <div class="card">
+            <h2>Weekly Availability Explorer</h2>
+            <div class="controls" style="align-items: flex-start;">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <select id="daySelect" multiple size="5">
+                        <option value="Monday" selected>Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                    <span style="font-size: 11px; color: var(--text-light);">Hold Ctrl/Cmd to select multiple</span>
+                </div>
+
+                <!-- Zone Multi-Select Toggles -->
+                <div class="combo-toggles" id="zoneToggles" style="margin-top: 5px;">
+                    <label>
+                        <input type="checkbox" value="Program Pool" checked> Program Pool
+                    </label>
+                    <label>
+                        <input type="checkbox" value="25m Lap Pool" checked> 25m Lap Pool
+                    </label>
+                    <label>
+                        <input type="checkbox" value="50m Pool"> 50m Pool
+                    </label>
+                </div>
+
+                <label class="stack-toggle">
+                    <input type="checkbox" id="stackToggle"> Stack Overlap
+                </label>
+            </div>
+            <div class="chart-container">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injected Data from Python
+        const monthlyData = {"labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "Program Pool": [94, 876, 850, 79, 888, 902, 76, 76, 86, 90, 76, 86], "25m Lap Pool": [231, 619, 736, 133, 441, 431, 39, 24, 74, 137, 206, 137], "50m Pool": [7, 83, 0, 3, 0, 0, 0, 0, 0, 0, 12, 6]};
+        const weeklyData = {"Program Pool": {"Monday": [0, 0, 0, 52, 116, 117, 122, 64, 0, 0, 126, 72, 72, 48, 0], "Tuesday": [0, 0, 0, 120, 117, 126, 79, 33, 153, 165, 106, 140, 146, 82, 0], "Wednesday": [0, 0, 0, 16, 65, 66, 72, 102, 54, 55, 101, 64, 73, 32, 0], "Thursday": [0, 0, 0, 16, 65, 66, 71, 49, 9, 0, 64, 72, 104, 32, 0], "Friday": [0, 0, 0, 16, 65, 65, 65, 41, 1, 8, 59, 82, 73, 0, 0], "Saturday": [0, 0, 0, 112, 96, 96, 96, 0, 0, 0, 0, 0, 0, 0, 0], "Sunday": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "25m Lap Pool": {"Monday": [0, 20, 20, 6, 18, 23, 18, 27, 19, 14, 36, 148, 164, 48, 0], "Tuesday": [0, 60, 68, 14, 25, 29, 110, 108, 107, 15, 50, 90, 84, 207, 0], "Wednesday": [0, 20, 20, 6, 21, 22, 18, 28, 52, 32, 56, 125, 134, 37, 0], "Thursday": [0, 60, 76, 23, 21, 24, 39, 75, 34, 15, 48, 90, 58, 54, 0], "Friday": [0, 20, 20, 1, 32, 40, 45, 46, 35, 16, 37, 76, 84, 0, 0], "Saturday": [0, 0, 0, 3, 3, 3, 3, 1, 1, 1, 0, 0, 0, 0, 0], "Sunday": [0, 0, 0, 1, 9, 9, 1, 2, 2, 1, 0, 0, 0, 0, 0]}, "50m Pool": {"Monday": [0, 0, 0, 1, 3, 3, 3, 3, 3, 1, 0, 0, 0, 0, 0], "Tuesday": [0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0], "Wednesday": [0, 0, 0, 1, 4, 4, 5, 5, 5, 4, 1, 0, 0, 0, 0], "Thursday": [0, 0, 0, 1, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0], "Friday": [0, 0, 0, 4, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0], "Saturday": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Sunday": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}};
+        const hoursLabels = ["5:00", "6:00", "7:00", "8:00", "9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+
+        // Color mapping for consistency across all charts
+        const poolColors = {
+            'Program Pool': '#e63946',
+            '25m Lap Pool': '#0056b3',
+            '50m Pool': '#00b4d8'
+        };
+
+        // 1. Render Monthly Trends Chart (With Forecast Integration)
+        const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+        let monthlyChartInstance = new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [
+                    {
+                        label: 'Program Pool Volume',
+                        data: monthlyData['Program Pool'],
+                        borderColor: poolColors['Program Pool'],
+                        backgroundColor: 'rgba(230, 57, 70, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        segment: { borderDash: ctx => ctx.p0DataIndex >= 5 ? [5, 5] : undefined } // Dash for projected H2
+                    },
+                    {
+                        label: '25m Lap Pool Volume',
+                        data: monthlyData['25m Lap Pool'],
+                        borderColor: poolColors['25m Lap Pool'],
+                        backgroundColor: 'rgba(0, 86, 179, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        segment: { borderDash: ctx => ctx.p0DataIndex >= 5 ? [5, 5] : undefined } // Dash for projected H2
+                    },
+                    {
+                        label: '50m Pool Volume',
+                        data: monthlyData['50m Pool'],
+                        borderColor: poolColors['50m Pool'],
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Total Booking Hours' } } }
+            }
+        });
+
+        // 2. Render Interactive Weekly Chart (COMBO VIEW)
+        const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
+        let weeklyChartInstance = new Chart(ctxWeekly, {
+            type: 'bar',
+            data: {
+                labels: hoursLabels,
+                datasets: [] // Initially empty, populated by update function
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        suggestedMax: 250, 
+                        title: { display: true, text: 'Booking Frequency' },
+                        stacked: false // Controlled dynamically
+                    },
+                    x: { 
+                        title: { display: true, text: 'Hour of Day' },
+                        stacked: false // Controlled dynamically
+                    }
+                },
+                plugins: { 
+                    legend: { 
+                        display: true, 
+                        position: 'top',
+                        labels: { usePointStyle: true, boxWidth: 8 }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            }
+        });
+
+        function updateWeeklyChart() {
+            const selectedDays = Array.from(document.getElementById('daySelect').selectedOptions).map(opt => opt.value);
+            const isStacked = document.getElementById('stackToggle').checked;
+            const checkboxes = document.querySelectorAll('#zoneToggles input[type="checkbox"]');
+            
+            const newDatasets = [];
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const zone = cb.value;
+                    
+                    // Aggregate data across selected days
+                    let aggregatedData = new Array(hoursLabels.length).fill(0);
+                    selectedDays.forEach(day => {
+                        const dayData = weeklyData[zone][day];
+                        if (dayData) {
+                            for (let i = 0; i < dayData.length; i++) {
+                                aggregatedData[i] += dayData[i];
+                            }
+                        }
+                    });
+
+                    newDatasets.push({
+                        label: zone,
+                        data: aggregatedData,
+                        backgroundColor: poolColors[zone],
+                        borderRadius: isStacked ? 0 : 4, // Remove radius if stacking to prevent visual gaps
+                    });
+                }
+            });
+
+            // Update Chart Data & Scaling Modes
+            weeklyChartInstance.data.datasets = newDatasets;
+            weeklyChartInstance.options.scales.x.stacked = isStacked;
+            weeklyChartInstance.options.scales.y.stacked = isStacked;
+            weeklyChartInstance.update();
+        }
+
+        // Attach event listeners for the Combo View Explorer
+        document.getElementById('daySelect').addEventListener('change', updateWeeklyChart);
+        document.getElementById('stackToggle').addEventListener('change', updateWeeklyChart);
+        document.querySelectorAll('#zoneToggles input').forEach(checkbox => {
+            checkbox.addEventListener('change', updateWeeklyChart);
+        });
+
+        // Initialize Weekly Chart
+        updateWeeklyChart();
+
+        // 3. Forecasting Simulator Logic (Combined into Monthly Chart)
+        
+        // Calculate Base H1 Total directly from the injected monthly data
+        let h1TotalRaw = 0;
+        ['Program Pool', '25m Lap Pool', '50m Pool'].forEach(pool => {
+            h1TotalRaw += monthlyData[pool].slice(0, 6).reduce((a, b) => a + b, 0);
+        });
+        document.getElementById('statH1Total').innerText = Math.round(h1TotalRaw) + ' hrs';
+
+        function updateMonthlyForecast() {
+            let t3Var = document.getElementById('t3Slider').value / 100;
+            let t4Var = document.getElementById('t4Slider').value / 100;
+            
+            document.getElementById('t3Val').innerText = (t3Var > 0 ? '+' : '') + (t3Var * 100) + '%';
+            document.getElementById('t4Val').innerText = (t4Var > 0 ? '+' : '') + (t4Var * 100) + '%';
+            
+            let h2TotalProjected = 0;
+
+            // Apply forecasting logic to each pool individually
+            ['Program Pool', '25m Lap Pool', '50m Pool'].forEach((pool, index) => {
+                let h1Actuals = monthlyData[pool].slice(0, 6);
+                let h1Avg = h1Actuals.reduce((a, b) => a + b, 0) / 6;
+                
+                // Calculate projected Terms based on H1 Average + Variance
+                let t3Val = h1Avg * (1 + t3Var);
+                let t4Val = h1Avg * (1 + t4Var);
+                
+                // Generate H2 array (Jul, Aug, Sep = T3) & (Oct, Nov, Dec = T4)
+                let h2Projected = [t3Val, t3Val, t3Val, t4Val, t4Val, t4Val];
+                h2TotalProjected += h2Projected.reduce((a, b) => a + b, 0);
+                
+                // Inject the merged actuals + forecast data back into the chart
+                monthlyChartInstance.data.datasets[index].data = h1Actuals.concat(h2Projected);
+            });
+
+            monthlyChartInstance.update();
+            
+            let variance = Math.round(h2TotalProjected - h1TotalRaw);
+            let sign = variance > 0 ? '+' : '';
+            
+            document.getElementById('statH2Total').innerText = Math.round(h2TotalProjected) + ' hrs';
+            
+            let varEl = document.getElementById('statVariance');
+            varEl.innerText = sign + variance + ' hrs vs H1';
+            varEl.style.color = variance > 0 ? '#e63946' : (variance < 0 ? '#2a9d8f' : '#0056b3');
+        }
+
+        document.getElementById('t3Slider').addEventListener('input', updateMonthlyForecast);
+        document.getElementById('t4Slider').addEventListener('input', updateMonthlyForecast);
+        
+        // Initialize forecast on load
+        updateMonthlyForecast();
+
+    </script>
+</body>
+</html>
