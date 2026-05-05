@@ -144,15 +144,22 @@
     <div id="mainContentView" class="hidden flex-grow flex flex-col">
         <!-- Filter Bar -->
         <div class="bg-white border-b border-slate-200 sticky top-[88px] sm:top-[72px] z-40 shadow-sm">
-            <div class="max-w-5xl mx-auto px-4 py-3 overflow-x-auto no-scrollbar">
-                <div class="flex gap-2" id="filterContainer">
-                    <button onclick="showHome()" class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors border border-transparent">
-                        <i class="fa-solid fa-arrow-left"></i> Home
-                    </button>
-                    <div class="w-px h-6 bg-slate-300 mx-1 self-center"></div>
-                    <button onclick="filterCategory('all')" class="filter-btn active bg-blue-900 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors shadow-sm">
-                        All Rules
-                    </button>
+            <div class="max-w-5xl mx-auto px-4 py-3">
+                <div id="globalSearchContainer" class="mb-3">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" placeholder="Search rules, keywords, or policies..." class="w-full pl-12 pr-4 py-3 bg-slate-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium transition-all">
+                    </div>
+                </div>
+                <div class="overflow-x-auto no-scrollbar">
+                    <div class="flex gap-2" id="filterContainer">
+                        <button onclick="showHome()" class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors border border-transparent">
+                            <i class="fa-solid fa-arrow-left"></i> Home
+                        </button>
+                        <div class="w-px h-6 bg-slate-300 mx-1 self-center"></div>
+                        <button onclick="filterCategory('all')" class="filter-btn active bg-blue-900 text-white px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors shadow-sm">
+                            All Rules
+                        </button>
                     <button onclick="filterCategory('Admission')" class="filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors">
                         Entry
                     </button>

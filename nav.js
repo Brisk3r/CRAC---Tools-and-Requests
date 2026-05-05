@@ -284,7 +284,7 @@
         </div>
 
         <!-- Mobile Menu Overlay -->
-        <div id="mobile-menu" class="no-print hidden fixed inset-0 z-[60] bg-white dark:bg-slate-900 p-6 lg:hidden flex-col">
+        <div id="mobile-menu" class="no-print hidden fixed inset-0 z-[100] bg-white dark:bg-slate-950 p-6 lg:hidden flex-col">
             <div class="flex items-center justify-between mb-8">
                 <div class="flex items-center gap-3">
                     <div class="bg-cyan-600 text-white p-1.5 rounded-lg shadow-sm">
