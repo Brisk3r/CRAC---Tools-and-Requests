@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +8,7 @@
 </head>
 <body class="bg-slate-100 font-sans">
     <div class="container mx-auto max-w-3xl my-8 md:my-12 p-6 md:p-8 bg-white rounded-xl shadow-lg">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Email Link Generator</h1>
-            <p class="text-slate-500 mt-2">Create tracked `mailto:` links to capture leads.</p>
-        </header>
+        <!-- Unified Navigation injected via nav.js -->
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Column 1: Email Details -->
@@ -164,5 +161,6 @@
         // Run once on load to ensure the UI is in the correct state
         generateMailto();
     </script>
+    <script src="./nav.js" data-title="Email Linker" data-icon="ph-envelope-simple"></script>
 </body>
 </html>

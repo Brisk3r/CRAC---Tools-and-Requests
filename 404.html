@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <!-- Core Tailwind for styling the loading state beautifully -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+        // Extract the slug from the path. This file will be served as the 404 handler.
+        // It captures anything after /s/
+        const path = window.location.pathname;
+        const match = path.match(/\/s\/([^/]+)/);
+
+        if (match && match[1]) {
+            const slug = match[1].toLowerCase().replace(/[^a-z0-9-]/g, '');
+            
+            const firebaseConfig = {
+                apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+                authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+                projectId: "opsf---comms-task-tracker",
+                storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
+                messagingSenderId: "489224390639",
+                appId: "1:489224390639:web:54b9f2772aaef86d32581a",
+                measurementId: "G-PE0JBKHX9W"
+            };
+            
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            getDoc(doc(db, "shortlinks", slug)).then((docSnap) => {
+                if (docSnap.exists()) {
+                    window.location.replace(docSnap.data().destination);
+                } else {
+                    showError("Link Expired or Invalid", "This short link does not exist in the registry.");
+                }
+            }).catch(e => {
+                console.error(e);
+                showError("Connection Error", "Unable to resolve the link right now.");
+            });
+        } else {
+            // Standard 404 Page (Not a shortlink)
+            showError("Page Not Found", "The requested path could not be found.");
+        }
+
+        function showError(title, message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-box').style.display = 'block';
+            document.getElementById('error-title').innerText = title;
+            document.getElementById('error-message').innerText = message;
+        }
+    </script>
+</head>
+<body class="bg-slate-950 flex items-center justify-center min-h-screen p-4 text-center font-sans">
+    
+    <div id="loading" class="flex flex-col items-center justify-center gap-4">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500/20 border-t-blue-500"></div>
+        <h2 class="text-blue-400 font-bold tracking-widest uppercase text-sm">Resolving Link...</h2>
+    </div>
+
+    <div id="error-box" style="display: none;" class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl max-w-md w-full">
+        <i class="ph-duotone ph-warning-circle text-5xl text-red-500 mb-4 inline-block"></i>
+        <h1 id="error-title" class="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Error</h1>
+        <p id="error-message" class="text-slate-400 font-medium mb-6">Details here.</p>
+        <a href="/CRAC---Tools-and-Requests/" class="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors uppercase tracking-widest text-xs">Return to Hub</a>
+    </div>
+
+</body>
+</html>

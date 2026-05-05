@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,10 +51,7 @@
 
     <div class="container mx-auto">
         <div class="card">
-            <header class="header text-center mb-8">
-                <h1 class="text-3xl font-bold mb-2">NSW Aquatic Centre Compliance Guide</h1>
-                <p class="text-sm">A quick reference for occupancy limits and safety guidelines.</p>
-            </header>
+            <!-- Unified Navigation injected via nav.js -->
 
             <main class="space-y-8">
                 <!-- Bather Load Calculator Section -->
@@ -118,7 +115,7 @@
                 <!-- Watch Around Water Policies Section -->
                 <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
                     <h2 class="text-2xl font-semibold text-blue-900 mb-4">Watch Around Water Policies 🧑‍🤝‍👩‍👧‍👦</h2>
-                    <p class="mb-4 text-gray-700">Quick reference for parent/guardian supervision requirements as per the "Watch Around Water" program.</p>
+                    <p class="mb-4 text-gray-700">Quick reference for parent/guardian supervision requirements as per the "Watch Around Water" programme.</p>
                     <div class="overflow-x-auto rounded-lg shadow">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="table-header">
@@ -205,5 +202,6 @@
             showResult('communityRoomResult', `<strong>Total Community Room Occupancy: ${roomOccupancy}</strong>`);
         }
     </script>
+    <script src="./nav.js" data-title="Occupancy Calculator" data-icon="ph-users-three" data-help="Calculate maximum bather loads based on NSW Health guidelines. Select the pool area, enter the dimensions, and the tool will provide the safe capacity limit for that space."></script>
 </body>
 </html>

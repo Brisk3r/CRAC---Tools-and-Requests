@@ -53,27 +53,7 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-    <!-- Header -->
-    <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="showHome()">
-                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-900 font-bold text-xl shadow-md">
-                    <i class="fa-solid fa-water"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold leading-tight">Clarence Regional Aquatic Centre</h1>
-                    <p class="text-xs text-blue-200">Staff Rules Database</p>
-                </div>
-            </div>
-            
-            <!-- Global Search (Hidden on Home, Shown in Views) -->
-            <div id="globalSearchContainer" class="hidden relative w-full sm:w-80">
-                <input type="text" id="searchInput" placeholder="Search database..." 
-                    class="w-full pl-10 pr-4 py-2 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-inner bg-blue-50/10 placeholder-blue-300 text-white border border-blue-700/50 transition-all">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-blue-300"></i>
-            </div>
-        </div>
-    </header>
+    <!-- Unified Navigation injected via nav.js -->
 
     <!-- HOME VIEW (Dashboard) -->
     <div id="homeView" class="flex-grow flex flex-col items-center justify-center p-6 fade-in">
@@ -359,7 +339,6 @@
         }
 
         // --- DATA HANDLING ---
-        // Includes default rules + the new Birthday Party rules so the app works before Google Sheet syncs
         let poolRules = [
             { category: "Birthday Parties", title: "Party Package Details", content: "$22 per child (minimum 10). Included: decorated gazebo setup, entry, party food (sausage rolls, pies, nuggets, chips, sauce), slushie, and lolly party bag.", keywords: "party, package, cost, food, minimum, gazebo" },
             { category: "Birthday Parties", title: "Parent & Spectator Fees", content: "One parent entry is free. Extra guests swimming pay $5.50 (Adult) or $4.50 (Child). Spectating guests pay a $2.00 entry fee.", keywords: "parent, adult, free, spectator, cost, swim, watch" },
@@ -396,7 +375,6 @@
                             poolRules = results.data;
                             document.getElementById('dbStatus').classList.remove('hidden');
                             
-                            // If user is actively searching or on a category, re-render to reflect new fetched data
                             if (!mainContentView.classList.contains('hidden')) {
                                 renderCards(); 
                             }
@@ -495,11 +473,8 @@
                 noResults.classList.add('hidden');
                 filtered.forEach(rule => {
                     const card = document.createElement('div');
-                    
                     const style = getRuleStyle(rule);
-
                     card.className = `glass-panel rounded-xl p-5 card-hover border-l-4 ${style.border}`;
-                    
                     card.innerHTML = `
                         <div class="flex items-start justify-between mb-2">
                             <div class="flex items-center gap-2">
@@ -517,7 +492,7 @@
 
         searchInput.addEventListener('input', renderCards);
         init();
-
     </script>
+    <script src="./nav.js" data-title="Rules Database" data-icon="ph-books" data-help="Search or browse the internal facility rules. You can filter by category (e.g., Learn to Swim, Waterslide) or use the search bar to find specific policies by keyword. Data is synced with the official Google Sheet."></script>
 </body>
 </html>

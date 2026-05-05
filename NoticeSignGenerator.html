@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Printable Sign Generator - Clarence Regional Aquatic Centre</title>
+    <title>Notice Builder - Clarence Regional Aquatic Centre</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@0.413.0"></script>
     <style>
@@ -88,7 +91,7 @@
     <!-- Header -->
     <div class="no-print mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-slate-800">Printable Sign Generator</h1>
+            <h1 class="text-3xl font-bold text-slate-800">Notice Builder</h1>
             <p class="text-slate-500 text-sm">Create standard compliant signage for CRAC & YCP</p>
         </div>
         <div class="flex gap-2">
@@ -205,7 +208,7 @@
                                 <input type="number" id="headlineSize" value="48" oninput="updatePreview()" class="w-16 p-1 text-sm border rounded text-center" title="Font Size">
                                 <select id="headlineAlign" onchange="updatePreview()" class="text-sm border rounded p-1 flex-grow">
                                     <option value="left">Left</option>
-                                    <option value="center" selected>Center</option>
+                                    <option value="center" selected>Centre</option>
                                     <option value="right">Right</option>
                                 </select>
                             </div>
@@ -231,18 +234,15 @@
                                     <select id="iconSelect1" onchange="handleIconSelect(1)" class="flex-grow p-1.5 border border-slate-300 rounded text-sm min-w-0">
                                         <option value="none">No Icon</option>
                                         <option value="ban">Prohibited (Ban)</option>
-                                        <option value="triangle-alert">Warning (Triangle)</option>
+                                        <option value="alert-triangle">Warning (Triangle)</option>
                                         <option value="info">Info (Circle)</option>
                                         <option value="clock">Time / Clock</option>
                                         <option value="waves">Waves / Swim</option>
                                         <option value="sparkles">Cleaning / Sparkles</option>
-                                        <option value="cctv">Camera / CCTV</option>
+                                        <option value="camera">Camera / CCTV</option>
                                         <option value="parking-circle">Parking</option>
-                                        <option value="wheelchair">Wheelchair / Access</option>
-                                        <option value="accessibility">Accessibility (Person)</option>
-                                        <option value="slippery">Slippery (Falling Person)</option>
-                                        <option value="droplets">Water / Droplets</option>
-                                        <option value="droplet">Single Drop</option>
+                                        <option value="accessibility">Wheelchair / Access</option>
+                                        <option value="user">Accessibility (Person)</option>
                                         <option value="flame">Flammable</option>
                                         <option value="zap">High Voltage / Electricity</option>
                                         <option value="cigarette-off">No Smoking</option>
@@ -259,21 +259,17 @@
                                 <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                     <span class="text-xs font-bold text-slate-400 w-4">2.</span>
                                     <select id="iconSelect2" onchange="handleIconSelect(2)" class="flex-grow p-1.5 border border-slate-300 rounded text-sm min-w-0">
-                                        <!-- Same options injected via JS to save space, or duplicated here for ease -->
                                         <option value="none">No Icon</option>
                                         <option value="ban">Prohibited (Ban)</option>
-                                        <option value="triangle-alert">Warning (Triangle)</option>
+                                        <option value="alert-triangle">Warning (Triangle)</option>
                                         <option value="info">Info (Circle)</option>
                                         <option value="clock">Time / Clock</option>
                                         <option value="waves">Waves / Swim</option>
                                         <option value="sparkles">Cleaning / Sparkles</option>
-                                        <option value="cctv">Camera / CCTV</option>
+                                        <option value="camera">Camera / CCTV</option>
                                         <option value="parking-circle">Parking</option>
-                                        <option value="wheelchair">Wheelchair / Access</option>
-                                        <option value="accessibility">Accessibility (Person)</option>
-                                        <option value="slippery">Slippery (Falling Person)</option>
-                                        <option value="droplets">Water / Droplets</option>
-                                        <option value="droplet">Single Drop</option>
+                                        <option value="accessibility">Wheelchair / Access</option>
+                                        <option value="user">Accessibility (Person)</option>
                                         <option value="flame">Flammable</option>
                                         <option value="zap">High Voltage / Electricity</option>
                                         <option value="cigarette-off">No Smoking</option>
@@ -292,18 +288,15 @@
                                     <select id="iconSelect3" onchange="handleIconSelect(3)" class="flex-grow p-1.5 border border-slate-300 rounded text-sm min-w-0">
                                         <option value="none">No Icon</option>
                                         <option value="ban">Prohibited (Ban)</option>
-                                        <option value="triangle-alert">Warning (Triangle)</option>
+                                        <option value="alert-triangle">Warning (Triangle)</option>
                                         <option value="info">Info (Circle)</option>
                                         <option value="clock">Time / Clock</option>
                                         <option value="waves">Waves / Swim</option>
                                         <option value="sparkles">Cleaning / Sparkles</option>
-                                        <option value="cctv">Camera / CCTV</option>
+                                        <option value="camera">Camera / CCTV</option>
                                         <option value="parking-circle">Parking</option>
-                                        <option value="wheelchair">Wheelchair / Access</option>
-                                        <option value="accessibility">Accessibility (Person)</option>
-                                        <option value="slippery">Slippery (Falling Person)</option>
-                                        <option value="droplets">Water / Droplets</option>
-                                        <option value="droplet">Single Drop</option>
+                                        <option value="accessibility">Wheelchair / Access</option>
+                                        <option value="user">Accessibility (Person)</option>
                                         <option value="flame">Flammable</option>
                                         <option value="zap">High Voltage / Electricity</option>
                                         <option value="cigarette-off">No Smoking</option>
@@ -347,33 +340,19 @@
                         <i data-lucide="file-text" class="w-5 h-5 text-slate-500"></i> Message Body
                     </h2>
                     
-                    <div class="mb-2 flex flex-wrap gap-1 bg-slate-50 p-1.5 rounded border border-slate-200 items-center">
-                        <button onclick="formatDoc('bold')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Bold"><i data-lucide="bold" class="w-4 h-4"></i></button>
-                        <button onclick="formatDoc('italic')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Italic"><i data-lucide="italic" class="w-4 h-4"></i></button>
-                        <button onclick="formatDoc('underline')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Underline"><i data-lucide="underline" class="w-4 h-4"></i></button>
-                        <div class="w-px h-6 bg-slate-300 mx-1"></div>
-                        <button onclick="formatDoc('insertUnorderedList')" class="p-1.5 hover:bg-slate-200 rounded text-slate-700" title="Bullet List"><i data-lucide="list" class="w-4 h-4"></i></button>
-                        <div class="w-px h-6 bg-slate-300 mx-1"></div>
-                        
-                        <div class="flex items-center gap-1 p-1 hover:bg-slate-200 rounded cursor-pointer border border-transparent hover:border-slate-300" title="Change highlight text colour">
-                            <i data-lucide="palette" class="w-4 h-4 text-slate-700"></i>
-                            <input type="color" onchange="formatColor(this.value)" class="w-5 h-5 p-0 border-0 rounded cursor-pointer bg-transparent">
+                    <div class="mb-3 bg-white rounded-lg">
+                        <div id="quillEditor" class="min-h-[120px] max-h-[250px] overflow-y-auto bg-slate-50 rounded-b-lg border-slate-300">
+                            <p>The 50m Pool is closed for winter maintenance.</p>
                         </div>
-
-                        <button onclick="formatDoc('removeFormat')" class="p-1.5 hover:bg-slate-200 rounded ml-auto text-slate-500" title="Clear Formatting"><i data-lucide="eraser" class="w-4 h-4"></i></button>
-                    </div>
-
-                    <div id="contentEditor" contenteditable="true" class="rich-text-editor p-3 border border-slate-300 rounded bg-white text-slate-700 mb-3" oninput="updatePreview()">
-                        The 50m Pool is closed for winter maintenance.
                     </div>
 
                     <div class="grid grid-cols-12 gap-2">
                         <div class="col-span-4">
-                            <label class="block text-xs text-slate-500">Font Size</label>
+                            <label class="block text-xs text-slate-500">Base Font Size</label>
                             <input type="number" id="contentSize" value="28" oninput="updatePreview()" class="w-full border rounded p-1">
                         </div>
                         <div class="col-span-4">
-                            <label class="block text-xs text-slate-500">Text Align</label>
+                            <label class="block text-xs text-slate-500">Default Align</label>
                             <select id="contentAlign" onchange="updatePreview()" class="w-full border rounded p-1">
                                 <option value="left">Left</option>
                                 <option value="center" selected>Center</option>
@@ -611,7 +590,6 @@
             const val = document.getElementById('iconSelect' + i).value;
             const col = document.getElementById('iconColor' + i).value;
             
-            // Map custom vars cleanly
             let customData = null;
             if(i === 1) customData = customIconData1;
             if(i === 2) customData = customIconData2;
@@ -623,16 +601,7 @@
                 img.style.height = iconSize + 'px';
                 img.style.width = 'auto';
                 iconContainer.appendChild(img);
-            } else if (standardSafetyPaths[val]) {
-                // Force the standard path into an unstyled <img> so NO external CSS can ever affect its shape or stroke
-                const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="${col}"><path d="${standardSafetyPaths[val]}"/></svg>`;
-                const img = document.createElement('img');
-                img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(rawSvg);
-                img.style.height = iconSize + 'px';
-                img.style.width = iconSize + 'px';
-                img.className = "shrink-0";
-                iconContainer.appendChild(img);
-            } else if (val !== 'none' && val !== 'custom') {
+            } else if (val !== 'none') {
                 const wrapper = document.createElement('div');
                 wrapper.style.color = col;
                 wrapper.className = "flex shrink-0";
@@ -644,7 +613,6 @@
             }
         }
         
-        // Re-init lucide icons and apply explicit sizes for the preview container
         lucide.createIcons();
         const previewLucideIcons = iconContainer.querySelectorAll('.lucide');
         previewLucideIcons.forEach(svg => {
@@ -671,7 +639,7 @@
         }
 
         // Body Content & Alignment
-        bodyText.innerHTML = document.getElementById('contentEditor').innerHTML;
+        bodyText.innerHTML = quill ? quill.root.innerHTML : '';
         bodyText.style.fontSize = document.getElementById('contentSize').value + 'px';
         bodyText.style.textAlign = document.getElementById('contentAlign').value;
 
@@ -758,20 +726,6 @@
         if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
     }
 
-    // New Text Color Function
-    function formatColor(color) {
-        document.execCommand('styleWithCSS', false, true); 
-        document.execCommand('foreColor', false, color);
-        document.getElementById('contentEditor').focus();
-        updatePreview();
-    }
-
-    function formatDoc(cmd) {
-        document.execCommand(cmd, false, null);
-        document.getElementById('contentEditor').focus();
-        updatePreview();
-    }
-
     function checkOverflow() {
         const pane = document.getElementById('previewPane');
         if (pane.scrollHeight > pane.clientHeight + 2) {
@@ -807,7 +761,7 @@
         danger_stop: {
             type: 'danger', border: 'hazard', logo: 'none',
             hlText: 'DO NOT ENTER', hlColor: '#000000', hlSize: 60,
-            icon1: 'triangle-alert', iconColor1: '#dc2626', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
+            icon1: 'alert-triangle', iconColor1: '#dc2626', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
             iconSize: 160, bg: '#ffffff',
             body: 'Chemical handling in progress.<br>Authorised Personnel Only.',
             footer: 'Clarence Valley Council'
@@ -815,7 +769,7 @@
         cleaning: {
             type: 'warning', border: 'none', logo: 'crac',
             hlText: 'Cleaning In Progress', hlColor: '#000000', hlSize: 42,
-            icon1: 'sparkles', iconColor1: '#eab308', icon2: 'slippery', iconColor2: '#2563eb', icon3: 'none', iconColor3: '#000000',
+            icon1: 'sparkles', iconColor1: '#eab308', icon2: 'accessibility', iconColor2: '#2563eb', icon3: 'none', iconColor3: '#000000',
             iconSize: 100, bg: '#fefce8',
             body: 'Floors may be slippery. Please watch your step.',
             footer: 'Clarence Regional Aquatic Centre'
@@ -840,7 +794,7 @@
         document.getElementById('iconSize').value = t.iconSize || 120;
 
         document.getElementById('bgColor').value = t.bg;
-        document.getElementById('contentEditor').innerHTML = t.body;
+        if(quill) quill.root.innerHTML = t.body;
         document.getElementById('footerText').value = t.footer;
         
         handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
@@ -856,7 +810,7 @@
 
         const state = {
             headline: document.getElementById('headlineInput').value,
-            content: document.getElementById('contentEditor').innerHTML,
+            content: quill ? quill.root.innerHTML : '',
             signType: document.getElementById('signType').value,
             logo: document.getElementById('logoSelect').value,
             footer: document.getElementById('footerText').value,
@@ -883,25 +837,32 @@
         if (saves && saves[name]) {
             const s = saves[name];
             document.getElementById('headlineInput').value = s.headline;
-            document.getElementById('contentEditor').innerHTML = s.content;
+            if(quill) quill.root.innerHTML = s.content;
             document.getElementById('signType').value = s.signType;
             document.getElementById('logoSelect').value = s.logo;
             document.getElementById('footerText').value = s.footer;
             if(s.headerText) document.getElementById('headerTextInput').value = s.headerText;
             if(s.headerColor) document.getElementById('headerColorInput').value = s.headerColor;
             
-            // Icon Backwards compatibility with V1 saves
+            // Icon mapping for backwards compatibility with old names
+            const mapIcon = (name) => {
+                if (name === 'triangle-alert') return 'alert-triangle';
+                if (name === 'cctv') return 'camera';
+                if (name === 'slippery') return 'accessibility';
+                return name || 'none';
+            };
+
             if(s.icon && !s.icon1) {
-                document.getElementById('iconSelect1').value = s.icon;
+                document.getElementById('iconSelect1').value = mapIcon(s.icon);
                 document.getElementById('iconColor1').value = s.iconColor || '#000000';
                 document.getElementById('iconSelect2').value = 'none';
                 document.getElementById('iconSelect3').value = 'none';
             } else {
-                document.getElementById('iconSelect1').value = s.icon1 || 'none';
+                document.getElementById('iconSelect1').value = mapIcon(s.icon1);
                 document.getElementById('iconColor1').value = s.iconColor1 || '#000000';
-                document.getElementById('iconSelect2').value = s.icon2 || 'none';
+                document.getElementById('iconSelect2').value = mapIcon(s.icon2);
                 document.getElementById('iconColor2').value = s.iconColor2 || '#000000';
-                document.getElementById('iconSelect3').value = s.icon3 || 'none';
+                document.getElementById('iconSelect3').value = mapIcon(s.icon3);
                 document.getElementById('iconColor3').value = s.iconColor3 || '#000000';
             }
             if(s.iconSize) document.getElementById('iconSize').value = s.iconSize;
@@ -950,14 +911,30 @@
         lucide.createIcons();
         refreshSavedList();
 
-        // NEW LOGIC: Catch AI data from the URL
+        // Initialize Quill
+        quill = new Quill('#quillEditor', {
+            theme: 'snow',
+            placeholder: 'Enter sign body text here...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['clean']
+                ]
+            }
+        });
+        
+        quill.on('text-change', () => updatePreview());
+
+        // Catch template data from the URL
         const params = new URLSearchParams(window.location.search);
         const headlineParam = params.get('headline');
         const bodyParam = params.get('body');
 
         if (headlineParam || bodyParam) {
             if (headlineParam) document.getElementById('headlineInput').value = headlineParam;
-            if (bodyParam) document.getElementById('contentEditor').innerHTML = bodyParam;
+            if (bodyParam) quill.root.innerHTML = bodyParam;
 
             // Automatically select "Notice" style to make it look good right away
             document.getElementById('signType').value = 'notice';
@@ -972,5 +949,6 @@
 
 </script>
 
+    <script src="./nav.js" data-title="Notice Builder" data-icon="ph-warning-octagon" data-help="Create standardised PDF signs for facility closures, maintenance, or safety notices. Select a template, customise the text, and use the 'Print' button to create a compliant A4 sign. You can also save your custom configurations as presets for future use."></script>
 </body>
 </html>

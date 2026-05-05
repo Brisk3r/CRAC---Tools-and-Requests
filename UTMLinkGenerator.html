@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,10 +40,7 @@
 </head>
 <body class="bg-slate-100 font-sans">
     <div class="container mx-auto max-w-3xl my-8 md:my-12 p-6 md:p-8 bg-white rounded-xl shadow-lg">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">UTM Link & QR Code Generator</h1>
-            <p class="text-slate-500 mt-2">Create, shorten, and save links for your marketing campaigns.</p>
-        </header>
+        <!-- Unified Navigation injected via nav.js -->
         
         <form id="utmForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Form fields remain the same -->
@@ -328,5 +325,6 @@
         copyLongUrlButton.addEventListener('click', () => copyToClipboard(resultUrl, 'Copied long URL!'));
         copyShortUrlButton.addEventListener('click', () => copyToClipboard(shortUrlResult, 'Copied short URL!'));
     </script>
+    <script src="./nav.js" data-title="UTM & QR Builder" data-icon="ph-link-simple" data-help="Build tracked URLs for marketing campaigns. Enter your base website link, define the source (e.g., Facebook, Email), and the tool will create a professional UTM-tagged URL. This helps us track which channels are driving the most traffic to our facility pages."></script>
 </body>
 </html>

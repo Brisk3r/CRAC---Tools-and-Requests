@@ -10,523 +10,250 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Alpine.js for Modals -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        midnight: '#0f172a',
+                        deep: '#020617',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .card-hover:hover { transform: translateY(-2px); transition: all 0.2s ease-in-out; }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.4s, color 0.4s; }
+        .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); }
         [x-cloak] { display: none !important; }
         
-        /* Custom Scrollbar for updates */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.1); border-radius: 20px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); }
+
+        .glass-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        .dark .glass-card {
+            background: #1e293b !important;
+            border: 1px solid #334155;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col" x-data="{ isModalOpen: false, modalTitle: '', modalSrc: '', mobileMenuOpen: false }">
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col dark:bg-deep dark:text-white">
 
-    <!-- Header / Navigation -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            
-            <!-- Logo Area -->
-            <div class="flex items-center gap-3">
-                <a href="index.html" class="flex items-center gap-3 group">
-                    <div class="bg-cyan-600 text-white p-2 rounded-lg group-hover:bg-cyan-700 transition-colors">
-                        <i class="ph-bold ph-waves text-2xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Operations Hub</h1>
-                        <p class="text-xs text-slate-500 font-medium hidden sm:block">Clarence Regional Aquatic Centre & YCP</p>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center gap-1">
-                <a href="CRACResources.html" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-cyan-700 rounded-md hover:bg-cyan-50 transition-colors">CRAC Resources</a>
-                <a href="YCPResources.html" class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-teal-700 rounded-md hover:bg-teal-50 transition-colors">YCP Resources</a>
-                
-                <div class="h-6 w-px bg-slate-200 mx-2"></div>
-                
-                <button @click="isModalOpen = true; modalTitle = 'Communication Request Form'; modalSrc = 'https://brisk3r.github.io/CRAC---Tools-and-Requests/SocialCal/soccal.html'" 
-                        class="px-3 py-2 text-sm font-medium text-slate-600 hover:text-pink-600 rounded-md hover:bg-pink-50 transition-colors">
-                    Comms Request
-                </button>
-                
-                <button @click="isModalOpen = true; modalTitle = 'Book a Meeting with Avi'; modalSrc = 'https://outlook.office.com/book/BookanAvi@clarence.nsw.gov.au/?embed=true'" 
-                        class="ml-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2">
-                    <i class="ph-bold ph-calendar-plus"></i>
-                    <span>Book Meeting</span>
-                </button>
-            </nav>
-
-            <!-- Mobile Menu Toggle -->
-            <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
-                <i class="ph-bold" :class="mobileMenuOpen ? 'ph-x' : 'ph-list'" class="text-2xl"></i>
-            </button>
-        </div>
-
-        <!-- Mobile Menu Dropdown -->
-        <div x-show="mobileMenuOpen" x-cloak 
-             x-transition:enter="transition ease-out duration-100"
-             x-transition:enter-start="opacity-0 transform -translate-y-2"
-             x-transition:enter-end="opacity-100 transform translate-y-0"
-             x-transition:leave="transition ease-in duration-75"
-             x-transition:leave-start="opacity-100 transform translate-y-0"
-             x-transition:leave-end="opacity-0 transform -translate-y-2"
-             class="md:hidden border-t border-slate-200 bg-white absolute w-full z-50 shadow-lg">
-            <div class="px-4 py-4 space-y-2">
-                <a href="CRACResources.html" class="block px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-cyan-50 hover:text-cyan-700">
-                    <i class="ph-bold ph-book-bookmark mr-2"></i> CRAC Resources
-                </a>
-                <a href="YCPResources.html" class="block px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-teal-50 hover:text-teal-700">
-                    <i class="ph-bold ph-waves mr-2"></i> YCP Resources
-                </a>
-                <button @click="isModalOpen = true; modalTitle = 'Communication Request Form'; modalSrc = 'https://forms.office.com/r/1tV6fDHVJB?embed=true'; mobileMenuOpen = false" 
-                        class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-pink-50 hover:text-pink-700">
-                    <i class="ph-bold ph-paper-plane-tilt mr-2"></i> Comms Request
-                </button>
-                <button @click="isModalOpen = true; modalTitle = 'Book a Meeting with Avi'; modalSrc = 'https://outlook.office.com/book/BookanAvi@clarence.nsw.gov.au/?embed=true'; mobileMenuOpen = false" 
-                        class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium bg-slate-900 text-white mt-2">
-                    <i class="ph-bold ph-calendar-plus mr-2"></i> Book a Meeting
-                </button>
-            </div>
-        </div>
-    </header>
+    <!-- Unified Navigation injected via nav.js -->
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
-        <!-- Hero / Welcome Section -->
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-10 relative overflow-hidden">
+        <!-- Classic Hero Section -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-10 relative overflow-hidden dark:bg-midnight dark:border-slate-800">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
             
             <div class="p-8 md:p-12 text-center max-w-4xl mx-auto">
-                <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-4">CRAC & YCP Team Hub</h2>
-                <p class="text-slate-600 text-base md:text-lg leading-relaxed mb-8">
-                    Hi team, I've created this site to help centralise all our communication requests and resources. All comms and signage requests <strong>must be processed through these tools</strong> for our records and to keep brand consistency. It should make our workflow much smoother, especially with me working more remotely. Let me know if you have any questions! - Avi <span class="text-slate-400 hover:text-red-500 transition-colors cursor-default">❤️</span>
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-4 dark:text-white">CRAC & YCP Team Hub</h2>
+                <p class="text-slate-600 text-base md:text-lg leading-relaxed mb-8 dark:text-slate-400">
+                    Hi team, I've created this site to help centralise all our communication requests and resources. All comms and signage requests <strong>must be processed through these tools</strong> for our records and to keep brand consistency. It should make our workflow much smoother, especially with me working more remotely. Let me know if you have any questions! - Avi <a href="./CRACSIM.html" class="text-slate-400 hover:text-red-500 transition-colors" title="Legacy Simulator">❤️</a>
                 </p>
 
                 <!-- Central Search Bar -->
                 <div class="relative max-w-xl mx-auto">
                     <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl"></i>
                     <input type="text" id="searchInput" placeholder="Search for tools, forms, or resources..." 
-                        class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:bg-white focus:border-cyan-500 transition-all text-base outline-none shadow-sm hover:shadow-md">
+                        class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:bg-white focus:border-cyan-500 transition-all text-base outline-none shadow-sm hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:focus:bg-slate-800/50">
                 </div>
             </div>
         </section>
 
-        <!-- Section: Administration & Management -->
-        <div class="mb-10 category-section">
-            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
-                <i class="ph-duotone ph-shield-check text-blue-600 text-xl"></i> Administration & Security
+        <!-- Dynamic Jump Back In Section -->
+        <div id="recents-section" class="mb-10 hidden">
+            <h2 class="text-xs font-bold text-blue-500 mb-4 uppercase tracking-widest flex items-center gap-2 dark:text-blue-400">
+                <i class="ph-bold ph-lightning"></i> Jump Back In
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <!-- CRAC Calendar Admin -->
-                <a href="CRAC_CAL/crac-cal-admin.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-calendar-check text-xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Admin</span>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">CRAC Calendar Admin</h3>
-                    <p class="text-sm text-slate-500">Manage bookings and lanes for the Clarence Regional Aquatic Centre.</p>
-                </a>
-
-                <!-- YCP Calendar Admin -->
-                <a href="CRAC_CAL/ycp-cal-admin.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-teal-50 text-teal-600 rounded-lg group-hover:bg-teal-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-calendar-plus text-xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-teal-600 bg-teal-50 px-2 py-1 rounded-full">Admin</span>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">YCP Calendar Admin</h3>
-                    <p class="text-sm text-slate-500">Manage schedule and availability for Yamba Community Pool.</p>
-                </a>
-
+            <div id="recents-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Recents injected via JS -->
             </div>
         </div>
 
-        <!-- Section: Staff & Operations -->
-        <div class="mb-10 category-section">
-            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
-                <i class="ph-duotone ph-users-three text-orange-500 text-xl"></i> Staff & Operations
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <!-- Timesheet Calc -->
-                <a href="WeekendTimesheetCalculator.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-orange-50 text-orange-600 rounded-lg group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-calculator text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Timesheet Calculator</h3>
-                    <p class="text-sm text-slate-500">Calculate weekend penalty rates and total hours.</p>
-                </a>
-
-                <!-- Task Tracker -->
-                <a href="TaskTracker.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-orange-50 text-orange-600 rounded-lg group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-list-checks text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Task Tracker</h3>
-                    <p class="text-sm text-slate-500">Track operational tasks and maintenance logs.</p>
-                </a>
-            </div>
-        </div>
-
-        <!-- Section: Marketing Generators & Comms -->
-        <div class="mb-10 category-section">
-            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
-                <i class="ph-duotone ph-megaphone text-pink-500 text-xl"></i> Marketing, Comms & Generators
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <!-- Communication Request (Modal) -->
-                <div @click="isModalOpen = true; modalTitle = 'Communication Request Form'; modalSrc = 'https://forms.office.com/r/1tV6fDHVJB?embed=true'" 
-                     class="tool-card group bg-white p-6 rounded-xl border border-pink-100 shadow-sm hover:shadow-md card-hover cursor-pointer relative overflow-hidden h-full">
-                    <div class="absolute top-0 right-0 w-16 h-16 bg-pink-50 rounded-bl-full -mr-8 -mt-8 z-0"></div>
-                    <div class="flex justify-between items-start mb-4 relative z-10">
-                        <div class="p-2 bg-pink-100 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-paper-plane-tilt text-xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-pink-600 bg-pink-50 px-2 py-1 rounded-full">Form</span>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1 relative z-10">Communication Requests</h3>
-                    <p class="text-sm text-slate-500 relative z-10">Submit requests for social media, newsletters, and photo uploads.</p>
-                </div>
-
-                <!-- Notice Sign Gen -->
-                <a href="NoticeSignGenerator.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-pink-50 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-warning-octagon text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Notice Sign Generator</h3>
-                    <p class="text-sm text-slate-500">Create standardised PDF signs for closures or hazards.</p>
-                </a>
-
-                <!-- Swim Cert Gen -->
-                <a href="Mult-Centre/SwimCertGen.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-cyan-50 text-cyan-600 rounded-lg group-hover:bg-cyan-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-certificate text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Swim Cert Generator</h3>
-                    <p class="text-sm text-slate-500">Generate Learn to Swim certificates for students.</p>
-                </a>
-
-                <!-- QR Gen -->
-                <a href="QRCodeGenerator.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-pink-50 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-qr-code text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">QR Code Generator</h3>
-                    <p class="text-sm text-slate-500">Create branded QR codes for posters and flyers.</p>
-                </a>
-
-                <!-- Email Link Gen -->
-                <a href="EmailLinkGenerator.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-pink-50 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-envelope-open text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Email Link Generator</h3>
-                    <p class="text-sm text-slate-500">Create pre-filled 'mailto' links for campaigns.</p>
-                </a>
-
-                 <!-- UTM Link Gen -->
-                 <a href="UTMLinkGenerator.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-pink-50 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-link text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">UTM Link Generator</h3>
-                    <p class="text-sm text-slate-500">Generate tracked URLs for digital marketing.</p>
-                </a>
-
-                <!-- Email Templates -->
-                <a href="crac-email-templates.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-pink-50 text-pink-600 rounded-lg group-hover:bg-pink-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-text-aa text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Email Templates</h3>
-                    <p class="text-sm text-slate-500">Standardised HTML templates for customer comms.</p>
-                </a>
-            </div>
-        </div>
-
-        <!-- Section: Resources & Planning -->
-        <div class="mb-10 category-section">
-            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
-                <i class="ph-duotone ph-book-bookmark text-indigo-500 text-xl"></i> Resources & Planning
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <a href="CRACResources.html" class="tool-card group bg-white p-6 rounded-xl border-l-4 border-l-blue-600 shadow-sm hover:shadow-md card-hover block h-full">
-                    <h3 class="font-bold text-slate-900 mb-1">CRAC Resources</h3>
-                    <p class="text-sm text-slate-500">Central documentation for CRAC operations.</p>
-                </a>
-
-                <a href="YCPResources.html" class="tool-card group bg-white p-6 rounded-xl border-l-4 border-l-teal-500 shadow-sm hover:shadow-md card-hover block h-full">
-                    <h3 class="font-bold text-slate-900 mb-1">YCP Resources</h3>
-                    <p class="text-sm text-slate-500">Central documentation for YCP operations.</p>
-                </a>
-
-                <a href="SocialSchedule.html" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                            <i class="ph-bold ph-calendar-star text-xl"></i>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-1">Social Schedule</h3>
-                    <p class="text-sm text-slate-500">Overview of upcoming social posts and events.</p>
-                </a>
-
-            </div>
-        </div>
+        <div id="dashboard-content"></div>
 
         <!-- Recent Updates -->
-        <div class="mb-10 category-section">
-            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+        <div class="category-section mt-10">
+            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 dark:text-slate-300 dark:border-slate-800">
                 <i class="ph-duotone ph-bell text-amber-500 text-xl"></i> Recent Updates
             </h2>
-            <div id="updates-container" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-80 overflow-y-auto custom-scroll">
+            <div id="updates-container" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-[500px] overflow-y-auto custom-scroll dark:bg-midnight dark:border-slate-800">
                 <p class="text-slate-400 text-sm animate-pulse">Loading updates...</p>
-            </div>
-        </div>
-
-        <!-- Section: Public Embeds (Technical) -->
-        <div class="mb-10 category-section">
-            <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
-                <i class="ph-duotone ph-code text-slate-400 text-xl"></i> Public Embed Files (Technical)
-            </h2>
-            <div class="bg-slate-100 rounded-xl p-6 border border-slate-200">
-                <p class="text-sm text-slate-500 mb-4">These files are designed to be embedded in other websites (Iframes) and may not look correct when viewed directly.</p>
-                <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <li>
-                        <a href="CRAC_CAL/crac-cal-embed.html" class="flex items-center gap-2 text-sm text-blue-600 hover:underline">
-                            <i class="ph-bold ph-arrow-square-out"></i> CRAC Calendar Embed
-                        </a>
-                    </li>
-                    <li>
-                        <a href="CRAC_CAL/ycp-cal-embed.html" class="flex items-center gap-2 text-sm text-teal-600 hover:underline">
-                            <i class="ph-bold ph-arrow-square-out"></i> YCP Calendar Embed
-                        </a>
-                    </li>
-                </ul>
             </div>
         </div>
 
     </main>
 
-    <!-- Modal for embedding forms/calendars (Alpine.js) -->
-    <div x-show="isModalOpen" x-cloak 
-         x-transition:enter="ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-         @keydown.escape.window="isModalOpen = false">
-        
-        <div x-show="isModalOpen"
-             x-transition:enter="ease-out duration-300"
-             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-             x-transition:leave="ease-in duration-200"
-             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-full max-h-[85vh] flex flex-col border border-slate-200" 
-             @click.outside="isModalOpen = false">
-            
-            <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
-                <h3 class="text-lg font-bold text-slate-800" x-text="modalTitle"></h3>
-                <button @click="isModalOpen = false" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded-full transition-colors">
-                    <i class="ph-bold ph-x text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="flex-grow bg-slate-50 rounded-b-2xl overflow-hidden relative">
-                 <!-- Loading Indicator behind iframe -->
-                 <div class="absolute inset-0 flex items-center justify-center -z-10">
-                    <i class="ph-duotone ph-spinner animate-spin text-3xl text-slate-300"></i>
-                </div>
-                <iframe :src="modalSrc" class="w-full h-full" style="border: none;"></iframe>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500 space-y-2">
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto dark:bg-midnight dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500 space-y-2 dark:text-slate-400">
             <p>&copy; <span id="year"></span> Clarence Valley Council. All rights reserved.</p>
-            <p class="text-xs">Clarence Regional Aquatic Centre & Yamba Community Pool</p>
-            <p class="text-xs text-slate-400">Site managed by <a href="mailto:avi.parker@clarence.nsw.gov.au" class="hover:text-cyan-600 underline decoration-dotted">Avi Parker</a>. Version ID: <span id="random-number-output" class="font-mono"></span></p>
+            <p class="text-xs font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 flex items-center justify-center gap-2">
+                <span>Release: Blue Lagoon</span>
+                <span class="text-slate-300 dark:text-slate-700">|</span> 
+                <span>ID: <span id="random-number-output" class="font-mono"></span></span>
+                <a href="./CRACSIM.html" class="text-slate-200 hover:text-red-400 transition-colors px-1" title="Legacy Simulator">❤️</a>
+            </p>
         </div>
     </footer>
 
     <!-- Logic -->
+    <script src="./updates.js"></script>
     <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
-
-        // --- Search Logic ---
-        const searchInput = document.getElementById('searchInput');
-        const cards = document.querySelectorAll('.tool-card');
-        const sections = document.querySelectorAll('.category-section');
-
-        function filterTools(query) {
-            const lowerQuery = query.toLowerCase();
-
-            cards.forEach(card => {
-                const title = card.querySelector('h3').textContent.toLowerCase();
-                const desc = card.querySelector('p').textContent.toLowerCase();
-                const parentLi = card.closest('li'); 
-                const target = parentLi || card;
-
-                if (title.includes(lowerQuery) || desc.includes(lowerQuery)) {
-                    target.style.display = '';
-                    target.classList.remove('hidden');
-                } else {
-                    target.style.display = 'none';
-                    target.classList.add('hidden');
-                }
-            });
-
-            // Hide empty sections
-            sections.forEach(section => {
-                let hasVisible = false;
-                
-                const standardCards = section.querySelectorAll('.tool-card');
-                standardCards.forEach(c => { if (c.style.display !== 'none') hasVisible = true; });
-
-                const listItems = section.querySelectorAll('li');
-                listItems.forEach(l => { if (l.style.display !== 'none') hasVisible = true; });
-
-                section.style.display = hasVisible ? 'block' : 'none';
-            });
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => filterTools(e.target.value));
-        }
-
-        // --- Updates Feed Logic ---
-        const updates = [
+        const toolsData = [
             {
-                title: 'Security & Admin Updates',
-                content: 'Security updates have been rolled out for all the admin centres for the calendars and status admins.',
-                date: '16 Feburary 2026'
+                category: 'Operations',
+                icon: 'ph-duotone ph-briefcase',
+                color: 'blue',
+                tools: [
+                    { title: 'Task Tracker', url: 'TaskTracker.html', desc: 'Track operational tasks and maintenance logs.', icon: 'ph-list-checks' },
+                    { title: 'Timesheet Calculator', url: 'WeekendTimesheetCalculator.html', desc: 'Calculate weekend penalty rates and total hours.', icon: 'ph-clock' },
+                    { title: 'Occupancy Calculator', url: 'occupancy-calculator.html', desc: 'Facility capacity and bather load tracking.', icon: 'ph-users-three' },
+                    { title: 'Rules Database', url: 'CRACPoolRulesDB.html', desc: 'Internal reference for facility rules and policies.', icon: 'ph-books' }
+                ]
             },
             {
-                title: 'Timesheet & Certificate Tools',
-                content: 'The Weekend Timesheet Calculator and Swim Cert Generator are now live in the dashboard to assist with daily operations.',
-                date: '12 January 2026'
+                category: 'Operations & Finance',
+                icon: 'ph-duotone ph-briefcase',
+                color: 'blue',
+                tools: [
+                    { title: 'Pricing Hub', url: 'CRACPriceCalculator.html', desc: 'Central kiosk and entry fee calculator for CRAC & Yamba.', icon: 'ph-currency-circle-dollar', badge: 'Core Tool' },
+                    { title: 'Task Tracker', url: 'TaskTracker.html', desc: 'Track maintenance and operational tasks.', icon: 'ph-check-square' },
+                    { title: 'Timesheet Tool', url: 'WeekendTimesheetCalculator.html', desc: 'Calculate award rates and weekend shifts.', icon: 'ph-clock-countdown' },
+                    { title: 'Occupancy', url: 'occupancy-calculator.html', desc: 'Real-time facility capacity tracking.', icon: 'ph-users-three' }
+                ]
             },
             {
-                title: 'Social Scheduler - Under Construction',
-                content: 'Added a dynamic social scheduler that holds feature rich brand specific boards to plan and collaborate on social media schedules. Open it up and type in a name for your board and it will automatically build you a resource.',
-                date: '25 August 2025'
+                category: 'Marketing & Comms',
+                icon: 'ph-duotone ph-megaphone',
+                color: 'pink',
+                tools: [
+                    { title: 'Request Comms', url: 'SocialCal/soccal.html', desc: 'Submit requests for social media and newsletters.', icon: 'ph-paper-plane-tilt' },
+                    { title: 'Notice Builder', url: 'NoticeSignGenerator.html', desc: 'Create and print standardised PDF signs and posters.', icon: 'ph-warning-octagon' },
+                    { title: 'UTM & QR Builder', url: 'UTMLinkGenerator.html', desc: 'Generate tracked URLs and branded QR codes.', icon: 'ph-qr-code' }
+                ]
             },
             {
-                title: 'Tools Hub Grouped',
-                content: 'The tools on the main hub page have been grouped into categories to make them easier to find.',
-                date: '22 August 2025'
+                category: 'Facility Admin',
+                icon: 'ph-duotone ph-buildings',
+                color: 'teal',
+                tools: [
+                    { title: 'CRAC Admin', url: 'CRAC_CAL/crac-cal-admin.html', desc: 'Manage bookings for the CRAC centre.', icon: 'ph-calendar', badge: 'Admin' },
+                    { title: 'YCP Admin', url: 'CRAC_CAL/ycp-cal-admin.html', desc: 'Manage schedule for Yamba Community Pool.', icon: 'ph-calendar-star', badge: 'Admin' },
+                    { title: 'Print Studio', url: 'CRAC_CAL/CRAC_CalPrintStudio.html', desc: 'Generate printable schedules and lane charts.', icon: 'ph-printer' }
+                ]
             },
             {
-                title: 'Added New Link Generators',
-                content: 'Create quick links with tracking parameters and helpful features without all the mucking around!',
-                date: '22 August 2025'
-            },
-            {
-                title: 'Added New Resource Hubs',
-                content: 'Access to important links and resources is being added to the two defined hub pages. Passwords are provided as needed to staff with clearance.',
-                date: '21 August 2025'
-            },
-            {
-                title: 'New QR Code Generator',
-                content: 'New QR Code Generator has been added to aid with quick signs and linking.',
-                date: '19 August 2025'
-            },
-            {
-                title: 'New Task Tracker Tool Added',
-                content: 'You can now use the "Task Tracker" tool to manage team projects and tasks.',
-                date: '19 August 2025'
-            },
-            {
-                title: 'New Consolidated Request Form is Live',
-                content: 'All requests for social media, newsletters, and photo uploads now go through our single "Communication Requests" form.',
-                date: '18 August 2025'
-            },
-            {
-                title: 'Reminder: Turnaround Times',
-                content: 'Just a friendly reminder to please allow at least 5 business days for standard signage requests.',
-                date: '15 August 2025'
+                category: 'Resources & Planning',
+                icon: 'ph-duotone ph-book-bookmark',
+                color: 'amber',
+                tools: [
+                    { title: 'A3 Menu Builder', url: 'A3MenuBuilder.html', desc: 'Create and print kiosk menus and posters.', icon: 'ph-list-plus' },
+                    { title: 'CRAC Links', url: 'CRACResources.html', desc: 'Central documentation for CRAC operations.', icon: 'ph-book-bookmark' },
+                    { title: 'YCP Links', url: 'YCPResources.html', desc: 'Central documentation for YCP operations.', icon: 'ph-waves' },
+                    { title: 'Cert Builder', url: 'Mult-Centre/SwimCertGen.html', desc: 'Create and print Learn to Swim certificates.', icon: 'ph-certificate' }
+                ]
             }
         ];
 
+        const renderDashboard = () => {
+            const container = document.getElementById('dashboard-content');
+            toolsData.forEach(cat => {
+                const section = document.createElement('div');
+                section.className = 'mb-10 category-section';
+                section.innerHTML = `
+                    <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 dark:text-slate-300 dark:border-slate-800">
+                        <i class="${cat.icon} text-${cat.color}-600 text-xl"></i> ${cat.category}
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${cat.tools.map(tool => `
+                            <a href="${tool.url}" class="tool-card group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md card-hover block h-full dark:bg-midnight dark:border-slate-800" data-search="${tool.title.toLowerCase()} ${tool.desc.toLowerCase()}">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="p-2 bg-${cat.color}-50 text-${cat.color}-600 rounded-lg group-hover:bg-${cat.color}-600 group-hover:text-white transition-colors dark:bg-${cat.color}-900/20">
+                                        <i class="ph-bold ${tool.icon} text-xl"></i>
+                                    </div>
+                                    ${tool.badge ? `<span class="text-[10px] font-bold uppercase tracking-wider text-${cat.color}-600 bg-${cat.color}-50 px-2 py-1 rounded-full dark:bg-${cat.color}-900/40">${tool.badge}</span>` : ''}
+                                </div>
+                                <h3 class="font-bold text-slate-900 mb-1 dark:text-white">${tool.title}</h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">${tool.desc}</p>
+                            </a>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        };
+
+        const renderRecents = () => {
+            const recents = JSON.parse(localStorage.getItem('gen-web-recents') || '[]');
+            const section = document.getElementById('recents-section');
+            const grid = document.getElementById('recents-grid');
+            if (recents.length === 0) return;
+            section.classList.remove('hidden');
+            grid.innerHTML = recents.map(tool => `
+                <a href="${tool.url}" class="group bg-white p-4 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-400 transition-all flex items-center gap-3 dark:bg-midnight dark:border-slate-800">
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors dark:bg-blue-900/20 dark:text-blue-400">
+                        <i class="ph-bold ${tool.icon} text-lg"></i>
+                    </div>
+                    <span class="font-bold text-slate-800 text-sm truncate dark:text-white">${tool.title}</span>
+                </a>
+            `).join('');
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
-            // Render Updates
+            document.getElementById('year').textContent = new Date().getFullYear();
+            renderDashboard();
+            renderRecents();
+
+            // Render Hub Updates
             const updatesContainer = document.getElementById('updates-container');
-            if (updatesContainer) {
-                updatesContainer.innerHTML = '';
-                
-                updates.forEach((update, index) => {
-                    const updateElement = document.createElement('div');
-                    updateElement.classList.add('py-3');
+            const dataToRender = (typeof hubUpdates !== 'undefined') ? hubUpdates : [];
+            
+            updatesContainer.innerHTML = dataToRender.map((update, index) => `
+                <div class="py-3 ${index < dataToRender.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="font-bold text-slate-800 text-sm dark:text-white">${update.title}</p>
+                        <span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 whitespace-nowrap ml-2 dark:bg-slate-800 dark:border-slate-700">${update.date}</span>
+                    </div>
+                    <p class="text-sm text-slate-600 leading-relaxed dark:text-slate-400">${update.content}</p>
+                </div>
+            `).join('');
 
-                    // Add a border to all but the last item
-                    if (index < updates.length - 1) {
-                        updateElement.classList.add('border-b', 'border-slate-100');
-                    }
-
-                    updateElement.innerHTML = `
-                        <div class="flex justify-between items-start mb-1">
-                            <p class="font-bold text-slate-800 text-sm">${update.title}</p>
-                            <span class="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 whitespace-nowrap ml-2">${update.date}</span>
-                        </div>
-                        <p class="text-sm text-slate-600 leading-relaxed">${update.content}</p>
-                    `;
-                    updatesContainer.appendChild(updateElement);
-                });
-            }
-
-            // Version ID
             const today = new Date();
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, '0');
             const day = String(today.getDate()).padStart(2, '0');
-            const dateFormatted = `${year}${month}${day}`;
-
             const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             let randomString = '';
-            for (let i = 0; i < 6; i++) {
-                randomString += characters.charAt(Math.floor(Math.random() * characters.length));
-            }
+            for (let i = 0; i < 6; i++) randomString += characters.charAt(Math.floor(Math.random() * characters.length));
+            document.getElementById('random-number-output').textContent = `${year}${month}${day}-${randomString}`;
+        });
 
-            const outputElement = document.getElementById('random-number-output');
-            if (outputElement) {
-                outputElement.textContent = `${dateFormatted}-${randomString}`;
-            }
+        // Search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.tool-card').forEach(card => {
+                const searchScope = card.getAttribute('data-search') || '';
+                card.style.display = searchScope.includes(query) ? '' : 'none';
+            });
+            document.querySelectorAll('.category-section').forEach(sec => {
+                const hasVisible = Array.from(sec.querySelectorAll('.tool-card')).some(c => c.style.display !== 'none');
+                sec.style.display = hasVisible ? '' : 'none';
+            });
         });
     </script>
+    <script src="./nav.js"></script>
 </body>
 </html>

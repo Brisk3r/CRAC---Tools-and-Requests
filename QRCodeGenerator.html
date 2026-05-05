@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,13 +31,7 @@
 </head>
 <body class="bg-gray-100">
 
-    <!-- Page Header -->
-    <header id="page-header" class="bg-white shadow-sm">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-cyan-700">QR Code Generator</h1>
-            <a href="index.html" class="text-sm font-medium text-cyan-600 hover:text-cyan-800">&larr; Back to Tools Hub</a>
-        </div>
-    </header>
+    <!-- Unified Navigation injected via nav.js -->
 
     <div class="flex flex-col lg:flex-row">
         <!-- Controls Section -->
@@ -58,7 +52,7 @@
                         <input type="color" id="dot-color" class="form-input h-10" value="#0e7490">
                     </div>
                     <div>
-                        <label for="background-color" class="form-label">Background Color</label>
+                        <label for="background-color" class="form-label">Background Colour</label>
                         <input type="color" id="background-color" class="form-input h-10" value="#ffffff">
                     </div>
                 </div>
@@ -95,7 +89,7 @@
                         </button>
                         <button type="button" id="remove-logo" class="ml-2 text-sm text-red-600 hover:text-red-800">Remove</button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">PNG, JPG, or SVG. Will be placed in the center.</p>
+                    <p class="text-xs text-gray-500 mt-1">PNG, JPG, or SVG. Will be placed in the centre.</p>
                 </div>
 
                 <!-- Download Button -->
@@ -245,5 +239,6 @@
         });
     </script>
 
+    <script src="./nav.js" data-title="QR Code Generator" data-icon="ph-qr-code" data-help="Instantly create branded QR codes for posters, flyers, or digital screens. Paste your target URL, customise the colours to match CRAC or YCP branding, and download the high-resolution image. Great for 'Scan to Book' or linking to facility resources."></script>
 </body>
 </html>
