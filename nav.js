@@ -143,12 +143,12 @@
                                 </div>
                                 <div><p class="uppercase tracking-tight">Timesheet Tool</p><p class="text-[9px] font-normal opacity-60">Penalty hour calc</p></div>
                             </a>
-                            <a href="${rootPath}CRACPoolRulesDB.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <!-- <a href="${rootPath}CRACPoolRulesDB.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
                                 <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
                                     <i class="ph-duotone ph-books text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Rules Database</p><p class="text-[9px] font-normal opacity-60">Facility policies</p></div>
-                            </a>
+                            </a> -->
                         </div>
                     </div>
                 </div>
@@ -285,6 +285,10 @@
 
         <!-- Mobile Menu Overlay -->
         <div id="mobile-menu" class="no-print hidden fixed inset-0 z-[100] bg-white dark:bg-slate-950 p-6 lg:hidden flex-col">
+            <style>
+                #mobile-menu { background-color: white !important; opacity: 1 !important; visibility: visible !important; }
+                .dark #mobile-menu { background-color: #020617 !important; }
+            </style>
             <div class="flex items-center justify-between mb-8">
                 <div class="flex items-center gap-3">
                     <div class="bg-cyan-600 text-white p-1.5 rounded-lg shadow-sm">
@@ -310,6 +314,9 @@
                         <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                             <i class="ph-duotone ph-clock text-blue-500 text-xl"></i> Timesheet Tool
                         </a>
+                        <!-- <a href="${rootPath}CRACPoolRulesDB.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                            <i class="ph-duotone ph-books text-blue-500 text-xl"></i> Rules Database
+                        </a> -->
                     </div>
                 </div>
                 <div>
