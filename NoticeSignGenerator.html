@@ -33,6 +33,17 @@
             overflow: hidden;
             position: relative;
             box-sizing: border-box;
+            transform-origin: top center;
+        }
+
+        @media (max-width: 1280px) {
+            #previewPane { transform: scale(0.85); margin-bottom: -150px; }
+        }
+        @media (max-width: 1024px) {
+            #previewPane { transform: scale(0.7); margin-bottom: -300px; }
+        }
+        @media (max-width: 768px) {
+            #previewPane { transform: scale(0.45); margin-bottom: -550px; }
         }
 
         #previewBorder {

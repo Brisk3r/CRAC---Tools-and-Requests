@@ -147,16 +147,32 @@
 
         /* Sidebar UI */
         .sidebar-input {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
             padding: 0.75rem 1rem;
             border-radius: 0.75rem;
             width: 100%;
             outline: none;
             font-weight: 600;
             font-size: 0.875rem;
+            transition: all 0.2s;
         }
-        .sidebar-input:focus { border-color: #3b82f6; background: white; }
+        .sidebar-input:focus { border-color: #004593; background: white; }
+
+        .mobile-warning {
+            display: none;
+            background: #fff7ed;
+            border-bottom: 2px solid #fed7aa;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            color: #9a3412;
+            z-index: 100;
+        }
+
+        @media (max-width: 1024px) {
+            .mobile-warning { display: block; }
+        }
         
         .list-edit-input {
             background: transparent;
