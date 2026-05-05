@@ -143,8 +143,9 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const UPLOAD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWDWX8ioKgdeUhkuqVS0YGYdIB9ygWrtSYxVOPV01ItNhvQI4xhcPwBQBt4Y5HXwb_/exec"; 
         const firebaseConfig = {
@@ -158,9 +159,11 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         let allRequests = [];
         let calendar;
+        let unsubscribe = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
@@ -189,10 +192,18 @@
             // Listen for Filter Changes
             document.getElementById('calendarFilter').addEventListener('change', renderCalendarEvents);
 
-            // Fetch Data
-            onSnapshot(collection(db, 'requests'), (snap) => {
-                allRequests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderCalendarEvents();
+            // Auth & Fetch Data
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    console.log("Connected to Comms Engine");
+                    if (unsubscribe) unsubscribe();
+                    unsubscribe = onSnapshot(collection(db, 'requests'), (snap) => {
+                        allRequests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderCalendarEvents();
+                    });
+                } else {
+                    signInAnonymously(auth).catch(err => console.error("Database Connection Failed:", err));
+                }
             });
 
             document.getElementById('requestForm').onsubmit = async (e) => {
@@ -220,7 +231,7 @@
                     generateSign: document.getElementById('generateSign').checked,
                     status: "Pending",
                     assetUrl: assetUrl,
-                    timestamp: new Date()
+                    timestamp: serverTimestamp()
                 });
 
                 document.getElementById('requestForm').reset();
