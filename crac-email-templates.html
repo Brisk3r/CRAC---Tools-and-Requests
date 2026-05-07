@@ -37,6 +37,13 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
+    <!-- ADDED MISSING NAVBAR ELEMENT -->
+    <div id="navbar" class="p-4 shadow-md transition-colors duration-500 text-white bg-blue-800">
+        <div class="max-w-7xl mx-auto px-4 md:px-8">
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-envelope mr-2"></i>Email Template Generator</h1>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- LEFT PANEL: Controls -->
@@ -261,9 +268,11 @@
         function setFacility(facId) {
             currentFacility = config[facId];
             
-            // Update Navbar Color
+            // Update Navbar Color with Null Check for safety
             const navbar = document.getElementById('navbar');
-            navbar.className = `p-4 shadow-md transition-colors duration-500 text-white ${facId === 'CRAC' ? 'bg-blue-800' : 'bg-teal-700'}`;
+            if (navbar) {
+                navbar.className = `p-4 shadow-md transition-colors duration-500 text-white ${facId === 'CRAC' ? 'bg-blue-800' : 'bg-teal-700'}`;
+            }
             
             // Update Buttons
             const btnCrac = document.getElementById('btn-crac');
@@ -387,7 +396,10 @@
                 btn.classList.remove('bg-green-600', 'hover:bg-green-700');
                 btn.classList.add('bg-slate-700');
                 
-                toast.classList.remove('hidden');
+                // Reset toast styling to green (in case it was red from an error)
+                toast.classList.remove('hidden', 'text-red-700', 'bg-red-100');
+                toast.classList.add('text-green-700', 'bg-green-100');
+                toast.innerHTML = 'Email copied! Ready to paste into Outlook.';
 
                 setTimeout(() => {
                     btn.innerHTML = originalText;
@@ -397,7 +409,15 @@
                 }, 2000);
 
             } catch (err) {
-                alert('Could not copy automatically. Please select the text and press Ctrl+C.');
+                // Better UI error handling rather than an alert
+                const toast = document.getElementById('toast');
+                toast.innerHTML = 'Could not copy automatically. Please press Ctrl+C or Cmd+C.';
+                toast.classList.remove('hidden', 'text-green-700', 'bg-green-100');
+                toast.classList.add('text-red-700', 'bg-red-100');
+                
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 4000);
             }
             
             selection.removeAllRanges();
@@ -407,6 +427,7 @@
         updateForm(); // Setup initial dynamic fields and render
 
     </script>
+    <!-- Assuming nav.js exists externally, keeping it intact -->
     <script src="./nav.js" data-title="Email Templates" data-icon="ph-layout"></script>
 </body>
 </html>
