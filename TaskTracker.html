@@ -190,7 +190,7 @@
                             </h2>
                             <div className="flex items-center gap-3">
                                 {tasks.length > 0 && (
-                                    <button onClick={onSquash} disabled={isProcessing} className="text-[10px] uppercase tracking-widest font-bold text-slate-500 hover:text-orange-600 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-800 px-3 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm disabled:opacity-50" title="Remove descriptions and updates to minimize database load times.">
+                                    <button onClick={onSquash} disabled={isProcessing} className="text-[10px] uppercase tracking-widest font-bold text-slate-500 hover:text-orange-600 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-800 px-3 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm disabled:opacity-50" title="Remove descriptions and updates to minimise database load times.">
                                         {isProcessing ? <i className="ph-bold ph-spinner animate-spin text-sm"></i> : <i className="ph-bold ph-arrows-in-line-vertical text-sm"></i>}
                                         {isProcessing ? 'Processing...' : 'Squash Data Payload'}
                                     </button>
@@ -708,7 +708,7 @@
                         chunk.forEach(task => {
                             const ref = doc(db, 'tasks', task.id);
                             batch.update(ref, { 
-                            description: '[Squashed to minimize database load size]', 
+                            description: '[Squashed to minimise database load size]', 
                             updates: [{ text: 'Historical data squashed.', date: new Date().toISOString(), author: 'System' }],
                             updatedAt: serverTimestamp(),
                             isSquashed: true

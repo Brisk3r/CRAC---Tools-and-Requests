@@ -229,7 +229,7 @@
             }, [paths, user]);
 
             const initializeDatabase = async () => {
-                if (!window.confirm("Initialize database with CRAC default settings?")) return;
+                if (!window.confirm("Initialise database with CRAC default settings?")) return;
                 try { await db.collection(paths.settings).doc('main_config').set(CRAC_DEFAULTS); }
                 catch(err) { alert("Initialization failed: " + err.message); }
             };
@@ -412,7 +412,7 @@
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 flex flex-col items-center justify-center text-center">
                                     <Icons.AlertTriangle className="text-yellow-600 mb-2" size={32} />
                                     <h3 className="text-lg font-bold text-yellow-800">Configuration Not Found</h3>
-                                    <button onClick={initializeDatabase} className="mt-3 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2"><Icons.Database size={18} /> Initialize Database Settings</button>
+                                    <button onClick={initializeDatabase} className="mt-3 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2"><Icons.Database size={18} /> Initialise Database Settings</button>
                                 </div>
                             )}
 
