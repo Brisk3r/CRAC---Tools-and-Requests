@@ -129,36 +129,48 @@
                         <span id="statusIndicator" class="px-2 py-0.5 text-[9px] font-black rounded-full text-white uppercase bg-slate-500">Pending</span>
                     </div>
 
-                    <div id="newRequestFields" class="hidden space-y-4">
-                        <div class="bg-slate-50 p-3 rounded-xl border">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="block text-[9px] text-slate-400 uppercase font-black">Campaign Title</span>
-                                <button id="suggestBtn" class="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                    Suggest Idea
-                                </button>
-                            </div>
-                            <input type="text" id="editTitle" class="w-full bg-transparent font-bold text-blue-800 text-sm outline-none" placeholder="Enter title...">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-slate-50 p-3 rounded-xl border">
-                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-1">Target Date</span>
-                            <input type="date" id="editDate" class="w-full bg-transparent font-bold text-blue-800 text-sm outline-none">
-                        </div>
+                    <div id="briefFields" class="space-y-4">
                         <div class="bg-slate-50 p-3 rounded-xl border">
                             <span class="block text-[9px] text-slate-400 uppercase font-black mb-1">Facility</span>
                             <select id="facilitySelect" class="w-full bg-transparent font-bold text-slate-700 text-sm outline-none">
-                                <option value="Clarence Regional Aquatic Centre">CRAC Facility</option>
-                                <option value="Yamba Community Pool">Yamba Facility</option>
+                                <option value="Clarence Regional Aquatic Centre">Clarence Regional (CRAC)</option>
+                                <option value="Yamba Community Pool">Yamba Community Pool</option>
                             </select>
+                        </div>
+
+                        <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                            <span class="block text-[9px] font-black text-blue-600 uppercase mb-1">Primary Category</span>
+                            <select id="categorySelect" class="w-full bg-transparent font-bold text-blue-900 text-sm outline-none">
+                                <option value="Maintenance Closure">Maintenance / Closure</option>
+                                <option value="Swim School Intensive">Swim School / Intensives</option>
+                                <option value="Squad Training">Squad / Training Update</option>
+                                <option value="Lane Availability">Lane Availability / Public Swim</option>
+                                <option value="Community Event">Event / BBQ / Fun Day</option>
+                                <option value="Staff Spotlight">Staff Spotlight / Hiring</option>
+                                <option value="Health Fitness">Health & Fitness / Aqua</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="block text-[9px] text-slate-400 uppercase font-black">Specific Topic</span>
+                                <button id="suggestBtn" class="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    Suggest
+                                </button>
+                            </div>
+                            <input type="text" id="editTitle" class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none" placeholder="e.g. Pump repair on Main Pool">
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border">
+                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-1">Date Needed</span>
+                            <input type="date" id="editDate" class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none">
                         </div>
                     </div>
 
                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <label class="block text-[9px] font-black text-blue-600 uppercase mb-2">Key Message / Brief</label>
-                        <textarea id="editKeyMessage" rows="6" class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white outline-none resize-none leading-relaxed text-slate-700"></textarea>
+                        <label class="block text-[9px] font-black text-blue-600 uppercase mb-2">Raw Message Details (Facts Only)</label>
+                        <textarea id="editKeyMessage" rows="6" placeholder="Paste dates, times, and specific instructions here..." class="w-full bg-white/50 text-sm p-3 rounded-lg border border-blue-100 focus:bg-white outline-none resize-none leading-relaxed text-slate-700"></textarea>
                     </div>
 
                     <div id="assetBox" class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 hidden">
@@ -298,21 +310,33 @@
                 globalRequestsArray.forEach(data => {
                     const isApproved = data.status === 'Approved';
                     calendar.addEvent({ id: data.id, title: data.title, start: data.date, color: isApproved ? '#10b981' : '#94a3b8' });
+                    
                     const card = document.createElement('div');
-                    card.className = "bg-white p-6 rounded-2xl border border-slate-100 shadow-md hover:shadow-xl transition-all cursor-pointer group relative";
-                    const attachIcon = data.assetUrl ? `<svg class="w-4 h-4 text-indigo-500 absolute top-5 right-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>` : '';
+                    card.className = "bg-white rounded-2xl border border-slate-100 shadow-md hover:shadow-xl transition-all cursor-pointer group flex flex-col overflow-hidden";
+                    
+                    // Thumbnail Logic
+                    const thumbContent = data.assetUrl 
+                        ? `<img src="${data.assetUrl}" class="w-full h-32 object-cover bg-slate-100">`
+                        : `<div class="w-full h-32 bg-slate-50 flex items-center justify-center border-b border-slate-100 group-hover:bg-blue-50 transition-colors">
+                             <svg class="w-8 h-8 text-slate-200 group-hover:text-blue-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                           </div>`;
+
                     card.innerHTML = `
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="px-2.5 py-1 text-[9px] font-black rounded-lg border uppercase ${isApproved ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-400'}">${data.status}</span>
-                            <span class="text-[9px] font-black text-slate-300 uppercase">${data.date}</span>
+                        ${thumbContent}
+                        <div class="p-5 flex-grow">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2 py-0.5 text-[8px] font-black rounded-md border uppercase tracking-wider ${isApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}">${data.status}</span>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tight">${data.date}</span>
+                            </div>
+                            <h3 class="font-extrabold text-slate-800 leading-tight mb-4 text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-blue-600 transition-colors">${data.title}</h3>
+                            <div class="flex items-center justify-between mt-auto">
+                                <div class="flex gap-1.5">
+                                    <span class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-widest border border-blue-100">${data.facility && data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
+                                    ${data.category ? `<span class="px-1.5 py-0.5 bg-slate-50 text-slate-500 rounded text-[8px] font-black uppercase tracking-widest border border-slate-100">${data.category.split(' ')[0]}</span>` : ''}
+                                </div>
+                                <svg class="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </div>
                         </div>
-                        ${attachIcon}
-                        <h3 class="font-extrabold text-slate-800 leading-tight mb-4 text-lg line-clamp-2">${data.title}</h3>
-                        <div class="flex gap-2 mb-6">
-                            <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-blue-100">${data.facility && data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
-                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-[0.1em] border border-slate-200">Request</span>
-                        </div>
-                        <button class="w-full bg-slate-900 group-hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-[10px] uppercase transition-all">Review & Edit</button>
                     `;
                     card.onclick = () => openModal(data.id, data);
                     gridView.appendChild(card);
@@ -380,8 +404,10 @@
                 facilitySelect.value = 'Clarence Regional Aquatic Centre';
             }
 
+            const categorySelect = document.getElementById('categorySelect');
+            categorySelect.value = data.category || "General Update";
+
             document.getElementById('editKeyMessage').value = data.keyMessage || "";
-            document.getElementById('newRequestFields').classList.toggle('hidden', !isNew);
             document.getElementById('editTitle').value = isNew ? "" : data.title;
             
             // Asset Box
@@ -448,6 +474,7 @@
 
             document.getElementById('editTitle').value = pick.title;
             document.getElementById('editKeyMessage').value = pick.msg;
+            document.getElementById('categorySelect').value = pick.cat;
             // Highlight the suggested fields
             document.getElementById('editTitle').classList.add('bg-blue-50');
             document.getElementById('editKeyMessage').classList.add('bg-blue-50');
@@ -486,7 +513,8 @@
                 keyMessage: document.getElementById('editKeyMessage').value,
                 signHeadline: document.getElementById('signHeadline').value,
                 signBody: document.getElementById('signBody').value,
-                facility: document.getElementById('facilitySelect').value
+                facility: document.getElementById('facilitySelect').value,
+                category: document.getElementById('categorySelect').value
             };
 
             try {
