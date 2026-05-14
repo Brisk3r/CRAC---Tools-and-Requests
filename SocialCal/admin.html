@@ -27,8 +27,8 @@
         /* Full Robust Editor Styles */
         .ql-toolbar.ql-snow { border: 1px solid #e2e8f0; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; background-color: #f8fafc; }
         .ql-container.ql-snow { border: 1px solid #e2e8f0; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; font-family: inherit; }
-        .ql-editor { min-height: 350px; color: #1e293b; line-height: 1.6; font-size: 0.95rem; }
-        .ql-editor p { margin-bottom: 0.75rem; }
+        .ql-editor { min-height: 350px; color: #1e293b; line-height: 1.5; font-size: 0.95rem; }
+        .ql-editor p { margin-bottom: 0.5rem; }
         .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.25rem; }
         .ql-editor strong { font-weight: 700; color: #1e3a8a; }
 
@@ -189,10 +189,16 @@
                             <button id="tabNews" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-pink-500 transition-colors">Newsletter</button>
                             <button id="tabWeb" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-emerald-500 transition-colors">Website Alert</button>
                         </div>
-                        <button id="rerunAiBtn" class="text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group" title="Re-run AI Drafting">
-                            <span id="rerunStatus" class="text-[9px] font-black uppercase hidden group-hover:inline">Regenerate</span>
-                            <svg id="rerunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        </button>
+                        <div class="flex items-center gap-1">
+                            <button id="cleanFormatBtn" class="text-slate-400 hover:text-emerald-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-emerald-50 group" title="Clean Spacing & Formatting">
+                                <span class="text-[9px] font-black uppercase hidden group-hover:inline">Clean</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            </button>
+                            <button id="rerunAiBtn" class="text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group" title="Re-run AI Drafting">
+                                <span id="rerunStatus" class="text-[9px] font-black uppercase hidden group-hover:inline">Regenerate</span>
+                                <svg id="rerunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex-grow flex flex-col min-h-[450px] space-y-4">
@@ -520,40 +526,56 @@
 
         document.getElementById('rerunAiBtn').onclick = async () => {
             if (!currentEditingId) return;
-            const btn = document.getElementById('rerunAiBtn');
             const icon = document.getElementById('rerunIcon');
             const statusText = document.getElementById('rerunStatus');
             
             if (!confirm("Regenerate all drafts for this post? This will overwrite your current edits.")) return;
             
-            icon.classList.add('animate-spin', 'text-blue-600');
+            // Isolate animation to icon and static text
+            icon.classList.add('animate-spin', 'text-blue-600', 'inline-block');
             statusText.innerText = "Processing...";
             statusText.classList.remove('hidden');
 
             try {
-                // 1. Clear drafts in Firebase to trigger v4.4 Engine
+                // 1. Clear drafts and set PRIORITY
                 await updateDoc(doc(db, "requests", currentEditingId), {
                     status: 'Pending',
+                    priority: true,
                     rewrittenPost: '',
                     rewrittenNewsletter: '',
                     rewrittenWebsite: ''
                 });
 
-                // 2. Trigger Apps Script
-                await fetch("https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec", {mode: 'no-cors'});
+                // 2. Trigger Apps Script surgically for THIS post only
+                await fetch(`https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec?docId=${currentEditingId}`, {mode: 'no-cors'});
                 
-                // Keep loading state until snapshot listener picks up the change
+                // Reset UI state after timeout
                 setTimeout(() => {
                     icon.classList.remove('animate-spin', 'text-blue-600');
                     statusText.innerText = "Regenerate";
                     statusText.classList.add('hidden');
-                }, 8000); 
+                }, 10000); // 10s for stability
 
             } catch (err) {
                 console.error(err);
                 icon.classList.remove('animate-spin');
                 statusText.innerText = "Regenerate";
             }
+        };
+
+        document.getElementById('cleanFormatBtn').onclick = () => {
+            let html = quill.root.innerHTML;
+            // 1. Nuclear Cleanup: Remove empty paragraphs, line breaks, and non-breaking spaces
+            html = html.replace(/<p>(?:<br>|&nbsp;|\s)*<\/p>/gi, '')
+                       .replace(/>\s+</g, '><')
+                       .replace(/(?:<br\s*\/?>\s*){2,}/gi, '<br>')
+                       .trim();
+            quill.root.innerHTML = html;
+            
+            // Subtle feedback
+            const btn = document.getElementById('cleanFormatBtn');
+            btn.classList.add('text-emerald-600');
+            setTimeout(() => btn.classList.remove('text-emerald-600'), 1000);
         };
 
         const menuBtn = document.getElementById('processMenuBtn');
@@ -613,8 +635,11 @@
             const orig = btn.innerText;
             btn.innerText = "...";
 
-            // Save current active tab content to local state before pushing to DB
-            channelDrafts[currentTab] = quill.root.innerHTML;
+            // Save current active tab content to local state
+            let editorHtml = quill.root.innerHTML;
+            // FINAL CLEANUP: Remove empty paragraphs/filler added by Quill
+            editorHtml = editorHtml.replace(/<p>(?:<br>|&nbsp;|\s)*<\/p>/gi, '').trim();
+            channelDrafts[currentTab] = editorHtml;
             
             const payload = {
                 status: status,
