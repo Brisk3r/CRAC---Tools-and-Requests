@@ -183,8 +183,12 @@
 
                 <!-- Right Sidebar: Robust Editor & Signage -->
                 <div class="lg:col-span-8 flex flex-col h-full space-y-4">
-                    <div class="border-b pb-2">
-                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Drafter Workspace</h4>
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <div class="flex gap-4">
+                            <button id="tabSocial" class="channel-tab active text-[10px] font-black text-blue-600 border-b-2 border-blue-600 pb-2 uppercase tracking-widest">Social Media</button>
+                            <button id="tabNews" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-pink-500 transition-colors">Newsletter</button>
+                            <button id="tabWeb" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-emerald-500 transition-colors">Website Alert</button>
+                        </div>
                     </div>
                     
                     <div class="flex-grow flex flex-col min-h-[450px] space-y-4">
@@ -249,6 +253,8 @@
         let globalRequestsArray = [];
         let isManualReviewMode = false;
         let pendingReviewQueue = [];
+        let currentTab = 'Social';
+        let channelDrafts = { Social: '', Newsletter: '', Website: '' };
 
         // Robust Quill Editor Toolbar
         const quill = new Quill('#quillEditor', {
@@ -280,6 +286,41 @@
             datesSet: () => updateGapHighlights()
         });
         calendar.render();
+
+        // Multi-Channel Tab Switching
+        const tabs = {
+            Social: document.getElementById('tabSocial'),
+            Newsletter: document.getElementById('tabNews'),
+            Website: document.getElementById('tabWeb')
+        };
+
+        Object.keys(tabs).forEach(key => {
+            tabs[key].addEventListener('click', () => switchTab(key));
+        });
+
+        function switchTab(target) {
+            // Save current editor content to local state
+            channelDrafts[currentTab] = quill.root.innerHTML;
+
+            // Update UI
+            Object.keys(tabs).forEach(key => {
+                const isActive = key === target;
+                tabs[key].classList.toggle('active', isActive);
+                if (isActive) {
+                    tabs[key].classList.remove('text-slate-400');
+                    tabs[key].classList.add('border-b-2');
+                    if (key === 'Social') tabs[key].classList.add('text-blue-600', 'border-blue-600');
+                    if (key === 'Newsletter') tabs[key].classList.add('text-pink-600', 'border-pink-600');
+                    if (key === 'Website') tabs[key].classList.add('text-emerald-600', 'border-emerald-600');
+                } else {
+                    tabs[key].classList.remove('border-b-2', 'text-blue-600', 'text-pink-600', 'text-emerald-600', 'border-blue-600', 'border-pink-600', 'border-emerald-600');
+                    tabs[key].classList.add('text-slate-400');
+                }
+            });
+
+            currentTab = target;
+            quill.root.innerHTML = channelDrafts[target] || '';
+        }
 
         // Auth
         document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -330,9 +371,13 @@
                             </div>
                             <h3 class="font-extrabold text-slate-800 leading-tight mb-4 text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-blue-600 transition-colors">${data.title}</h3>
                             <div class="flex items-center justify-between mt-auto">
-                                <div class="flex gap-1.5">
+                                <div class="flex gap-1.5 items-center">
                                     <span class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-widest border border-blue-100">${data.facility && data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
-                                    ${data.category ? `<span class="px-1.5 py-0.5 bg-slate-50 text-slate-500 rounded text-[8px] font-black uppercase tracking-widest border border-slate-100">${data.category.split(' ')[0]}</span>` : ''}
+                                    <div class="flex gap-1 ml-1 border-l pl-2 border-slate-100">
+                                        ${data.channels?.includes('Social') ? `<svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>` : ''}
+                                        ${data.channels?.includes('Newsletter') ? `<svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>` : ''}
+                                        ${data.channels?.includes('Website') ? `<svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>` : ''}
+                                    </div>
                                 </div>
                                 <svg class="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </div>
@@ -427,7 +472,13 @@
                 updateSignLink(data);
             } else signBtn.classList.add('hidden');
 
-            quill.root.innerHTML = data.rewrittenPost || '';
+            // Initialize multi-channel drafts
+            channelDrafts = {
+                Social: data.rewrittenPost || '',
+                Newsletter: data.rewrittenNewsletter || '',
+                Website: data.rewrittenWebsite || ''
+            };
+            switchTab('Social'); // Reset to Social tab by default
             
             const statusInd = document.getElementById('statusIndicator');
             statusInd.innerText = isNew ? 'Draft' : data.status;
@@ -505,10 +556,15 @@
             const btn = status === 'Approved' ? document.getElementById('approveBtn') : document.getElementById('saveDraftBtn');
             const orig = btn.innerText;
             btn.innerText = "...";
+
+            // Save current active tab content to local state before pushing to DB
+            channelDrafts[currentTab] = quill.root.innerHTML;
             
             const payload = {
                 status: status,
-                rewrittenPost: quill.root.innerHTML,
+                rewrittenPost: channelDrafts.Social,
+                rewrittenNewsletter: channelDrafts.Newsletter,
+                rewrittenWebsite: channelDrafts.Website,
                 date: document.getElementById('editDate').value,
                 keyMessage: document.getElementById('editKeyMessage').value,
                 signHeadline: document.getElementById('signHeadline').value,
