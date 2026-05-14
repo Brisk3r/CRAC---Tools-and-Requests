@@ -298,9 +298,9 @@
             tabs[key].addEventListener('click', () => switchTab(key));
         });
 
-        function switchTab(target) {
-            // Save current editor content to local state
-            channelDrafts[currentTab] = quill.root.innerHTML;
+        function switchTab(target, skipSave = false) {
+            // Save current editor content to local state unless skipping (e.g. initial load)
+            if (!skipSave) channelDrafts[currentTab] = quill.root.innerHTML;
 
             // Update UI
             Object.keys(tabs).forEach(key => {
@@ -478,7 +478,7 @@
                 Newsletter: data.rewrittenNewsletter || '',
                 Website: data.rewrittenWebsite || ''
             };
-            switchTab('Social'); // Reset to Social tab by default
+            switchTab('Social', true); // Reset to Social tab by default and skip saving previous state
             
             const statusInd = document.getElementById('statusIndicator');
             statusInd.innerText = isNew ? 'Draft' : data.status;
