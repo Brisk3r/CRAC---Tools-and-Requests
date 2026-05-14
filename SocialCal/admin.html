@@ -191,7 +191,7 @@
                         </div>
                         <button id="rerunAiBtn" class="text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group" title="Re-run AI Drafting">
                             <span id="rerunStatus" class="text-[9px] font-black uppercase hidden group-hover:inline">Regenerate</span>
-                            <svg class="w-4 h-4 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <svg id="rerunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         </button>
                     </div>
                     
@@ -521,11 +521,12 @@
         document.getElementById('rerunAiBtn').onclick = async () => {
             if (!currentEditingId) return;
             const btn = document.getElementById('rerunAiBtn');
+            const icon = document.getElementById('rerunIcon');
             const statusText = document.getElementById('rerunStatus');
             
             if (!confirm("Regenerate all drafts for this post? This will overwrite your current edits.")) return;
             
-            btn.classList.add('animate-spin', 'text-blue-600');
+            icon.classList.add('animate-spin', 'text-blue-600');
             statusText.innerText = "Processing...";
             statusText.classList.remove('hidden');
 
@@ -543,14 +544,14 @@
                 
                 // Keep loading state until snapshot listener picks up the change
                 setTimeout(() => {
-                    btn.classList.remove('animate-spin', 'text-blue-600');
+                    icon.classList.remove('animate-spin', 'text-blue-600');
                     statusText.innerText = "Regenerate";
                     statusText.classList.add('hidden');
-                }, 8000); // Give AI some time to run before letting the button be clickable again
+                }, 8000); 
 
             } catch (err) {
                 console.error(err);
-                btn.classList.remove('animate-spin');
+                icon.classList.remove('animate-spin');
                 statusText.innerText = "Regenerate";
             }
         };
