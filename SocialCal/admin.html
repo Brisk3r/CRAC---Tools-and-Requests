@@ -189,6 +189,10 @@
                             <button id="tabNews" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-pink-500 transition-colors">Newsletter</button>
                             <button id="tabWeb" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-emerald-500 transition-colors">Website Alert</button>
                         </div>
+                        <button id="rerunAiBtn" class="text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group" title="Re-run AI Drafting">
+                            <span id="rerunStatus" class="text-[9px] font-black uppercase hidden group-hover:inline">Regenerate</span>
+                            <svg class="w-4 h-4 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </button>
                     </div>
                     
                     <div class="flex-grow flex flex-col min-h-[450px] space-y-4">
@@ -347,6 +351,20 @@
                 gridView.innerHTML = '';
                 calendar.removeAllEvents();
                 globalRequestsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Live Update Open Modal if data changes
+                if (currentEditingId) {
+                    const freshData = globalRequestsArray.find(r => r.id === currentEditingId);
+                    if (freshData && !isManualReviewMode) { // Don't interrupt manual review flow
+                        channelDrafts = {
+                            Social: freshData.rewrittenPost || '',
+                            Newsletter: freshData.rewrittenNewsletter || '',
+                            Website: freshData.rewrittenWebsite || ''
+                        };
+                        quill.root.innerHTML = channelDrafts[currentTab] || '';
+                    }
+                }
+
                 globalRequestsArray.sort((a, b) => (a.status === 'Pending' ? -1 : 1) || new Date(a.date) - new Date(b.date));
                 globalRequestsArray.forEach(data => {
                     const isApproved = data.status === 'Approved';
@@ -499,6 +517,43 @@
         // Live update sign link when inputs change
         document.getElementById('signHeadline').oninput = () => { if(currentEditingId) updateSignLink(globalRequestsArray.find(r => r.id === currentEditingId)); };
         document.getElementById('signBody').oninput = () => { if(currentEditingId) updateSignLink(globalRequestsArray.find(r => r.id === currentEditingId)); };
+
+        document.getElementById('rerunAiBtn').onclick = async () => {
+            if (!currentEditingId) return;
+            const btn = document.getElementById('rerunAiBtn');
+            const statusText = document.getElementById('rerunStatus');
+            
+            if (!confirm("Regenerate all drafts for this post? This will overwrite your current edits.")) return;
+            
+            btn.classList.add('animate-spin', 'text-blue-600');
+            statusText.innerText = "Processing...";
+            statusText.classList.remove('hidden');
+
+            try {
+                // 1. Clear drafts in Firebase to trigger v4.4 Engine
+                await updateDoc(doc(db, "requests", currentEditingId), {
+                    status: 'Pending',
+                    rewrittenPost: '',
+                    rewrittenNewsletter: '',
+                    rewrittenWebsite: ''
+                });
+
+                // 2. Trigger Apps Script
+                await fetch("https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec", {mode: 'no-cors'});
+                
+                // Keep loading state until snapshot listener picks up the change
+                setTimeout(() => {
+                    btn.classList.remove('animate-spin', 'text-blue-600');
+                    statusText.innerText = "Regenerate";
+                    statusText.classList.add('hidden');
+                }, 8000); // Give AI some time to run before letting the button be clickable again
+
+            } catch (err) {
+                console.error(err);
+                btn.classList.remove('animate-spin');
+                statusText.innerText = "Regenerate";
+            }
+        };
 
         const menuBtn = document.getElementById('processMenuBtn');
         const dropdown = document.getElementById('processDropdown');
