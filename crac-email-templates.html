@@ -73,6 +73,7 @@
                             <option value="ltsReenrol">LTS Re-enrolment</option>
                             <option value="directDebit">Direct Debit Failure</option>
                             <option value="generalInfo">General Announcement</option>
+                            <option value="aiNews">AI News Update (Paste from Admin)</option>
                         </select>
                         <i class="fa-solid fa-chevron-down absolute right-3 top-3.5 text-slate-400 pointer-events-none"></i>
                     </div>
@@ -259,6 +260,17 @@
                     <p>${d.details}</p>
                     <p>We are committed to providing a safe, professional, and ${fac.id === 'CRAC' ? 'premier' : 'welcoming'} environment for all our visitors.</p>
                     <p>See you by the pool! ☀️</p>
+                `
+            },
+            aiNews: {
+                fields: [
+                    {id: 'newsContent', label: 'Paste AI Newsletter Blurb', placeholder: 'Paste from Admin Dashboard...', type: 'textarea'}
+                ],
+                subject: (d) => `Latest Update from ${currentFacility.shortName}`,
+                body: (d, fac) => `
+                    <p>Hi ${d.custName},</p>
+                    ${d.newsContent || '<p><em>Paste your AI-generated content here to preview...</em></p>'}
+                    <p>Best regards,</p>
                 `
             }
         };
