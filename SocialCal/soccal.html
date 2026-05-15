@@ -51,12 +51,14 @@
                     <label class="block text-[10px] font-black text-blue-600 uppercase mb-1">Primary Category</label>
                     <select id="requestCategory" required class="w-full bg-blue-50 border border-blue-100 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-bold text-blue-900 transition-all">
                         <option value="" disabled selected>Choose type...</option>
-                        <option value="Maintenance Closure">Maintenance / Closure</option>
-                        <option value="Swim School Intensive">Swim School / Intensives</option>
+                        <option value="Important Notice">General / Important Notice</option>
+                        <option value="Maintenance Closure">Maintenance / Facility Closure</option>
+                        <option value="Swim School General">Swim School (Term/Admin)</option>
+                        <option value="Swim School Intensive">Swim School (Intensives)</option>
                         <option value="Squad Training">Squad / Training Update</option>
-                        <option value="Lane Availability">Lane Availability / Public Swim</option>
+                        <option value="Lane Availability">Public Swim / Lane Availability</option>
                         <option value="Community Event">Event / BBQ / Fun Day</option>
-                        <option value="Staff Spotlight">Staff Spotlight / Hiring</option>
+                        <option value="Staff Spotlight">Staff Spotlight / Careers</option>
                         <option value="Health Fitness">Health & Fitness / Aqua</option>
                     </select>
                 </div>
@@ -158,7 +160,33 @@
                     <div id="modalAssetWrapper" class="hidden text-right"><a id="modalAssetLink" target="_blank" class="text-blue-600 font-bold text-xs underline">View Asset</a></div>
                     <div class="col-span-2 border-t pt-3"><span class="block text-[10px] font-bold text-slate-400 uppercase">Message Brief</span><p id="modalKeyMessage" class="text-sm mt-1 text-slate-700 whitespace-pre-wrap"></p></div>
                 </div>
-                <div class="mt-4"><h4 class="text-sm font-bold text-blue-800 uppercase mb-2 border-b pb-1">Processed Copy</h4><div id="modalRewrittenPost" class="bg-blue-50 p-4 rounded border border-blue-100 text-sm text-slate-800 italic">Awaiting review...</div></div>
+                
+                <div id="modalChannelsWrapper" class="space-y-4">
+                    <!-- Social Content -->
+                    <div id="wrapperSocial" class="hidden">
+                        <h4 class="text-[10px] font-black text-blue-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                            Social Media Copy
+                        </h4>
+                        <div id="contentSocial" class="bg-blue-50 p-4 rounded border border-blue-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                    <!-- News Content -->
+                    <div id="wrapperNews" class="hidden">
+                        <h4 class="text-[10px] font-black text-pink-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            Newsletter / Email Copy
+                        </h4>
+                        <div id="contentNews" class="bg-pink-50 p-4 rounded border border-pink-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                    <!-- Web Content -->
+                    <div id="wrapperWeb" class="hidden">
+                        <h4 class="text-[10px] font-black text-emerald-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                            Website Alert Copy
+                        </h4>
+                        <div id="contentWeb" class="bg-emerald-50 p-4 rounded border border-emerald-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -191,7 +219,7 @@
                 initialView: 'dayGridMonth',
                 eventClick: (info) => {
                     const p = info.event.extendedProps;
-                    document.getElementById('modalTitle').innerText = info.event.title.replace('✅ ', '').replace('⏳ ', '');
+                    document.getElementById('modalTitle').innerText = info.event.title.split(' | ')[0].replace('✅ ', '').replace('⏳ ', '');
                     document.getElementById('modalStaffName').innerText = p.staffName;
                     document.getElementById('modalKeyMessage').innerText = p.keyMessage;
                     document.getElementById('modalCategoryBadge').innerText = p.category || 'Request';
@@ -201,9 +229,31 @@
                     if(p.assetUrl) { asset.classList.remove('hidden'); document.getElementById('modalAssetLink').href = p.assetUrl; }
                     else { asset.classList.add('hidden'); }
                     
-                    const rewritten = document.getElementById('modalRewrittenPost');
-                    if (p.status === 'Approved' && p.rewrittenPost) { rewritten.innerHTML = p.rewrittenPost; rewritten.classList.remove('italic'); }
-                    else { rewritten.innerText = "Processing draft..."; rewritten.classList.add('italic'); }
+                    // Channel content population
+                    const channels = p.channels || [];
+                    const isApproved = p.status === 'Approved';
+
+                    const updateSection = (id, wrapperId, content) => {
+                        const wrapper = document.getElementById(wrapperId);
+                        const display = document.getElementById(id);
+                        if (channels.includes(wrapperId.replace('wrapper', ''))) {
+                            wrapper.classList.remove('hidden');
+                            if (isApproved && content) {
+                                display.innerHTML = content;
+                                display.classList.remove('italic');
+                            } else {
+                                display.innerText = "Processing draft...";
+                                display.classList.add('italic');
+                            }
+                        } else {
+                            wrapper.classList.add('hidden');
+                        }
+                    };
+
+                    updateSection('contentSocial', 'wrapperSocial', p.rewrittenPost);
+                    updateSection('contentNews', 'wrapperNews', p.rewrittenNewsletter);
+                    updateSection('contentWeb', 'wrapperWeb', p.rewrittenWebsite);
+
                     document.getElementById('eventModal').classList.remove('hidden');
                 }
             });
@@ -280,9 +330,16 @@
                 const txtColor = isApproved ? '#ffffff' : '#1e293b';
                 const statusEmoji = isApproved ? '✅ ' : '⏳ ';
                 
+                // Channel Shorthand
+                let channelsStr = '';
+                const channels = d.channels || [];
+                if (channels.length > 0) {
+                    channelsStr = ' | ' + channels.map(c => c[0]).join('/');
+                }
+                
                 calendar.addEvent({ 
                     id: d.id, 
-                    title: statusEmoji + d.title, 
+                    title: statusEmoji + d.title + channelsStr, 
                     start: d.date, 
                     backgroundColor: bgColor,
                     borderColor: bgColor,

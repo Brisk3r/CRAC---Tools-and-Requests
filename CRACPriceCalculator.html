@@ -44,7 +44,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-screen p-4 md:p-8 transition-colors duration-300">
 
     <div class="max-w-5xl mx-auto">
         <!-- Unified Navigation injected via nav.js -->
@@ -54,46 +54,46 @@
             <!-- Inputs Section -->
             <div class="lg:col-span-7 space-y-6">
                 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <h2 class="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                         <i data-lucide="package" class="w-5 h-5 text-brand-500"></i> Unit Costs
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Item Name (Optional)</label>
-                            <input type="text" id="itemName" value="Coconut Water" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors" placeholder="e.g., Coconut Water">
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Item Name (Optional)</label>
+                            <input type="text" id="itemName" value="Coconut Water" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors" placeholder="e.g., Coconut Water">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Wholesale Cost ($)</label>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Wholesale Cost ($)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2.5 text-slate-400">$</span>
-                                <input type="number" id="wholesaleCost" value="2.20" step="0.01" class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+                                <input type="number" id="wholesaleCost" value="2.20" step="0.01" class="w-full pl-8 pr-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <h2 class="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                         <i data-lucide="users" class="w-5 h-5 text-brand-500"></i> Labour & Overheads
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Staff Rate ($/hr)</label>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Staff Rate ($/hr)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2.5 text-slate-400">$</span>
-                                <input type="number" id="labourRate" value="32.50" step="0.50" class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+                                <input type="number" id="labourRate" value="32.50" step="0.50" class="w-full pl-8 pr-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Time per Item (Mins)</label>
-                            <input type="number" id="labourMins" value="1.5" step="0.1" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors" placeholder="e.g., 1.5">
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Time per Item (Mins)</label>
+                            <input type="number" id="labourMins" value="1.5" step="0.1" class="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors" placeholder="e.g., 1.5">
                             <p class="text-xs text-slate-400 mt-1">Time to order, stock, and sell.</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Wastage/Overhead (%)</label>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Wastage/Overhead (%)</label>
                             <div class="relative">
-                                <input type="number" id="overheadPct" value="5" step="1" class="w-full pr-8 pl-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+                                <input type="number" id="overheadPct" value="5" step="1" class="w-full pr-8 pl-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
                                 <span class="absolute right-3 top-2.5 text-slate-400">%</span>
                             </div>
                             <p class="text-xs text-slate-400 mt-1">Fridge power, dropped items, etc.</p>
@@ -101,23 +101,23 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <h2 class="text-lg font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                         <i data-lucide="target" class="w-5 h-5 text-brand-500"></i> Pricing Strategy
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Target Retail Price ($)</label>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Target Retail Price ($)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2.5 text-brand-600 font-bold">$</span>
-                                <input type="number" id="targetPrice" value="4.50" step="0.10" class="w-full pl-8 pr-4 py-2 bg-brand-50 border border-brand-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors font-semibold text-brand-900">
+                                <input type="number" id="targetPrice" value="4.50" step="0.10" class="w-full pl-8 pr-4 py-2 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors font-semibold text-brand-900 dark:text-brand-100">
                             </div>
                             <p class="text-xs text-slate-500 mt-1">Enter the price you want to test.</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-600 mb-1">Or Calculate by Margin (%)</label>
+                            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Or Calculate by Margin (%)</label>
                             <div class="relative">
-                                <input type="number" id="targetMargin" value="40" step="1" class="w-full pr-8 pl-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
+                                <input type="number" id="targetMargin" value="40" step="1" class="w-full pr-8 pl-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors">
                                 <span class="absolute right-3 top-2.5 text-slate-400">%</span>
                             </div>
                             <p class="text-xs text-slate-500 mt-1">Standard kiosk margin is 35-50%.</p>
@@ -156,56 +156,56 @@
                 </div>
 
                 <!-- True Cost Breakdown -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="font-semibold text-slate-800 mb-4">True Cost Breakdown</h3>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <h3 class="font-semibold text-slate-800 dark:text-white mb-4">True Cost Breakdown</h3>
                     
                     <div class="space-y-4">
                         <div>
                             <div class="flex justify-between text-sm mb-1">
-                                <span class="text-slate-600">Wholesale Cost</span>
-                                <span class="font-medium" id="outWholesale">$2.20</span>
+                                <span class="text-slate-600 dark:text-slate-400">Wholesale Cost</span>
+                                <span class="font-medium dark:text-slate-200" id="outWholesale">$2.20</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
                                 <div class="bg-brand-400 h-2 rounded-full" id="barWholesale" style="width: 70%"></div>
                             </div>
                         </div>
                         
                         <div>
                             <div class="flex justify-between text-sm mb-1">
-                                <span class="text-slate-600">Labour Cost</span>
-                                <span class="font-medium" id="outLabour">$0.81</span>
+                                <span class="text-slate-600 dark:text-slate-400">Labour Cost</span>
+                                <span class="font-medium dark:text-slate-200" id="outLabour">$0.81</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
                                 <div class="bg-amber-400 h-2 rounded-full" id="barLabour" style="width: 20%"></div>
                             </div>
                         </div>
 
                         <div>
                             <div class="flex justify-between text-sm mb-1">
-                                <span class="text-slate-600">Overhead/Wastage</span>
-                                <span class="font-medium" id="outOverhead">$0.15</span>
+                                <span class="text-slate-600 dark:text-slate-400">Overhead/Wastage</span>
+                                <span class="font-medium dark:text-slate-200" id="outOverhead">$0.15</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
                                 <div class="bg-rose-400 h-2 rounded-full" id="barOverhead" style="width: 10%"></div>
                             </div>
                         </div>
 
-                        <div class="pt-4 border-t border-slate-100 flex justify-between items-center">
-                            <span class="font-semibold text-slate-800">Total True Cost</span>
-                            <span class="font-bold text-lg text-slate-800" id="outTotalCost">$3.16</span>
+                        <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <span class="font-semibold text-slate-800 dark:text-slate-200">Total True Cost</span>
+                            <span class="font-bold text-lg text-slate-800 dark:text-white" id="outTotalCost">$3.16</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Margin Calculator Suggestion -->
-                <div class="bg-brand-50 p-5 rounded-2xl border border-brand-100 flex items-start gap-4">
-                    <div class="bg-brand-100 p-2 rounded-lg text-brand-600 shrink-0">
+                <div class="bg-brand-50 dark:bg-brand-900/20 p-5 rounded-2xl border border-brand-100 dark:border-brand-800 flex items-start gap-4">
+                    <div class="bg-brand-100 dark:bg-brand-800 p-2 rounded-lg text-brand-600 dark:text-brand-400 shrink-0">
                         <i data-lucide="lightbulb" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h4 class="text-sm font-semibold text-brand-900 mb-1">Margin Suggestion</h4>
-                        <p class="text-sm text-brand-800 leading-relaxed">
-                            To hit your target margin of <span id="suggestedMarginText" class="font-bold">40%</span>, you would need to price this item at <strong id="suggestedPrice" class="text-brand-900 bg-white px-2 py-0.5 rounded shadow-sm border border-brand-200">$0.00</strong>.
+                        <h4 class="text-sm font-semibold text-brand-900 dark:text-brand-100 mb-1">Margin Suggestion</h4>
+                        <p class="text-sm text-brand-800 dark:text-brand-200 leading-relaxed">
+                            To hit your target margin of <span id="suggestedMarginText" class="font-bold">40%</span>, you would need to price this item at <strong id="suggestedPrice" class="text-brand-900 dark:text-brand-100 bg-white dark:bg-slate-800 px-2 py-0.5 rounded shadow-sm border border-brand-200 dark:border-brand-700">$0.00</strong>.
                         </p>
                     </div>
                 </div>

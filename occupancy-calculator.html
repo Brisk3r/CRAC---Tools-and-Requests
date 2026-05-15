@@ -47,104 +47,104 @@
         }
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="p-4 sm:p-8 bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-300">
 
     <div class="container mx-auto">
-        <div class="card">
+        <div class="card bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800">
             <!-- Unified Navigation injected via nav.js -->
 
-            <main class="space-y-8">
+            <main class="space-y-8 mt-6">
                 <!-- Bather Load Calculator Section -->
-                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
-                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Maximum Bather Load Calculator 🏊‍♀️</h2>
-                    <p class="mb-4 text-gray-700">Calculate the maximum instantaneous bather load based on water surface area and depth, as per NSW Health guidelines.</p>
+                <section class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-xl shadow-inner border dark:border-slate-800">
+                    <h2 class="text-2xl font-semibold text-blue-900 dark:text-blue-400 mb-4">Maximum Bather Load Calculator 🏊‍♀️</h2>
+                    <p class="mb-4 text-gray-700 dark:text-slate-400">Calculate the maximum instantaneous bather load based on water surface area and depth, as per NSW Health guidelines.</p>
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="wadingArea" class="block text-sm font-medium text-gray-700">Wading Area (< 1.0m deep) m²</label>
-                                <input type="number" id="wadingArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                                <label for="wadingArea" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Wading Area (< 1.0m deep) m²</label>
+                                <input type="number" id="wadingArea" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
                             </div>
                             <div>
-                                <label for="shallowArea" class="block text-sm font-medium text-gray-700">Shallow Area (1.0m – 1.5m deep) m²</label>
-                                <input type="number" id="shallowArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                                <label for="shallowArea" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Shallow Area (1.0m – 1.5m deep) m²</label>
+                                <input type="number" id="shallowArea" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="deepArea" class="block text-sm font-medium text-gray-700">Deep Area (> 1.5m deep) m²</label>
-                                <input type="number" id="deepArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                                <label for="deepArea" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Deep Area (> 1.5m deep) m²</label>
+                                <input type="number" id="deepArea" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
                             </div>
                             <div>
-                                <label for="spaArea" class="block text-sm font-medium text-gray-700">Spa Area m²</label>
-                                <input type="number" id="spaArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                                <label for="spaArea" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Spa Area m²</label>
+                                <input type="number" id="spaArea" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
                             </div>
                         </div>
-                        <button onclick="calculateBatherLoad()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-colors">Calculate Bather Load</button>
+                        <button onclick="calculateBatherLoad()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-all active:scale-[0.98]">Calculate Bather Load</button>
                     </div>
-                    <div id="batherResult" class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md hidden"></div>
+                    <div id="batherResult" class="mt-6 p-4 bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-300 rounded-md hidden"></div>
                 </section>
 
                 <!-- Occupant Load Calculator Section -->
-                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
-                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Land-Based Occupant Load Calculator 🚶‍♂️</h2>
-                    <p class="mb-4 text-gray-700">Calculate the occupant load for land-based areas using the NCC's spectator stand factor.</p>
+                <section class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-xl shadow-inner border dark:border-slate-800">
+                    <h2 class="text-2xl font-semibold text-blue-900 dark:text-blue-400 mb-4">Land-Based Occupant Load Calculator 🚶‍♂️</h2>
+                    <p class="mb-4 text-gray-700 dark:text-slate-400">Calculate the occupant load for land-based areas using the NCC's spectator stand factor.</p>
                     <div class="space-y-4">
                         <div>
-                            <label for="deckArea" class="block text-sm font-medium text-gray-700">Pool Deck Area (m²)</label>
-                            <input type="number" id="deckArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            <label for="deckArea" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Pool Deck Area (m²)</label>
+                            <input type="number" id="deckArea" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
                         </div>
-                        <button onclick="calculateOccupantLoad()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-colors">Calculate Occupant Load</button>
+                        <button onclick="calculateOccupantLoad()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-all active:scale-[0.98]">Calculate Occupant Load</button>
                     </div>
-                    <div id="occupantResult" class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md hidden"></div>
+                    <div id="occupantResult" class="mt-6 p-4 bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-300 rounded-md hidden"></div>
                 </section>
 
                 <!-- Community Room Occupancy Calculator Section -->
-                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
-                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Community Room Occupancy Calculator 🗣️</h2>
-                    <p class="mb-4 text-gray-700">Calculate the maximum occupant load for a community room based on the National Construction Code (NCC) standard for a general assembly area.</p>
+                <section class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-xl shadow-inner border dark:border-slate-800">
+                    <h2 class="text-2xl font-semibold text-blue-900 dark:text-blue-400 mb-4">Community Room Occupancy Calculator 🗣️</h2>
+                    <p class="mb-4 text-gray-700 dark:text-slate-400">Calculate the maximum occupant load for a community room based on the National Construction Code (NCC) standard for a general assembly area.</p>
                     <div class="space-y-4">
                         <div>
-                            <label for="roomArea" class="block text-sm font-medium text-gray-700">Community Room Area (m²)</label>
-                            <input type="number" id="roomArea" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
+                            <label for="roomArea" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Community Room Area (m²)</label>
+                            <input type="number" id="roomArea" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" value="0">
                         </div>
-                        <button onclick="calculateCommunityRoomOccupancy()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-colors">Calculate Room Occupancy</button>
+                        <button onclick="calculateCommunityRoomOccupancy()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-md shadow-md hover:bg-blue-700 transition-all active:scale-[0.98]">Calculate Room Occupancy</button>
                     </div>
-                    <div id="communityRoomResult" class="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-md hidden"></div>
+                    <div id="communityRoomResult" class="mt-6 p-4 bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-300 rounded-md hidden"></div>
                 </section>
 
                 <!-- Watch Around Water Policies Section -->
-                <section class="bg-gray-50 p-6 rounded-xl shadow-inner">
-                    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Watch Around Water Policies 🧑‍🤝‍👩‍👧‍👦</h2>
-                    <p class="mb-4 text-gray-700">Quick reference for parent/guardian supervision requirements as per the "Watch Around Water" programme.</p>
-                    <div class="overflow-x-auto rounded-lg shadow">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="table-header">
+                <section class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-xl shadow-inner border dark:border-slate-800">
+                    <h2 class="text-2xl font-semibold text-blue-900 dark:text-blue-400 mb-4">Watch Around Water Policies 🧑‍🤝‍👩‍👧‍👦</h2>
+                    <p class="mb-4 text-gray-700 dark:text-slate-400">Quick reference for parent/guardian supervision requirements as per the "Watch Around Water" programme.</p>
+                    <div class="overflow-x-auto rounded-lg shadow border dark:border-slate-700">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                            <thead class="bg-gray-100 dark:bg-slate-800">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Child's Age</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Supervision Condition</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Supervision Ratio</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Child's Age</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Supervision Condition</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Supervision Ratio</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="table-row">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">0-5 years and non-swimmers</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Must be within arm's reach of a parent/guardian at all times.</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1 adult (16+) to a maximum of 2 children (0-4 years).</td>
+                            <tbody class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">0-5 years and non-swimmers</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-slate-300">Must be within arm's reach of a parent/guardian at all times.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-slate-300">1 adult (16+) to a maximum of 2 children (0-4 years).</td>
                                 </tr>
-                                <tr class="table-row">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">6-10 years</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Must be actively supervised by a parent/guardian with a clear line of sight.</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">1 adult (16+) to a maximum of 4 children (5-9 years).</td>
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">6-10 years</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-slate-300">Must be actively supervised by a parent/guardian with a clear line of sight.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-slate-300">1 adult (16+) to a maximum of 4 children (5-9 years).</td>
                                 </tr>
-                                <tr class="table-row">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">11-15 years</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Parent/guardian must be present in the centre and keep an eye on their child.</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">No specific ratio.</td>
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">11-15 years</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-slate-300">Parent/guardian must be present in the centre and keep an eye on their child.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-slate-300">No specific ratio.</td>
                                 </tr>
-                                <tr class="table-row">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">16+ years</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">May enter the aquatic facility unsupervised.</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Not applicable.</td>
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">16+ years</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700 dark:text-slate-300">May enter the aquatic facility unsupervised.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-slate-300">Not applicable.</td>
                                 </tr>
                             </tbody>
                         </table>

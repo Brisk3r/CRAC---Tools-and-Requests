@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found Manager | Aquatic Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; }
+        
+        .expiry-progress { transition: width 1s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-screen transition-colors duration-300">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <!-- Unified Navigation injected via nav.js -->
+
+        <!-- Toolbar -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 mt-6">
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Lost & Found</h1>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 uppercase tracking-widest font-bold">30-Day Retention Gallery</p>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="relative flex-grow md:w-64">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search items..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 uppercase tracking-widest text-xs">
+                    <i class="ph-bold ph-plus"></i> Log Item
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 mb-8 border-b dark:border-slate-800 pb-6">
+            <button onclick="filterItems('all')" class="filter-btn active px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all shadow-sm">All Centres</button>
+            <button onclick="filterItems('CRAC')" class="filter-btn px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">CRAC</button>
+            <button onclick="filterItems('YCP')" class="filter-btn px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">Yamba (YCP)</button>
+            <div class="ml-auto flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span class="flex items-center gap-1.5"><div class="w-2 h-2 bg-emerald-500 rounded-full"></div> New</span>
+                <span class="flex items-center gap-1.5"><div class="w-2 h-2 bg-amber-500 rounded-full"></div> Expiring Soon</span>
+                <span class="flex items-center gap-1.5"><div class="w-2 h-2 bg-red-500 rounded-full"></div> Expired</span>
+            </div>
+        </div>
+
+        <!-- Gallery Grid -->
+        <div id="itemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Items populated by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-slate-400">
+            <i class="ph ph-mask-sad text-6xl mb-4 opacity-20"></i>
+            <p class="font-bold uppercase tracking-widest">No items found</p>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div id="addModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-800">
+            <div class="p-6 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+                <h3 class="font-black uppercase tracking-widest text-slate-900 dark:text-white">Log New Found Item</h3>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <form id="addForm" class="p-6 space-y-5">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Centre</label>
+                        <select id="itemCentre" class="w-full bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                            <option value="CRAC">CRAC</option>
+                            <option value="YCP">Yamba (YCP)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Date Found</label>
+                        <input type="date" id="itemDate" class="w-full bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Item Description</label>
+                    <input type="text" id="itemDesc" placeholder="e.g. Blue Speedo Goggles" required class="w-full bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Photo Upload (Mock)</label>
+                    <div class="border-2 border-dashed dark:border-slate-700 rounded-2xl p-8 text-center text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all cursor-pointer">
+                        <i class="ph-bold ph-camera text-3xl mb-2"></i>
+                        <p class="text-xs font-bold uppercase tracking-widest">Snap Photo or Browse</p>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest text-sm mt-4">
+                    Save to Hub
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. MOCK DATA & SETUP ---
+        let items = JSON.parse(localStorage.getItem('pool-lost-found')) || [
+            { id: 1, desc: "Pink Floral Towel", date: new Date().toISOString(), centre: "CRAC", claimed: false, photo: "https://images.unsplash.com/photo-1576426863848-c21f53c60b19?w=400" },
+            { id: 2, desc: "Zoggs Goggles (Clear)", date: "2024-05-10T10:00:00Z", centre: "YCP", claimed: false, photo: "https://images.unsplash.com/photo-1551009175-8a68da93d5f9?w=400" },
+            { id: 3, desc: "Ironman Water Bottle", date: "2024-04-20T10:00:00Z", centre: "CRAC", claimed: false, photo: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400" }
+        ];
+
+        let currentFilter = 'all';
+        const grid = document.getElementById('itemGrid');
+        const empty = document.getElementById('emptyState');
+
+        // --- 2. RENDER LOGIC ---
+        function renderItems() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = items.filter(i => {
+                const matchesSearch = i.desc.toLowerCase().includes(searchTerm);
+                const matchesFilter = currentFilter === 'all' || i.centre === currentFilter;
+                return matchesSearch && matchesFilter;
+            });
+
+            grid.innerHTML = '';
+            if (filtered.length === 0) {
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(item => {
+                    const card = createItemCard(item);
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        function createItemCard(item) {
+            const foundDate = new Date(item.date);
+            const now = new Date();
+            const daysDiff = Math.floor((now - foundDate) / (1000 * 60 * 60 * 24));
+            const percentRemaining = Math.max(0, Math.min(100, (30 - daysDiff) / 30 * 100));
+            
+            let statusColor = 'bg-emerald-500';
+            if (daysDiff > 25) statusColor = 'bg-red-500';
+            else if (daysDiff > 15) statusColor = 'bg-amber-500';
+
+            const div = document.createElement('div');
+            div.className = `group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all relative ${item.claimed ? 'opacity-60' : ''}`;
+            
+            div.innerHTML = `
+                <div class="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    <img src="${item.photo || 'https://via.placeholder.com/400x300?text=No+Photo'}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    <div class="absolute top-3 left-3 px-2 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded text-[9px] font-black uppercase tracking-widest shadow-sm">
+                        ${item.centre}
+                    </div>
+                    ${item.claimed ? `<div class="absolute inset-0 bg-emerald-500/40 flex items-center justify-center"><span class="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl font-black text-emerald-600 uppercase tracking-widest text-xs border-2 border-emerald-500">Claimed</span></div>` : ''}
+                </div>
+                
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-extrabold text-slate-800 dark:text-white uppercase text-sm leading-tight">${item.desc}</h3>
+                        <button onclick="toggleClaim(${item.id})" class="text-slate-300 hover:text-emerald-500 transition-colors" title="Mark as Claimed">
+                            <i class="ph-fill ph-check-circle text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-4">
+                        <span>Found: ${foundDate.toLocaleDateString('en-AU')}</span>
+                        <span>${daysDiff} Days Ago</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1">
+                            <span class="${daysDiff >= 30 ? 'text-red-500' : 'text-slate-400'}">Retention Period</span>
+                            <span class="${daysDiff >= 30 ? 'text-red-500' : 'text-slate-400'}">${30 - daysDiff} Days Left</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="expiry-progress h-full ${statusColor}" style="width: ${percentRemaining}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex gap-2">
+                        <button onclick="deleteItem(${item.id})" class="flex-1 py-2 rounded-lg border border-slate-100 dark:border-slate-800 hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-300 hover:text-red-500 transition-all font-black text-[9px] uppercase tracking-widest">Delete</button>
+                        <button onclick="alert('In a live Teams integration, this would open the specific Teams post for this item.')" class="flex-1 py-2 rounded-lg border border-slate-100 dark:border-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-slate-300 hover:text-blue-500 transition-all font-black text-[9px] uppercase tracking-widest">View in Teams</button>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        // --- 3. ACTIONS ---
+        function filterItems(centre) {
+            currentFilter = centre;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.includes(centre === 'all' ? 'All' : centre));
+                if (btn.classList.contains('active')) {
+                    btn.classList.add('bg-white', 'dark:bg-slate-900', 'text-blue-600', 'border-blue-200');
+                    btn.classList.remove('hover:bg-white', 'dark:hover:bg-slate-800');
+                } else {
+                    btn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-blue-600', 'border-blue-200');
+                    btn.classList.add('hover:bg-white', 'dark:hover:bg-slate-800');
+                }
+            });
+            renderItems();
+        }
+
+        function toggleClaim(id) {
+            items = items.map(i => i.id === id ? { ...i, claimed: !i.claimed } : i);
+            saveAndRender();
+        }
+
+        function deleteItem(id) {
+            if (confirm("Permanently remove this item from the records?")) {
+                items = items.filter(i => i.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('pool-lost-found', JSON.stringify(items));
+            renderItems();
+        }
+
+        // --- 4. MODAL LOGIC ---
+        function openAddModal() {
+            document.getElementById('itemDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+        }
+
+        document.getElementById('addForm').onsubmit = (e) => {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                desc: document.getElementById('itemDesc').value,
+                date: new Date(document.getElementById('itemDate').value).toISOString(),
+                centre: document.getElementById('itemCentre').value,
+                claimed: false,
+                photo: null // Mock photo
+            };
+            items.push(newItem);
+            saveAndRender();
+            closeAddModal();
+            e.target.reset();
+        };
+
+        // --- 5. INITIALIZE ---
+        document.getElementById('searchInput').oninput = renderItems;
+        renderItems();
+    </script>
+    <script src="./nav.js" data-title="Lost & Found" data-icon="ph-hand-palm" data-help="Track and manage items left behind by patrons. Items are automatically flagged for donation after 30 days. Use the 'Log Item' button to add a new find. In a future update, this will sync directly with your Microsoft Teams channel photos."></script>
+</body>
+</html>

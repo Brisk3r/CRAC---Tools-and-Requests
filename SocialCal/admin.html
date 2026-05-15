@@ -141,12 +141,14 @@
                         <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
                             <span class="block text-[9px] font-black text-blue-600 uppercase mb-1">Primary Category</span>
                             <select id="categorySelect" class="w-full bg-transparent font-bold text-blue-900 text-sm outline-none">
-                                <option value="Maintenance Closure">Maintenance / Closure</option>
-                                <option value="Swim School Intensive">Swim School / Intensives</option>
+                                <option value="Important Notice">General / Important Notice</option>
+                                <option value="Maintenance Closure">Maintenance / Facility Closure</option>
+                                <option value="Swim School General">Swim School (Term/Admin)</option>
+                                <option value="Swim School Intensive">Swim School (Intensives)</option>
                                 <option value="Squad Training">Squad / Training Update</option>
-                                <option value="Lane Availability">Lane Availability / Public Swim</option>
+                                <option value="Lane Availability">Public Swim / Lane Availability</option>
                                 <option value="Community Event">Event / BBQ / Fun Day</option>
-                                <option value="Staff Spotlight">Staff Spotlight / Hiring</option>
+                                <option value="Staff Spotlight">Staff Spotlight / Careers</option>
                                 <option value="Health Fitness">Health & Fitness / Aqua</option>
                             </select>
                         </div>
@@ -186,10 +188,58 @@
                     <div class="flex items-center justify-between border-b pb-2">
                         <div class="flex gap-4">
                             <button id="tabSocial" class="channel-tab active text-[10px] font-black text-blue-600 border-b-2 border-blue-600 pb-2 uppercase tracking-widest">Social Media</button>
-                            <button id="tabNews" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-pink-500 transition-colors">Newsletter</button>
+                            <button id="tabNews" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-pink-500 transition-colors">Newsletter / Email</button>
                             <button id="tabWeb" class="channel-tab text-[10px] font-black text-slate-400 pb-2 uppercase tracking-widest hover:text-emerald-500 transition-colors">Website Alert</button>
                         </div>
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-2">
+                            <div id="charCounter" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-2">0 chars</div>
+                            
+                            <!-- Canva Bridge -->
+                            <div id="canvaMenuContainer" class="relative">
+                                <button id="canvaBtn" class="text-blue-600 hover:text-blue-700 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group border border-blue-100" title="Open in Canva Template">
+                                    <span class="text-[9px] font-black uppercase">Canva</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l5 4 5-2z"></path></svg>
+                                </button>
+                                <div id="canvaDropdown" class="hidden absolute top-full mt-2 right-0 w-56 bg-white rounded-xl shadow-xl border border-slate-100 z-[60] overflow-hidden">
+                                    <div class="px-4 py-2 border-b bg-slate-50 flex justify-between items-center">
+                                        <span class="text-[8px] font-black text-slate-400 uppercase">Brand Templates</span>
+                                        <span id="canvaFacilityBadge" class="text-[7px] font-black px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded uppercase">CRAC</span>
+                                    </div>
+                                    <button onclick="launchCanva('generic')" class="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-blue-50 border-b flex items-center gap-2">
+                                        <i class="ph-bold ph-instagram-logo"></i> Standard Social Post
+                                    </button>
+                                    <button onclick="launchCanva('notice')" class="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-blue-50 border-b flex items-center gap-2">
+                                        <i class="ph-bold ph-warning-circle"></i> Emergency / Notice
+                                    </button>
+                                    <button onclick="launchCanva('event')" class="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-blue-50 flex items-center gap-2">
+                                        <i class="ph-bold ph-calendar"></i> Upcoming Event
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Newsletter Blocks Dropdown -->
+                            <div id="blockMenuContainer" class="hidden relative">
+                                <button id="blockMenuBtn" class="text-pink-600 hover:text-pink-700 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-pink-50 group border border-pink-100" title="Insert Newsletter Block">
+                                    <span class="text-[9px] font-black uppercase">Blocks</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                </button>
+                                <div id="blockDropdown" class="hidden absolute top-full mt-2 right-0 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-[60] overflow-hidden">
+                                    <button onclick="insertBlock('notice')" class="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-red-50 border-b flex items-center gap-2">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div> Important Notice
+                                    </button>
+                                    <button onclick="insertBlock('event')" class="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-blue-50 border-b flex items-center gap-2">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div> Upcoming Event
+                                    </button>
+                                    <button onclick="insertBlock('spotlight')" class="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                        <div class="w-2 h-2 bg-slate-500 rounded-full"></div> Staff Spotlight
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button id="copyHtmlBtn" class="hidden text-pink-600 hover:text-pink-700 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-pink-50 group border border-pink-100" title="Copy as Email HTML">
+                                <span class="text-[9px] font-black uppercase">Copy HTML</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
                             <button id="cleanFormatBtn" class="text-slate-400 hover:text-emerald-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-emerald-50 group" title="Clean Spacing & Formatting">
                                 <span class="text-[9px] font-black uppercase hidden group-hover:inline">Clean</span>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
@@ -330,7 +380,129 @@
 
             currentTab = target;
             quill.root.innerHTML = channelDrafts[target] || '';
+            
+            // Toggle Copy HTML button visibility
+            document.getElementById('copyHtmlBtn').classList.toggle('hidden', target !== 'Newsletter');
+            document.getElementById('blockMenuContainer').classList.toggle('hidden', target !== 'Newsletter');
+            document.getElementById('canvaMenuContainer').classList.toggle('hidden', target !== 'Social');
+            updateCharCounter();
         }
+
+        window.insertBlock = (type) => {
+            let html = '';
+            if (type === 'notice') {
+                html = `<div style="padding: 20px; background-color: #fef2f2; border: 2px solid #ef4444; border-radius: 12px; margin-bottom: 15px;">
+                          <h2 style="color: #991b1b; margin-top: 0;">⚠️ IMPORTANT NOTICE</h2>
+                          <p>Insert your critical message here regarding facility updates or closures.</p>
+                        </div>`;
+            } else if (type === 'event') {
+                html = `<div style="padding: 20px; background-color: #eff6ff; border: 2px solid #3b82f6; border-radius: 12px; margin-bottom: 15px;">
+                          <h2 style="color: #1e40af; margin-top: 0;">📅 UPCOMING EVENT</h2>
+                          <p><strong>Date:</strong> [Date]<br><strong>Time:</strong> [Time]</p>
+                          <p>Description of the event goes here...</p>
+                        </div>`;
+            } else if (type === 'spotlight') {
+                html = `<div style="padding: 20px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; display: flex; gap: 20px; align-items: center;">
+                          <div style="flex-grow: 1;">
+                            <h2 style="color: #1e293b; margin-top: 0;">👤 STAFF SPOTLIGHT</h2>
+                            <p>Meet our team member and learn more about their role at the centre!</p>
+                          </div>
+                        </div>`;
+            }
+            
+            const range = quill.getSelection();
+            if (range) {
+                quill.clipboard.dangerouslyPasteHTML(range.index, html);
+            } else {
+                quill.clipboard.dangerouslyPasteHTML(quill.getLength(), html);
+            }
+            document.getElementById('blockDropdown').classList.add('hidden');
+        };
+
+        const blockMenuBtn = document.getElementById('blockMenuBtn');
+        const blockDropdown = document.getElementById('blockDropdown');
+        blockMenuBtn.onclick = (e) => { e.stopPropagation(); blockDropdown.classList.toggle('hidden'); };
+
+        // Canva Bridge Logic
+        const canvaBtn = document.getElementById('canvaBtn');
+        const canvaDropdown = document.getElementById('canvaDropdown');
+        const canvaFacilityBadge = document.getElementById('canvaFacilityBadge');
+        
+        canvaBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            const facility = document.getElementById('facilitySelect').value;
+            const isClarence = facility.includes('Clarence');
+            canvaFacilityBadge.innerText = isClarence ? 'CRAC' : 'Yamba';
+            canvaFacilityBadge.className = isClarence 
+                ? 'text-[7px] font-black px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded uppercase'
+                : 'text-[7px] font-black px-1.5 py-0.5 bg-teal-100 text-teal-600 rounded uppercase';
+            canvaDropdown.classList.toggle('hidden'); 
+        };
+
+        window.launchCanva = async (type) => {
+            const data = globalRequestsArray.find(r => r.id === currentEditingId);
+            const facility = document.getElementById('facilitySelect').value;
+            const isClarence = facility.includes('Clarence');
+
+            const templateUrls = {
+                'crac': {
+                    'generic': 'https://canva.link/7nzrjs25q1xu29g',
+                    'notice': 'https://www.canva.com/brand/templates/CRAC_NOTICE',
+                    'event': 'https://www.canva.com/brand/templates/CRAC_EVENT'
+                },
+                'ycp': {
+                    'generic': 'https://www.canva.com/brand/templates/YCP_STANDARD',
+                    'notice': 'https://www.canva.com/brand/templates/YCP_NOTICE',
+                    'event': 'https://www.canva.com/brand/templates/YCP_EVENT'
+                }
+            };
+
+            const targetUrls = isClarence ? templateUrls.crac : templateUrls.ycp;
+
+            // Attempt to copy image to clipboard
+            if (data && data.assetUrl) {
+                try {
+                    const resp = await fetch(data.assetUrl);
+                    const blob = await resp.blob();
+                    const item = new ClipboardItem({ [blob.type]: blob });
+                    await navigator.clipboard.write([item]);
+                    alert("Image copied to clipboard!\n\nOpening Canva now—just press Ctrl+V to paste the image into your template.");
+                } catch (err) {
+                    console.warn("Clipboard image copy failed:", err);
+                    alert("Opening Canva template...\n\n(Note: Automatic image copy failed due to browser security. Please drag the image into Canva manually.)");
+                }
+            } else {
+                alert("Opening Canva template...");
+            }
+
+            window.open(targetUrls[type], '_blank');
+            canvaDropdown.classList.add('hidden');
+        };
+
+        document.addEventListener('click', () => {
+            blockDropdown.classList.add('hidden');
+            canvaDropdown.classList.add('hidden');
+        });
+
+        function updateCharCounter() {
+            const text = quill.getText().trim();
+            const count = text.length;
+            const counter = document.getElementById('charCounter');
+            counter.innerText = `${count} chars`;
+            counter.classList.toggle('text-amber-500', count > 280 && currentTab === 'Social');
+        }
+
+        quill.on('text-change', updateCharCounter);
+
+        document.getElementById('copyHtmlBtn').onclick = () => {
+            const html = quill.root.innerHTML;
+            navigator.clipboard.writeText(html).then(() => {
+                const btn = document.getElementById('copyHtmlBtn');
+                const orig = btn.innerHTML;
+                btn.innerHTML = `<span class="text-[9px] font-black uppercase">Copied!</span>`;
+                setTimeout(() => btn.innerHTML = orig, 2000);
+            });
+        };
 
         // Auth
         document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -386,6 +558,13 @@
                              <svg class="w-8 h-8 text-slate-200 group-hover:text-blue-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                            </div>`;
 
+                    const channelBadges = (data.channels || []).map(c => {
+                        if (c === 'Social') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[7px] font-black border border-blue-100"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>SOCIAL</span>`;
+                        if (c === 'Newsletter') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-pink-50 text-pink-600 rounded text-[7px] font-black border border-pink-100"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>NEWS</span>`;
+                        if (c === 'Website') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[7px] font-black border border-emerald-100"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>WEB</span>`;
+                        return '';
+                    }).join('');
+
                     card.innerHTML = `
                         ${thumbContent}
                         <div class="p-5 flex-grow">
@@ -394,14 +573,13 @@
                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tight">${data.date}</span>
                             </div>
                             <h3 class="font-extrabold text-slate-800 leading-tight mb-4 text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-blue-600 transition-colors">${data.title}</h3>
-                            <div class="flex items-center justify-between mt-auto">
+                            <div class="flex flex-wrap gap-1 mb-4">
+                                ${channelBadges}
+                            </div>
+                            <div class="flex items-center justify-between mt-auto pt-3 border-t border-slate-50">
                                 <div class="flex gap-1.5 items-center">
-                                    <span class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-widest border border-blue-100">${data.facility && data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
-                                    <div class="flex gap-1 ml-1 border-l pl-2 border-slate-100">
-                                        ${data.channels?.includes('Social') ? `<svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>` : ''}
-                                        ${data.channels?.includes('Newsletter') ? `<svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>` : ''}
-                                        ${data.channels?.includes('Website') ? `<svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>` : ''}
-                                    </div>
+                                    <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[8px] font-black uppercase tracking-widest border border-slate-200">${data.facility && data.facility.includes('Clarence') ? 'CRAC' : 'Yamba'}</span>
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase truncate max-w-[80px]">${data.category}</span>
                                 </div>
                                 <svg class="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </div>

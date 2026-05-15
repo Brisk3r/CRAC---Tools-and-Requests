@@ -44,7 +44,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-300">
 
     <!-- Configuration Error Banner -->
     <div id="config-error-banner" class="hidden bg-red-600 text-white text-center p-3 font-semibold">
@@ -57,47 +57,47 @@
 
         <!-- View Toggle Buttons -->
         <div class="flex justify-center mb-8 space-x-4">
-            <button id="user-view-btn" class="py-2 px-6 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Staff View</button>
-            <button id="admin-view-btn" class="py-2 px-6 bg-gray-600 text-white rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">Admin View</button>
+            <button id="user-view-btn" class="py-2 px-6 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors">Staff View</button>
+            <button id="admin-view-btn" class="py-2 px-6 bg-gray-600 dark:bg-slate-800 text-white rounded-lg shadow-md hover:bg-gray-700 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors">Admin View</button>
         </div>
 
         <!-- Main Content Area -->
         <main>
             <!-- User Availability View -->
             <div id="user-view" class="view">
-                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 text-center">My Fortnightly Availability</h2>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-slate-800">
+                    <h2 class="text-2xl font-semibold mb-4 text-center dark:text-white">My Fortnightly Availability</h2>
                     <div class="mb-4">
-                        <label for="user-name" class="block text-sm font-medium text-gray-700">Your Name:</label>
-                        <input type="text" id="user-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="e.g., Avi Parker">
+                        <label for="user-name" class="block text-sm font-medium text-gray-700 dark:text-slate-400">Your Name:</label>
+                        <input type="text" id="user-name" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="e.g., Avi Parker">
                     </div>
                     <div id="availability-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Availability grid will be generated here by JavaScript -->
                     </div>
                     <div class="text-center mt-6">
-                        <button id="submit-availability" class="py-3 px-8 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition-transform transform hover:scale-105">Submit Availability</button>
+                        <button id="submit-availability" class="py-3 px-8 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition-transform transform hover:scale-105 active:scale-95">Submit Availability</button>
                     </div>
                 </div>
             </div>
 
             <!-- Admin Roster Projection View -->
             <div id="admin-view" class="view hidden">
-                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 text-center">Projected Roster</h2>
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-slate-800">
+                    <h2 class="text-2xl font-semibold mb-4 text-center dark:text-white">Projected Roster</h2>
                      <div class="flex justify-center mb-4">
-                        <button id="generate-roster-btn" class="py-2 px-6 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700">Generate/Refresh Roster</button>
+                        <button id="generate-roster-btn" class="py-2 px-6 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Generate/Refresh Roster</button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <div class="overflow-x-auto custom-scroll">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+                            <thead class="bg-gray-50 dark:bg-slate-800/50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Staff</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Shift</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Required</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Assigned Staff</th>
                                 </tr>
                             </thead>
-                            <tbody id="roster-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="roster-body" class="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
                                 <!-- Roster will be generated here -->
                             </tbody>
                         </table>
@@ -184,20 +184,20 @@
                 const dateId = date.toISOString().split('T')[0];
 
                 const dayCard = `
-                    <div class="p-4 border rounded-lg bg-gray-50">
-                        <h4 class="font-semibold text-lg mb-3">${dayString}</h4>
+                    <div class="p-4 border dark:border-slate-800 rounded-lg bg-gray-50 dark:bg-slate-800/40">
+                        <h4 class="font-semibold text-lg mb-3 dark:text-slate-200">${dayString}</h4>
                         <div class="flex flex-wrap gap-2">
                             <input type="radio" name="avail-${dateId}" id="avail-${dateId}-all" value="all" class="sr-only" checked>
-                            <label for="avail-${dateId}-all" class="flex-1 text-center py-2 px-3 rounded-md border bg-available">All Day</label>
+                            <label for="avail-${dateId}-all" class="flex-1 text-center py-2 px-3 rounded-md border dark:border-slate-700 bg-available dark:bg-emerald-900/30 dark:text-emerald-300">All Day</label>
 
                             <input type="radio" name="avail-${dateId}" id="avail-${dateId}-am" value="am" class="sr-only">
-                            <label for="avail-${dateId}-am" class="flex-1 text-center py-2 px-3 rounded-md border bg-am">AM Only</label>
+                            <label for="avail-${dateId}-am" class="flex-1 text-center py-2 px-3 rounded-md border dark:border-slate-700 bg-am dark:bg-amber-900/30 dark:text-amber-300">AM Only</label>
                             
                             <input type="radio" name="avail-${dateId}" id="avail-${dateId}-pm" value="pm" class="sr-only">
-                            <label for="avail-${dateId}-pm" class="flex-1 text-center py-2 px-3 rounded-md border bg-pm">PM Only</label>
+                            <label for="avail-${dateId}-pm" class="flex-1 text-center py-2 px-3 rounded-md border dark:border-slate-700 bg-pm dark:bg-rose-900/30 dark:text-rose-300">PM Only</label>
 
                             <input type="radio" name="avail-${dateId}" id="avail-${dateId}-none" value="none" class="sr-only">
-                            <label for="avail-${dateId}-none" class="flex-1 text-center py-2 px-3 rounded-md border bg-unavailable">Unavailable</label>
+                            <label for="avail-${dateId}-none" class="flex-1 text-center py-2 px-3 rounded-md border dark:border-slate-700 bg-unavailable dark:bg-slate-700 dark:text-slate-400">Unavailable</label>
                         </div>
                     </div>
                 `;
@@ -323,7 +323,7 @@
                     
                     let assignedStaffHtml;
                     if (availableStaff.length > 0) {
-                        assignedStaffHtml = availableStaff.map(name => `<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">${name}</span>`).join('');
+                        assignedStaffHtml = availableStaff.map(name => `<span class="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full border dark:border-blue-800">${name}</span>`).join('');
                     } else {
                         assignedStaffHtml = `<span class="text-red-500 font-semibold">No staff available</span>`;
                     }
@@ -331,10 +331,10 @@
                     const requiredText = Object.entries(dailyShifts[shiftName]).map(([role, count]) => `${count} ${role}`).join(', ');
 
                     const row = `
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap font-medium">${dayString}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">${shiftName}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${requiredText}</td>
+                        <tr class="dark:border-slate-800">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium dark:text-slate-300">${dayString}</td>
+                            <td class="px-6 py-4 whitespace-nowrap dark:text-slate-400">${shiftName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-500">${requiredText}</td>
                             <td class="px-6 py-4 whitespace-nowrap">${assignedStaffHtml}</td>
                         </tr>
                     `;

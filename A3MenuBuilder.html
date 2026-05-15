@@ -14,7 +14,9 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; }
+        body { font-family: 'Inter', 'Outfit', sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; }
+        
+        .print-font { font-family: 'Outfit', sans-serif; }
         
         @page { size: A3 portrait; margin: 0; }
 
@@ -27,13 +29,14 @@
         .a3-canvas {
             width: 297mm;
             height: 420mm;
-            background: white;
+            background: white !important;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             margin: 2rem auto;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            color: #0f172a !important; /* Always dark text for print preview */
         }
 
         .brand-asset { position: absolute; pointer-events: none; z-index: 0; }
@@ -319,17 +322,17 @@
             }, [activeTab]);
 
             return (
-                <div className="flex h-screen w-full overflow-hidden print:block print:h-auto print:overflow-visible">
+                <div className="flex h-screen w-full overflow-hidden print:block print:h-auto print:overflow-visible transition-colors duration-300">
                     {/* Left Sidebar */}
-                    <div className="no-print w-96 bg-white border-r border-slate-200 shadow-xl z-50 flex flex-col flex-shrink-0">
-                        <div className="p-6 border-b border-slate-100 bg-slate-50">
-                            <h1 className="font-black text-slate-900 uppercase text-2xl leading-none tracking-tighter">Menu Builder</h1>
-                            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">A3 Poster Generator</p>
+                    <div className="no-print w-96 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-xl z-50 flex flex-col flex-shrink-0">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                            <h1 className="font-black text-slate-900 dark:text-white uppercase text-2xl leading-none tracking-tighter">Menu Builder</h1>
+                            <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest mt-1">A3 Poster Generator</p>
                         </div>
 
-                        <div className="flex bg-slate-100 p-2">
-                            <button onClick={()=>setActiveTab('list')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>Standard List</button>
-                            <button onClick={()=>setActiveTab('graphics')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'graphics' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>Graphics</button>
+                        <div className="flex bg-slate-100 dark:bg-slate-800 p-2">
+                            <button onClick={()=>setActiveTab('list')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'list' ? 'bg-white dark:bg-slate-900 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>Standard List</button>
+                            <button onClick={()=>setActiveTab('graphics')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'graphics' ? 'bg-white dark:bg-slate-900 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>Graphics</button>
                         </div>
 
                         <div className="flex-grow overflow-y-auto p-6 space-y-6 custom-scroll">
@@ -448,15 +451,15 @@
                     </div>
 
                     {/* Right Side: A3 Preview */}
-                    <div className="flex-grow overflow-y-auto bg-slate-200 p-8 flex flex-col items-center custom-scroll print:p-0 print:block">
+                    <div className="flex-grow overflow-y-auto bg-slate-200 dark:bg-slate-950 p-8 flex flex-col items-center custom-scroll print:p-0 print:block transition-colors duration-300">
                         
                         {/* Toggle controls - No Print */}
-                        <div className="no-print bg-white p-2 rounded-xl shadow-sm border border-slate-200 mb-6 flex gap-2">
-                            <button onClick={()=>setPreviewMode('text')} className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${previewMode === 'text' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>Standard Menu Mode</button>
-                            <button onClick={()=>setPreviewMode('graphic')} className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${previewMode === 'graphic' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>Graphic Treats Mode</button>
+                        <div className="no-print bg-white dark:bg-slate-900 p-2 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 mb-6 flex gap-2">
+                            <button onClick={()=>setPreviewMode('text')} className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${previewMode === 'text' ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>Standard Menu Mode</button>
+                            <button onClick={()=>setPreviewMode('graphic')} className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${previewMode === 'graphic' ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>Graphic Treats Mode</button>
                         </div>
 
-                        <div className="a3-canvas relative flex-shrink-0" style={{ transform: 'scale(0.8)', transformOrigin: 'top center', marginTop: '-40px' }}>
+                        <div className="a3-canvas relative flex-shrink-0 print-font" style={{ transform: 'scale(0.8)', transformOrigin: 'top center', marginTop: '-40px' }}>
                             
                             {/* Brand Assets */}
                             <img src="./assets/brand-swoop.svg" className="brand-asset" style={{ top: '-10%', left: '-10%', width: '60%', opacity: 0.1, transform: 'rotate(180deg)' }} />
