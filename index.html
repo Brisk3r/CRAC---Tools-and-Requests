@@ -99,7 +99,6 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-6 mt-auto dark:bg-midnight dark:border-slate-800">
         <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-500 space-y-2 dark:text-slate-400">
-            <p>&copy; <span id="year"></span> Clarence Valley Council. All rights reserved.</p>
             <p class="text-xs font-black uppercase tracking-[0.2em] text-blue-600/80 dark:text-blue-400/80 flex items-center justify-center gap-2">
                 <span>Release: Blue Lagoon</span>
                 <span class="text-slate-300 dark:text-slate-700">|</span> 
@@ -111,17 +110,19 @@
 
     <!-- Logic -->
     <script src="./updates.js"></script>
-    {
-        category: 'Operations',
-        icon: 'ph-duotone ph-briefcase',
-        color: 'blue',
-        tools: [
-            { title: 'Task Tracker', url: 'TaskTracker.html', desc: 'Track operational tasks and maintenance logs.', icon: 'ph-list-checks' },
-            { title: 'Lost & Found', url: 'LostAndFound.html', desc: '30-day retention gallery and item tracking.', icon: 'ph-hand-palm' },
-            { title: 'Timesheet Calculator', url: 'WeekendTimesheetCalculator.html', desc: 'Calculate weekend penalty rates and total hours.', icon: 'ph-clock' },
-            { title: 'Occupancy Calculator', url: 'occupancy-calculator.html', desc: 'Facility capacity and bather load tracking.', icon: 'ph-users-three' }
-        ]
-    },
+    <script>
+        const toolsData = [
+            {
+                category: 'Operations',
+                icon: 'ph-duotone ph-briefcase',
+                color: 'blue',
+                tools: [
+                    { title: 'Task Tracker', url: 'TaskTracker.html', desc: 'Track operational tasks and maintenance logs.', icon: 'ph-list-checks' },
+                    { title: 'Lost & Found', url: 'LostAndFound.html', desc: '30-day retention gallery and item tracking.', icon: 'ph-hand-palm' },
+                    { title: 'Timesheet Calculator', url: 'WeekendTimesheetCalculator.html', desc: 'Calculate weekend penalty rates and total hours.', icon: 'ph-clock' },
+                    { title: 'Occupancy Calculator', url: 'occupancy-calculator.html', desc: 'Facility capacity and bather load tracking.', icon: 'ph-users-three' }
+                ]
+            },
                     // { title: 'Rules Database', url: 'CRACPoolRulesDB.html', desc: 'Internal reference for facility rules and policies.', icon: 'ph-books' }
                 ]
             },
