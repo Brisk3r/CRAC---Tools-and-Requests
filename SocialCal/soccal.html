@@ -246,11 +246,19 @@
                     const updateSection = (id, wrapperId, content, channelKey) => {
                         const wrapper = document.getElementById(wrapperId);
                         const display = document.getElementById(id);
-                        if (channels.includes(channelKey)) {
+                        
+                        // Show section if requested OR if it has approved content
+                        const hasApprovedContent = isApproved && content && content.trim() !== '' && content !== 'Awaiting review...';
+                        const isRequested = channels.includes(channelKey);
+
+                        if (isRequested || hasApprovedContent) {
                             wrapper.classList.remove('hidden');
-                            if (isApproved && content) {
+                            if (hasApprovedContent) {
                                 display.innerHTML = content;
                                 display.classList.remove('italic');
+                            } else if (isApproved) {
+                                display.innerText = "Copy not provided.";
+                                display.classList.add('italic');
                             } else {
                                 display.innerText = "Processing draft...";
                                 display.classList.add('italic');
