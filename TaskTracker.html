@@ -685,19 +685,26 @@
             const handleSaveTask = async (taskData, close = true) => {
                 const { collection, doc, addDoc, updateDoc, serverTimestamp } = window.firebaseModules;
                 const tasksCollection = collection(db, 'tasks');
-                const payload = { ...taskData };
-                const id = payload.id; delete payload.id;
                 
-                if (id) {
-                    payload.updatedAt = serverTimestamp();
-                    await updateDoc(doc(tasksCollection, id), payload);
-                } else {
-                    payload.status = newColumnStatus || 'To Do';
-                    payload.createdAt = serverTimestamp();
-                    payload.updates = [];
-                    await addDoc(tasksCollection, payload);
+                try {
+                    if (taskData.id) {
+                        const id = taskData.id;
+                        const payload = { ...taskData };
+                        delete payload.id;
+                        payload.updatedAt = serverTimestamp();
+                        await updateDoc(doc(tasksCollection, id), payload);
+                    } else {
+                        const payload = { ...taskData };
+                        payload.status = newColumnStatus || 'To Do';
+                        payload.createdAt = serverTimestamp();
+                        payload.updates = payload.updates || [];
+                        await addDoc(tasksCollection, payload);
+                    }
+                    if (close) { setIsModalOpen(false); setSelectedTask(null); }
+                } catch (err) {
+                    console.error("Error saving task:", err);
+                    alert("Failed to save changes. Check console for details.");
                 }
-                if (close) { setIsModalOpen(false); setSelectedTask(null); }
             };
 
             const handleDeleteTask = async (id) => {
