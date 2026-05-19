@@ -81,10 +81,10 @@
     // --- 4. CATEGORY DETECTION ---
     const getCategory = () => {
         const p = path.toLowerCase();
-        if (p.includes('tasktracker') || p.includes('timesheet') || p.includes('occupancy') || p.includes('rulesdb') || p.includes('price')) return 'Operations';
+        if (p.includes('tasktracker') || p.includes('timesheet') || p.includes('rulesdb') || p.includes('price')) return 'Operations';
         if (p.includes('socialcal') || p.includes('noticesign') || p.includes('utmlink') || p.includes('qrcode') || p.includes('shorteneradmin')) return 'Marketing';
         if (p.includes('crac_cal') || p.includes('sim')) return 'Facilities';
-        if (p.includes('resources') || p.includes('swimcert') || p.includes('a3menu') || p.includes('roster')) return 'Resources';
+        if (p.includes('resources') || p.includes('swimcert') || p.includes('a3menu')) return 'Resources';
         return '';
     };
     const currentCat = getCategory();
@@ -282,88 +282,6 @@
                 <i class="ph-bold ph-list text-xl"></i>
             </button>
         </div>
-
-        <!-- Mobile Menu Overlay -->
-        <div id="mobile-menu" class="no-print hidden fixed inset-0 z-[100] bg-white dark:bg-slate-950 p-6 lg:hidden flex-col">
-            <style>
-                #mobile-menu { background-color: white !important; opacity: 1 !important; visibility: visible !important; }
-                .dark #mobile-menu { background-color: #020617 !important; }
-            </style>
-            <div class="flex items-center justify-between mb-8">
-                <div class="flex items-center gap-3">
-                    <div class="bg-cyan-600 text-white p-1.5 rounded-lg shadow-sm">
-                        <i class="ph-bold ph-waves text-xl"></i>
-                    </div>
-                    <h2 class="font-black text-slate-900 dark:text-white uppercase tracking-tighter">CRAC Hub</h2>
-                </div>
-                <button id="mobile-menu-close" class="p-2 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i class="ph-bold ph-x text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="grid gap-6 overflow-y-auto pr-2 custom-scroll flex-grow">
-                <div>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Operations</h3>
-                    <div class="grid gap-1">
-                        <a href="${rootPath}TaskTracker.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-list-checks text-blue-500 text-xl"></i> Task Tracker
-                        </a>
-                        <a href="${rootPath}CRACPriceCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-currency-circle-dollar text-blue-500 text-xl"></i> Pricing Hub
-                        </a>
-                        <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-clock text-blue-500 text-xl"></i> Timesheet Tool
-                        </a>
-                        <!-- <a href="${rootPath}CRACPoolRulesDB.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-books text-blue-500 text-xl"></i> Rules Database
-                        </a> -->
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Marketing</h3>
-                    <div class="grid gap-1">
-                        <a href="${rootPath}SocialCal/soccal.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-paper-plane-tilt text-pink-500 text-xl"></i> Comms Request
-                        </a>
-                        <a href="${rootPath}NoticeSignGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-warning-octagon text-pink-500 text-xl"></i> Notice Builder
-                        </a>
-                        <a href="${rootPath}ShortenerAdmin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-link text-pink-500 text-xl"></i> Short Links
-                        </a>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Facilities</h3>
-                    <div class="grid gap-1">
-                        <a href="${rootPath}CRAC_CAL/crac-cal-admin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-calendar text-teal-500 text-xl"></i> CRAC Admin
-                        </a>
-                        <a href="${rootPath}CRAC_CAL/ycp-cal-admin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-calendar-star text-teal-500 text-xl"></i> YCP Admin
-                        </a>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Resources</h3>
-                    <div class="grid gap-1">
-                        <a href="${rootPath}CRACResources.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-book-bookmark text-amber-500 text-xl"></i> CRAC Links
-                        </a>
-                        <a href="${rootPath}A3MenuBuilder.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                            <i class="ph-duotone ph-list text-amber-500 text-xl"></i> Menu Builder
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-8">
-                <a href="${rootPath}index.html" class="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-blue-600 transition-all uppercase tracking-tighter shadow-xl">
-                    <i class="ph-bold ph-house"></i>
-                    Back to Dashboard
-                </a>
-            </div>
-        </div>
     </header>
 
     <div id="gen-web-nav-spacer" class="no-print h-16"></div>
@@ -371,11 +289,11 @@
 
     const modalHTML = showNav ? `
     <!-- Global Help Modal -->
-    <div id="help-modal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+    <div id="help-modal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[10000] p-4">
         
         <div id="help-modal-overlay" class="absolute inset-0"></div>
 
-        <div id="help-modal-content" class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200 dark:border-slate-800 relative z-10 transition-all transform scale-95 opacity-0">
+        <div id="help-modal-content" class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200 dark:border-slate-800 relative z-[10001] transition-all transform scale-95 opacity-0">
             
             <div class="flex items-center gap-4 mb-6">
                 <div class="bg-blue-100 text-blue-600 p-3 rounded-xl dark:bg-blue-900/30">
@@ -402,19 +320,118 @@
     const inject = () => {
         if (document.getElementById('gen-web-nav')) return;
         
-        // Ensure we have a container for Tailwind to target if it's dynamic
-        if (typeof tailwind !== 'undefined') {
-            document.documentElement.classList.add('dark:bg-slate-950');
-        }
+        // 1. Inject Header (Prepend)
+        const headerWrapper = document.createElement('div');
+        headerWrapper.id = 'gen-web-nav';
+        headerWrapper.className = 'no-print';
+        headerWrapper.innerHTML = headerHTML;
+        document.body.prepend(headerWrapper);
 
-        const navWrapper = document.createElement('div');
-        navWrapper.id = 'gen-web-nav';
-        navWrapper.className = 'no-print';
-        navWrapper.innerHTML = headerHTML + modalHTML;
-        document.body.prepend(navWrapper);
+        // 2. Inject Mobile Menu & Modal (Append to end of body to ensure layering)
+        const portalWrapper = document.createElement('div');
+        portalWrapper.id = 'gen-web-portal';
+        portalWrapper.className = 'no-print';
+        portalWrapper.innerHTML = `
+            <!-- Mobile Menu Overlay -->
+            <div id="mobile-menu-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[10000] hidden opacity-0 transition-opacity duration-300"></div>
+            
+            <!-- Mobile Menu Panel -->
+            <div id="mobile-menu" class="fixed top-0 right-0 bottom-0 w-[85%] max-w-sm bg-white dark:bg-slate-900 z-[10001] flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl border-l border-slate-200 dark:border-slate-800 pointer-events-auto">
+                <style>
+                    #mobile-menu { background-color: #ffffff !important; }
+                    .dark #mobile-menu { background-color: #0f172a !important; }
+                </style>
+                <div class="p-6 flex flex-col h-full">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-cyan-600 text-white p-1.5 rounded-lg shadow-sm">
+                                <i class="ph-bold ph-waves text-xl"></i>
+                            </div>
+                            <h2 class="font-black text-slate-900 dark:text-white uppercase tracking-tighter">CRAC Hub</h2>
+                        </div>
+                        <button id="mobile-menu-close" class="p-2 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                            <i class="ph-bold ph-x text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid gap-6 overflow-y-auto pr-2 custom-scroll flex-grow">
+                        <div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Operations</h3>
+                            <div class="grid gap-1">
+                                <a href="${rootPath}TaskTracker.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-list-checks text-blue-500 text-xl"></i> Task Tracker
+                                </a>
+                                <a href="${rootPath}CRACPriceCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-currency-circle-dollar text-blue-500 text-xl"></i> Pricing Hub
+                                </a>
+                                <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-clock text-blue-500 text-xl"></i> Timesheet Tool
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Marketing</h3>
+                            <div class="grid gap-1">
+                                <a href="${rootPath}SocialCal/soccal.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-paper-plane-tilt text-pink-500 text-xl"></i> Comms Request
+                                </a>
+                                <a href="${rootPath}NoticeSignGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-warning-octagon text-pink-500 text-xl"></i> Notice Builder
+                                </a>
+                                <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-qr-code text-pink-500 text-xl"></i> UTM & QR Builder
+                                </a>
+                                <a href="${rootPath}ShortenerAdmin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-link text-pink-500 text-xl"></i> Short Links
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Facilities</h3>
+                            <div class="grid gap-1">
+                                <a href="${rootPath}CRAC_CAL/crac-cal-admin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-calendar text-teal-500 text-xl"></i> CRAC Admin
+                                </a>
+                                <a href="${rootPath}CRAC_CAL/ycp-cal-admin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-calendar-star text-teal-500 text-xl"></i> YCP Admin
+                                </a>
+                                <a href="${rootPath}CRAC_CAL/CRAC_CalPrintStudio.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-printer text-teal-500 text-xl"></i> Print Studio
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Resources</h3>
+                            <div class="grid gap-1">
+                                <a href="${rootPath}CRACResources.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-book-bookmark text-amber-500 text-xl"></i> CRAC Links
+                                </a>
+                                <a href="${rootPath}YCPResources.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-drop text-amber-500 text-xl"></i> YCP Links
+                                </a>
+                                <a href="${rootPath}Mult-Centre/SwimCertGen.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-certificate text-amber-500 text-xl"></i> Cert Builder
+                                </a>
+                                <a href="${rootPath}A3MenuBuilder.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-list text-amber-500 text-xl"></i> Menu Builder
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <a href="${rootPath}index.html" class="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-blue-600 transition-all uppercase tracking-tighter shadow-xl">
+                            <i class="ph-bold ph-house"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            ${modalHTML}
+        `;
+        document.body.appendChild(portalWrapper);
 
         // --- Event Delegation & Robust Init ---
-        // Using a small delay to ensure DOM is settled for some third-party libs
         setTimeout(() => {
             const helpBtn = document.getElementById('open-help-btn');
             const helpModal = document.getElementById('help-modal');
@@ -429,6 +446,7 @@
             };
 
             const closeHelp = () => {
+                if(!helpContentEl) return;
                 helpContentEl.classList.remove('scale-100', 'opacity-100');
                 setTimeout(() => {
                     helpModal.classList.add('hidden');
@@ -446,7 +464,8 @@
                     const current = localStorage.getItem('gen-web-theme') || 'light';
                     const next = current === 'light' ? 'dark' : 'light';
                     localStorage.setItem('gen-web-theme', next);
-                    applyTheme(next);
+                    const doc = document.documentElement;
+                    if (next === 'dark') doc.classList.add('dark'); else doc.classList.remove('dark');
                     const icon = themeToggle.querySelector('i');
                     if (icon) icon.className = `ph-bold ph-${next === 'dark' ? 'sun' : 'moon'} text-xl`;
                 };
@@ -456,9 +475,29 @@
             const mobToggle = document.getElementById('mobile-menu-toggle');
             const mobClose = document.getElementById('mobile-menu-close');
             const mobMenu = document.getElementById('mobile-menu');
+            const mobOverlay = document.getElementById('mobile-menu-overlay');
 
-            if (mobToggle) mobToggle.onclick = () => mobMenu.classList.remove('hidden');
-            if (mobClose) mobClose.onclick = () => mobMenu.classList.add('hidden');
+            const openMobileMenu = () => {
+                if(mobOverlay) {
+                    mobOverlay.classList.remove('hidden');
+                    setTimeout(() => mobOverlay.classList.remove('opacity-0'), 10);
+                }
+                if(mobMenu) mobMenu.classList.remove('translate-x-full');
+                document.body.style.overflow = 'hidden'; // Prevent scroll
+            };
+
+            const closeMobileMenu = () => {
+                if(mobOverlay) mobOverlay.classList.add('opacity-0');
+                if(mobMenu) mobMenu.classList.add('translate-x-full');
+                document.body.style.overflow = ''; // Restore scroll
+                setTimeout(() => {
+                    if(mobOverlay) mobOverlay.classList.add('hidden');
+                }, 300);
+            };
+
+            if (mobToggle) mobToggle.onclick = openMobileMenu;
+            if (mobClose) mobClose.onclick = closeMobileMenu;
+            if (mobOverlay) mobOverlay.onclick = closeMobileMenu;
         }, 100);
     };
 

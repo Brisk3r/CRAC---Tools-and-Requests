@@ -11,8 +11,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot };
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit, getDocs };
     </script>
 </head>
 <body class="bg-slate-50">
@@ -21,6 +21,7 @@
         const { useState, useEffect } = React;
         const App = () => {
             const [links, setLinks] = useState([]);
+            const [logs, setLogs] = useState([]);
             const [slug, setSlug] = useState('');
             const [dest, setDest] = useState('');
             const [db, setDb] = useState(null);
@@ -29,7 +30,7 @@
 
             useEffect(() => {
                 const init = async () => {
-                    const { initializeApp, getAuth, signInAnonymously, getFirestore, collection, onSnapshot } = window.firebaseModules;
+                    const { initializeApp, getAuth, signInAnonymously, getFirestore, collection, onSnapshot, query, orderBy, limit } = window.firebaseModules;
                     const firebaseConfig = {
                         apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
                         authDomain: "opsf---comms-task-tracker.firebaseapp.com",
@@ -48,6 +49,12 @@
                     onSnapshot(collection(database, 'shortlinks'), (snapshot) => {
                         setLinks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                     });
+
+                    // Real-time logs for recent activity
+                    const q = query(collection(database, 'shortlink_logs'), orderBy('timestamp', 'desc'), limit(20));
+                    onSnapshot(q, (snapshot) => {
+                        setLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    });
                 };
                 init();
             }, []);
@@ -56,7 +63,11 @@
                 if(!slug || !dest) return;
                 const cleanSlug = slug.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
                 const { doc, setDoc } = window.firebaseModules;
-                await setDoc(doc(db, 'shortlinks', cleanSlug), { destination: dest, createdAt: new Date().toISOString() });
+                await setDoc(doc(db, 'shortlinks', cleanSlug), { 
+                    destination: dest, 
+                    createdAt: new Date().toISOString(),
+                    clicks: 0 
+                });
                 setSlug(''); setDest('');
             };
 
@@ -64,6 +75,21 @@
                 if(!window.confirm(`Delete shortlink /s/${id}?`)) return;
                 const { doc, deleteDoc } = window.firebaseModules;
                 await deleteDoc(doc(db, 'shortlinks', id));
+            };
+
+            const getPlatformIcon = (ua) => {
+                if(!ua) return 'ph-desktop';
+                if(ua.includes('iPhone') || ua.includes('iPad')) return 'ph-phone';
+                if(ua.includes('Android')) return 'ph-android-logo';
+                return 'ph-desktop';
+            };
+
+            const formatReferrer = (ref) => {
+                if(!ref || ref === 'direct') return 'Direct / QR';
+                try {
+                    const url = new URL(ref);
+                    return url.hostname.replace('www.', '');
+                } catch(e) { return ref; }
             };
 
             if(!isAuth) {
@@ -105,36 +131,79 @@
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black text-slate-400 tracking-widest">
-                                <tr><th className="p-5">Short Link Path</th><th className="p-5">Destination URL</th><th className="p-5 text-right">Actions</th></tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {links.map(l => (
-                                    <tr key={l.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="p-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="font-black text-blue-600 text-lg">/s/{l.id}</div>
-                                                <button onClick={() => { navigator.clipboard.writeText(`https://brisk3r.github.io/CRAC---Tools-and-Requests/s/${l.id}`); alert('Link copied to clipboard!'); }} className="text-slate-400 hover:text-blue-600 transition-colors p-1 bg-slate-100 hover:bg-blue-100 rounded-md" title="Copy Link">
-                                                    <i className="ph-bold ph-copy text-sm"></i>
-                                                </button>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2">
+                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Active Short Links</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black text-slate-400 tracking-widest">
+                                        <tr>
+                                            <th className="p-5">Short Link Path</th>
+                                            <th className="p-5">Destination URL</th>
+                                            <th className="p-5 text-center">Clicks</th>
+                                            <th className="p-5 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {links.map(l => (
+                                            <tr key={l.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                <td className="p-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="font-black text-blue-600 text-lg">/s/{l.id}</div>
+                                                        <button onClick={() => { navigator.clipboard.writeText(`https://brisk3r.github.io/CRAC---Tools-and-Requests/s/${l.id}`); alert('Link copied to clipboard!'); }} className="text-slate-400 hover:text-blue-600 transition-colors p-1 bg-slate-100 hover:bg-blue-100 rounded-md" title="Copy Link">
+                                                            <i className="ph-bold ph-copy text-sm"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-400 font-bold mt-1">ID: {l.id}</div>
+                                                </td>
+                                                <td className="p-5">
+                                                    <a href={l.destination} target="_blank" className="text-slate-600 font-medium text-sm hover:text-blue-600 underline decoration-blue-200 underline-offset-4 flex items-center gap-2 max-w-md truncate break-all">
+                                                        {l.destination} <i className="ph-bold ph-arrow-up-right"></i>
+                                                    </a>
+                                                </td>
+                                                <td className="p-5 text-center">
+                                                    <div className="text-xl font-black text-slate-900">{l.clicks || 0}</div>
+                                                    {l.lastClicked && (
+                                                        <div className="text-[9px] text-slate-400 font-black uppercase tracking-tight">
+                                                            Last: {new Date(l.lastClicked.seconds * 1000).toLocaleDateString('en-AU')}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="p-5 text-right">
+                                                    <button onClick={() => removeLink(l.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-3 rounded-xl transition-all"><i className="ph-bold ph-trash text-xl"></i></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {links.length === 0 && <tr><td colSpan="4" className="p-12 text-center text-slate-400 font-bold">No active short links. Create one above!</td></tr>}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Recent Activity</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit max-h-[600px] overflow-y-auto custom-scrollbar">
+                                <div className="divide-y divide-slate-100">
+                                    {logs.map(log => (
+                                        <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-sm font-black text-blue-600">/s/{log.slug}</span>
+                                                <span className="text-[10px] font-bold text-slate-400">{log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                                             </div>
-                                            <div className="text-[10px] text-slate-400 font-bold mt-1">ID: {l.id}</div>
-                                        </td>
-                                        <td className="p-5">
-                                            <a href={l.destination} target="_blank" className="text-slate-600 font-medium text-sm hover:text-blue-600 underline decoration-blue-200 underline-offset-4 flex items-center gap-2 max-w-md truncate break-all">
-                                                {l.destination} <i className="ph-bold ph-arrow-up-right"></i>
-                                            </a>
-                                        </td>
-                                        <td className="p-5 text-right">
-                                            <button onClick={() => removeLink(l.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-3 rounded-xl transition-all"><i className="ph-bold ph-trash text-xl"></i></button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {links.length === 0 && <tr><td colSpan="3" className="p-12 text-center text-slate-400 font-bold">No active short links. Create one above!</td></tr>}
-                            </tbody>
-                        </table>
+                                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium truncate">
+                                                <i className="ph-bold ph-arrow-bend-up-right"></i>
+                                                <span>{formatReferrer(log.referrer)}</span>
+                                            </div>
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <i className={`ph-bold ${getPlatformIcon(log.userAgent)} text-slate-300`}></i>
+                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400">{log.platform || 'Unknown'}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {logs.length === 0 && <div className="p-8 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">Waiting for traffic...</div>}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );

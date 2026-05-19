@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, setDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
         // Extract the slug from the path. This file will be served as the 404 handler.
         // It captures anything after /s/
@@ -31,9 +31,37 @@
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
 
-            getDoc(doc(db, "shortlinks", slug)).then((docSnap) => {
+            getDoc(doc(db, "shortlinks", slug)).then(async (docSnap) => {
                 if (docSnap.exists()) {
-                    window.location.replace(docSnap.data().destination);
+                    const data = docSnap.data();
+                    
+                    // Track click and detailed log
+                    try {
+                        const sessionId = Math.random().toString(36).substring(2, 15);
+                        const logRef = doc(db, "shortlink_logs", `${slug}_${Date.now()}_${sessionId}`);
+                        
+                        // We run these in parallel but await the critical one if needed
+                        const trackingPromises = [
+                            updateDoc(doc(db, "shortlinks", slug), {
+                                clicks: increment(1),
+                                lastClicked: serverTimestamp()
+                            }),
+                            setDoc(logRef, {
+                                slug: slug,
+                                timestamp: serverTimestamp(),
+                                referrer: document.referrer || "direct",
+                                userAgent: navigator.userAgent,
+                                platform: navigator.platform,
+                                language: navigator.language
+                            })
+                        ];
+
+                        await Promise.all(trackingPromises);
+                    } catch (e) {
+                        console.error("Tracking error:", e);
+                    }
+
+                    window.location.replace(data.destination);
                 } else {
                     showError("Link Expired or Invalid", "This short link does not exist in the registry.");
                 }

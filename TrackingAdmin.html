@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics Command Center | Gen Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        window.firebaseModules = { initializeApp, getFirestore, collection, onSnapshot, query, orderBy, limit, getAuth, signInAnonymously };
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const CONFIGS = {
+            shortlinks: {
+                apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+                authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+                projectId: "opsf---comms-task-tracker"
+            },
+            crac: {
+                apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+                authDomain: "osf---availability-roster.firebaseapp.com",
+                projectId: "osf---availability-roster"
+            },
+            ycp: {
+                apiKey: "AIzaSyBxkpSPfF9znD4T_tH-juzO5hkf44hWUb4",
+                authDomain: "synaipse-f45a9.firebaseapp.com",
+                projectId: "synaipse-f45a9"
+            }
+        };
+
+        const App = () => {
+            const [shortlinkLogs, setShortlinkLogs] = useState([]);
+            const [cracLogs, setCracLogs] = useState([]);
+            const [ycpLogs, setYcpLogs] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+
+            useEffect(() => {
+                const init = async () => {
+                    const { initializeApp, getFirestore, collection, onSnapshot, query, orderBy, limit, getAuth, signInAnonymously } = window.firebaseModules;
+                    
+                    const setupApp = async (key, config, colName, setter) => {
+                        const app = initializeApp(config, key);
+                        const auth = getAuth(app);
+                        await signInAnonymously(auth);
+                        const db = getFirestore(app);
+                        const q = query(collection(db, colName), orderBy('timestamp', 'desc'), limit(50));
+                        onSnapshot(q, (snapshot) => {
+                            setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), source: key })));
+                        });
+                    };
+
+                    await Promise.all([
+                        setupApp('shortlinks', CONFIGS.shortlinks, 'shortlink_logs', setShortlinkLogs),
+                        setupApp('crac', CONFIGS.crac, 'calendar_logs', setCracLogs),
+                        setupApp('ycp', CONFIGS.ycp, 'calendar_logs', setYcpLogs)
+                    ]);
+                    setIsLoading(false);
+                };
+                init();
+            }, []);
+
+            const allLogs = useMemo(() => {
+                return [...shortlinkLogs, ...cracLogs, ...ycpLogs]
+                    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+            }, [shortlinkLogs, cracLogs, ycpLogs]);
+
+            const stats = useMemo(() => {
+                const s = { total: allLogs.length, crac: cracLogs.length, ycp: ycpLogs.length, links: shortlinkLogs.length };
+                return s;
+            }, [allLogs]);
+
+            const getPlatformIcon = (ua) => {
+                if(!ua) return 'ph-desktop';
+                if(ua.includes('iPhone') || ua.includes('iPad')) return 'ph-phone';
+                if(ua.includes('Android')) return 'ph-android-logo';
+                return 'ph-desktop';
+            };
+
+            const formatReferrer = (ref) => {
+                if(!ref || ref === 'direct') return 'Direct / QR';
+                try {
+                    const url = new URL(ref);
+                    return url.hostname.replace('www.', '');
+                } catch(e) { return ref; }
+            };
+
+            if(isLoading) return <div className="min-h-screen flex items-center justify-center font-black uppercase tracking-widest text-blue-500 animate-pulse">Initializing Neural Link...</div>;
+
+            return (
+                <div className="max-w-7xl mx-auto p-6 lg:p-12">
+                    <header className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6 border-b border-slate-800 pb-8">
+                        <div>
+                            <h1 className="text-5xl font-black uppercase tracking-tighter text-white flex items-center gap-4">
+                                <i className="ph-fill ph-chart-bar text-blue-500"></i> Analytics Hub
+                            </h1>
+                            <p className="text-slate-400 font-bold mt-2 uppercase tracking-widest text-xs">Cross-Project Traffic & Intent Surveillance</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <StatCard label="Shortlinks" value={stats.links} color="blue" />
+                            <StatCard label="CRAC Logs" value={stats.crac} color="teal" />
+                            <StatCard label="YCP Logs" value={stats.ycp} color="orange" />
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                        {/* Summary Side */}
+                        <div className="lg:col-span-1 space-y-6">
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Intent Analysis</h2>
+                            <SummaryBox title="Top Shortlinks" logs={shortlinkLogs} field="slug" />
+                            <SummaryBox title="Popular Actions" logs={[...cracLogs, ...ycpLogs]} field="action" />
+                        </div>
+
+                        {/* Master Feed */}
+                        <div className="lg:col-span-3">
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6">Live Surveillance Feed</h2>
+                            <div className="space-y-3">
+                                {allLogs.map(log => (
+                                    <LogEntry key={log.id} log={log} getIcon={getPlatformIcon} formatRef={formatReferrer} />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const StatCard = ({ label, value, color }) => {
+            const colors = {
+                blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+                teal: 'text-teal-500 bg-teal-500/10 border-teal-500/20',
+                orange: 'text-orange-500 bg-orange-500/10 border-orange-200/20'
+            };
+            return (
+                <div className={`p-4 rounded-2xl border ${colors[color]} min-w-[120px] text-center`}>
+                    <div className="text-2xl font-black">{value}</div>
+                    <div className="text-[10px] uppercase font-black tracking-widest opacity-60">{label}</div>
+                </div>
+            );
+        };
+
+        const SummaryBox = ({ title, logs, field }) => {
+            const counts = useMemo(() => {
+                const c = {};
+                logs.forEach(l => { if(l[field]) c[l[field]] = (c[l[field]] || 0) + 1; });
+                return Object.entries(c).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            }, [logs]);
+
+            return (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">{title}</h3>
+                    <div className="space-y-3">
+                        {counts.map(([val, count]) => (
+                            <div key={val} className="flex justify-between items-center group">
+                                <span className="text-sm font-bold text-slate-300 group-hover:text-blue-400 transition-colors truncate max-w-[150px]">{val}</span>
+                                <span className="bg-slate-800 px-2 py-1 rounded-lg text-[10px] font-black text-slate-500">{count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const LogEntry = ({ log, getIcon, formatRef }) => {
+            const sourceColor = { shortlinks: 'blue', crac: 'teal', ycp: 'orange' }[log.source];
+            const timestamp = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '...';
+
+            return (
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex items-center justify-between group hover:border-slate-700 hover:bg-slate-900 transition-all">
+                    <div className="flex items-center gap-6">
+                        <div className={`w-2 h-2 rounded-full bg-${sourceColor}-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]`}></div>
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-black text-white uppercase tracking-tighter">
+                                    {log.source === 'shortlinks' ? `/s/${log.slug}` : log.action}
+                                </span>
+                                {log.label && <span className="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded uppercase">{log.label}</span>}
+                            </div>
+                            <div className="flex items-center gap-4 mt-1">
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-1">
+                                    <i className="ph-bold ph-globe"></i> {formatRef(log.referrer)}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-1">
+                                    <i className={`ph-bold ${getIcon(log.userAgent)}`}></i> {log.platform}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-[10px] font-black text-slate-500 tabular-nums">{timestamp}</div>
+                        <div className="text-[9px] font-bold text-slate-700 uppercase tracking-widest mt-1">{log.source}</div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+    <script src="./nav.js" data-title="Tracking Admin" data-icon="ph-chart-bar"></script>
+</body>
+</html>
