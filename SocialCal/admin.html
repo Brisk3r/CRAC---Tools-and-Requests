@@ -165,6 +165,24 @@
                         </div>
 
                         <div class="bg-slate-50 p-3 rounded-xl border">
+                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-2">Publish To</span>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="editChannels" value="Social" class="rounded text-blue-600">
+                                    <span class="text-[10px] font-bold text-slate-700">Social</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="editChannels" value="Newsletter" class="rounded text-pink-600">
+                                    <span class="text-[10px] font-bold text-slate-700">News</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="editChannels" value="Website" class="rounded text-emerald-600">
+                                    <span class="text-[10px] font-bold text-slate-700">Web</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border">
                             <span class="block text-[9px] text-slate-400 uppercase font-black mb-1">Date Needed</span>
                             <input type="date" id="editDate" class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none">
                         </div>
@@ -644,6 +662,12 @@
             document.getElementById('staffNameDisplay').innerText = isNew ? "Admin Entry" : (data.staffName || "Staff Member");
             document.getElementById('editDate').value = data.date || "";
             
+            // Set Channels
+            const channels = data.channels || [];
+            document.querySelectorAll('input[name="editChannels"]').forEach(cb => {
+                cb.checked = channels.includes(cb.value);
+            });
+
             const facilitySelect = document.getElementById('facilitySelect');
             if (data.facility) {
                 facilitySelect.value = data.facility.includes('Clarence') ? 'Clarence Regional Aquatic Centre' : 'Yamba Community Pool';
@@ -819,6 +843,8 @@
             editorHtml = editorHtml.replace(/<p>(?:<br>|&nbsp;|\s)*<\/p>/gi, '').trim();
             channelDrafts[currentTab] = editorHtml;
             
+            const channels = Array.from(document.querySelectorAll('input[name="editChannels"]:checked')).map(cb => cb.value);
+            
             const payload = {
                 status: status,
                 rewrittenPost: channelDrafts.Social,
@@ -829,14 +855,15 @@
                 signHeadline: document.getElementById('signHeadline').value,
                 signBody: document.getElementById('signBody').value,
                 facility: document.getElementById('facilitySelect').value,
-                category: document.getElementById('categorySelect').value
+                category: document.getElementById('categorySelect').value,
+                channels: channels,
+                title: document.getElementById('editTitle').value || "Updated Campaign"
             };
 
             try {
                 if (currentEditingId) {
                     await updateDoc(doc(db, "requests", currentEditingId), payload);
                 } else {
-                    payload.title = document.getElementById('editTitle').value || "New Campaign";
                     payload.staffName = "Admin Entry";
                     payload.timestamp = serverTimestamp();
                     await addDoc(collection(db, "requests"), payload);
