@@ -6,32 +6,32 @@
 
 (function() {
     // --- 1. CONFIGURATION & STATE ---
-    const path = window.location.pathname;
-    const isLocal = path.includes('/projects/CRAC---Tools-and-Requests-main/');
     let rootPath = './';
-
-    if (isLocal) {
-        const parts = path.split('/projects/CRAC---Tools-and-Requests-main/');
-        const subPath = parts[1] || '';
-        const depth = (subPath.match(/\//g) || []).length;
-        rootPath = '../'.repeat(depth);
-    } else {
-        const parts = path.split('/CRAC---Tools-and-Requests/');
-        const subPath = parts[1] || '';
-        const cleanSubPath = subPath.startsWith('/') ? subPath.substring(1) : subPath;
-        const depth = (cleanSubPath.match(/\//g) || []).length;
-        rootPath = '../'.repeat(depth);
-    }
-
     const currentScript = document.currentScript || (function() {
         const scripts = document.getElementsByTagName('script');
         return scripts[scripts.length - 1];
     })();
 
-    const pageTitle = currentScript.getAttribute('data-title') || document.title.split('|')[0].trim() || 'Ops Hub';
-    const pageIcon = currentScript.getAttribute('data-icon') || 'ph-house-line';
-    const helpContent = currentScript.getAttribute('data-help') || 'No additional guide available for this tool yet.';
-    const isHome = path.endsWith('index.html') || path.endsWith('/') || path === '' || (isLocal && path.endsWith('CRAC---Tools-and-Requests-main/'));
+    const pageURL = new URL(window.location.href);
+    const pageURLString = pageURL.origin + pageURL.pathname;
+    let rootURLString = '';
+
+    if (currentScript && currentScript.src) {
+        const scriptURL = new URL(currentScript.src, window.location.href);
+        rootURLString = scriptURL.href.substring(0, scriptURL.href.lastIndexOf('/') + 1);
+        if (pageURLString.startsWith(rootURLString)) {
+            const subPath = pageURLString.substring(rootURLString.length);
+            const depth = (subPath.match(/\//g) || []).length;
+            rootPath = '../'.repeat(depth);
+        }
+    }
+
+    const pageTitle = currentScript ? (currentScript.getAttribute('data-title') || document.title.split('|')[0].trim() || 'Ops Hub') : 'Ops Hub';
+    const pageIcon = currentScript ? (currentScript.getAttribute('data-icon') || 'ph-house-line') : 'ph-house-line';
+    const helpContent = currentScript ? (currentScript.getAttribute('data-help') || 'No additional guide available for this tool yet.') : 'No additional guide available for this tool yet.';
+    
+    const filename = pageURLString.substring(pageURLString.lastIndexOf('/') + 1);
+    const isHome = filename === 'index.html' || filename === '' || pageURLString === rootURLString;
 
     // --- 2. THEME & DEPENDENCIES ---
     const applyTheme = (theme) => {
@@ -432,73 +432,75 @@
         document.body.appendChild(portalWrapper);
 
         // --- Event Delegation & Robust Init ---
-        setTimeout(() => {
-            const helpBtn = document.getElementById('open-help-btn');
-            const helpModal = document.getElementById('help-modal');
-            const helpContentEl = document.getElementById('help-modal-content');
-            const closeHelpBtn = document.getElementById('close-help-btn');
-            const helpOverlay = document.getElementById('help-modal-overlay');
+        const helpBtn = document.getElementById('open-help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const helpContentEl = document.getElementById('help-modal-content');
+        const closeHelpBtn = document.getElementById('close-help-btn');
+        const helpOverlay = document.getElementById('help-modal-overlay');
 
-            if (helpBtn) helpBtn.onclick = () => {
-                helpModal.classList.remove('hidden');
-                helpModal.classList.add('flex');
-                setTimeout(() => helpContentEl.classList.add('scale-100', 'opacity-100'), 10);
+        if (helpBtn) helpBtn.onclick = () => {
+            helpModal.classList.remove('hidden');
+            helpModal.classList.add('flex');
+            setTimeout(() => helpContentEl.classList.add('scale-100', 'opacity-100'), 10);
+        };
+
+        const closeHelp = () => {
+            if(!helpContentEl) return;
+            helpContentEl.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => {
+                helpModal.classList.add('hidden');
+                helpModal.classList.remove('flex');
+            }, 200);
+        };
+
+        if (closeHelpBtn) closeHelpBtn.onclick = closeHelp;
+        if (helpOverlay) helpOverlay.onclick = closeHelp;
+
+        // Theme Logic & Icon Sync
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const current = localStorage.getItem('gen-web-theme') || 'light';
+            const icon = themeToggle.querySelector('i');
+            if (icon) icon.className = `ph-bold ph-${current === 'dark' ? 'sun' : 'moon'} text-xl`;
+
+            themeToggle.onclick = () => {
+                const current = localStorage.getItem('gen-web-theme') || 'light';
+                const next = current === 'light' ? 'dark' : 'light';
+                localStorage.setItem('gen-web-theme', next);
+                const doc = document.documentElement;
+                if (next === 'dark') doc.classList.add('dark'); else doc.classList.remove('dark');
+                const icon = themeToggle.querySelector('i');
+                if (icon) icon.className = `ph-bold ph-${next === 'dark' ? 'sun' : 'moon'} text-xl`;
             };
+        }
 
-            const closeHelp = () => {
-                if(!helpContentEl) return;
-                helpContentEl.classList.remove('scale-100', 'opacity-100');
-                setTimeout(() => {
-                    helpModal.classList.add('hidden');
-                    helpModal.classList.remove('flex');
-                }, 200);
-            };
+        // Mobile Logic
+        const mobToggle = document.getElementById('mobile-menu-toggle');
+        const mobClose = document.getElementById('mobile-menu-close');
+        const mobMenu = document.getElementById('mobile-menu');
+        const mobOverlay = document.getElementById('mobile-menu-overlay');
 
-            if (closeHelpBtn) closeHelpBtn.onclick = closeHelp;
-            if (helpOverlay) helpOverlay.onclick = closeHelp;
-
-            // Theme Logic
-            const themeToggle = document.getElementById('theme-toggle');
-            if (themeToggle) {
-                themeToggle.onclick = () => {
-                    const current = localStorage.getItem('gen-web-theme') || 'light';
-                    const next = current === 'light' ? 'dark' : 'light';
-                    localStorage.setItem('gen-web-theme', next);
-                    const doc = document.documentElement;
-                    if (next === 'dark') doc.classList.add('dark'); else doc.classList.remove('dark');
-                    const icon = themeToggle.querySelector('i');
-                    if (icon) icon.className = `ph-bold ph-${next === 'dark' ? 'sun' : 'moon'} text-xl`;
-                };
+        const openMobileMenu = () => {
+            if(mobOverlay) {
+                mobOverlay.classList.remove('hidden');
+                setTimeout(() => mobOverlay.classList.remove('opacity-0'), 10);
             }
+            if(mobMenu) mobMenu.classList.remove('translate-x-full');
+            document.body.style.overflow = 'hidden'; // Prevent scroll
+        };
 
-            // Mobile Logic
-            const mobToggle = document.getElementById('mobile-menu-toggle');
-            const mobClose = document.getElementById('mobile-menu-close');
-            const mobMenu = document.getElementById('mobile-menu');
-            const mobOverlay = document.getElementById('mobile-menu-overlay');
+        const closeMobileMenu = () => {
+            if(mobOverlay) mobOverlay.classList.add('opacity-0');
+            if(mobMenu) mobMenu.classList.add('translate-x-full');
+            document.body.style.overflow = ''; // Restore scroll
+            setTimeout(() => {
+                if(mobOverlay) mobOverlay.classList.add('hidden');
+            }, 300);
+        };
 
-            const openMobileMenu = () => {
-                if(mobOverlay) {
-                    mobOverlay.classList.remove('hidden');
-                    setTimeout(() => mobOverlay.classList.remove('opacity-0'), 10);
-                }
-                if(mobMenu) mobMenu.classList.remove('translate-x-full');
-                document.body.style.overflow = 'hidden'; // Prevent scroll
-            };
-
-            const closeMobileMenu = () => {
-                if(mobOverlay) mobOverlay.classList.add('opacity-0');
-                if(mobMenu) mobMenu.classList.add('translate-x-full');
-                document.body.style.overflow = ''; // Restore scroll
-                setTimeout(() => {
-                    if(mobOverlay) mobOverlay.classList.add('hidden');
-                }, 300);
-            };
-
-            if (mobToggle) mobToggle.onclick = openMobileMenu;
-            if (mobClose) mobClose.onclick = closeMobileMenu;
-            if (mobOverlay) mobOverlay.onclick = closeMobileMenu;
-        }, 100);
+        if (mobToggle) mobToggle.onclick = openMobileMenu;
+        if (mobClose) mobClose.onclick = closeMobileMenu;
+        if (mobOverlay) mobOverlay.onclick = closeMobileMenu;
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inject); else inject();
