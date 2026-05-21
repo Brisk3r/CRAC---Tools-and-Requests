@@ -80,7 +80,7 @@
 
     // --- 4. CATEGORY DETECTION ---
     const getCategory = () => {
-        const p = path.toLowerCase();
+        const p = pageURL.pathname.toLowerCase();
         if (p.includes('tasktracker') || p.includes('timesheet') || p.includes('rulesdb') || p.includes('price')) return 'Operations';
         if (p.includes('socialcal') || p.includes('noticesign') || p.includes('utmlink') || p.includes('qrcode') || p.includes('shorteneradmin')) return 'Marketing';
         if (p.includes('crac_cal') || p.includes('sim')) return 'Facilities';
@@ -98,7 +98,7 @@
             
             <!-- Unified Brand & Context -->
             <div class="flex items-center gap-4">
-                <a href="${rootPath}index.html" class="flex items-center gap-3 group">
+                <a href="${rootPath}index.html" class="flex items-center gap-3 group focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none rounded-lg p-1">
                     <div class="bg-cyan-600 text-white p-1.5 rounded-lg group-hover:bg-blue-600 transition-colors shadow-sm dark:bg-cyan-900/50">
                         <i class="ph-bold ph-waves text-xl"></i>
                     </div>
@@ -118,69 +118,63 @@
                 
                 <!-- Operations Dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Operations' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight">
+                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Operations' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                         <i class="ph-bold ph-briefcase"></i>
                         <span>Operations</span>
                         <i class="ph-bold ph-caret-down text-[10px] opacity-50"></i>
                     </button>
-                    <div class="absolute left-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-left scale-95 group-hover:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
+                    <div class="absolute left-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all transform origin-top-left scale-95 group-hover:scale-100 group-focus-within:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
                         <div class="grid gap-1">
-                            <a href="${rootPath}TaskTracker.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}TaskTracker.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
                                     <i class="ph-duotone ph-list-checks text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Task Tracker</p><p class="text-[9px] font-normal opacity-60">Maintenance logs</p></div>
                             </a>
-                            <a href="${rootPath}CRACPriceCalculator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}CRACPriceCalculator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
                                     <i class="ph-duotone ph-currency-circle-dollar text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Pricing Hub</p><p class="text-[9px] font-normal opacity-60">Fee calculator</p></div>
                             </a>
-                            <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
                                     <i class="ph-duotone ph-clock text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Timesheet Tool</p><p class="text-[9px] font-normal opacity-60">Penalty hour calc</p></div>
                             </a>
-                            <!-- <a href="${rootPath}CRACPoolRulesDB.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
-                                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
-                                    <i class="ph-duotone ph-books text-lg"></i>
-                                </div>
-                                <div><p class="uppercase tracking-tight">Rules Database</p><p class="text-[9px] font-normal opacity-60">Facility policies</p></div>
-                            </a> -->
                         </div>
                     </div>
                 </div>
 
                 <!-- Marketing Dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Marketing' ? 'text-pink-600 bg-pink-50 dark:bg-pink-900/20' : 'text-slate-600 hover:text-pink-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight">
+                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Marketing' ? 'text-pink-600 bg-pink-50 dark:bg-pink-900/20' : 'text-slate-600 hover:text-pink-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                         <i class="ph-bold ph-megaphone"></i>
                         <span>Marketing</span>
                         <i class="ph-bold ph-caret-down text-[10px] opacity-50"></i>
                     </button>
-                    <div class="absolute left-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-left scale-95 group-hover:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
+                    <div class="absolute left-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all transform origin-top-left scale-95 group-hover:scale-100 group-focus-within:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
                         <div class="grid gap-1">
-                            <a href="${rootPath}SocialCal/soccal.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}SocialCal/soccal.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
                                     <i class="ph-duotone ph-paper-plane-tilt text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Comms Request</p><p class="text-[9px] font-normal opacity-60">Socials & newsletters</p></div>
                             </a>
-                            <a href="${rootPath}NoticeSignGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}NoticeSignGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
                                     <i class="ph-duotone ph-warning-octagon text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Notice Builder</p><p class="text-[9px] font-normal opacity-60">PDF signs & posters</p></div>
                             </a>
-                            <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
                                     <i class="ph-duotone ph-qr-code text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">UTM & QR Builder</p><p class="text-[9px] font-normal opacity-60">Tracked marketing links</p></div>
                             </a>
-                            <a href="${rootPath}ShortenerAdmin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}ShortenerAdmin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
                                     <i class="ph-duotone ph-link text-lg"></i>
                                 </div>
@@ -192,26 +186,26 @@
 
                 <!-- Facilities Dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Facilities' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20' : 'text-slate-600 hover:text-teal-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight">
+                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Facilities' ? 'text-teal-600 bg-teal-50 dark:bg-teal-900/20' : 'text-slate-600 hover:text-teal-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                         <i class="ph-bold ph-buildings"></i>
                         <span>Facilities</span>
                         <i class="ph-bold ph-caret-down text-[10px] opacity-50"></i>
                     </button>
-                    <div class="absolute left-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-left scale-95 group-hover:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
+                    <div class="absolute left-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all transform origin-top-left scale-95 group-hover:scale-100 group-focus-within:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
                         <div class="grid gap-1">
-                            <a href="${rootPath}CRAC_CAL/crac-cal-admin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}CRAC_CAL/crac-cal-admin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600 dark:bg-teal-900/40">
                                     <i class="ph-duotone ph-calendar text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">CRAC Admin</p><p class="text-[9px] font-normal opacity-60">Manage lane bookings</p></div>
                             </a>
-                            <a href="${rootPath}CRAC_CAL/ycp-cal-admin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}CRAC_CAL/ycp-cal-admin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600 dark:bg-teal-900/40">
                                     <i class="ph-duotone ph-calendar-star text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">YCP Admin</p><p class="text-[9px] font-normal opacity-60">Manage Yamba Pool</p></div>
                             </a>
-                            <a href="${rootPath}CRAC_CAL/CRAC_CalPrintStudio.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}CRAC_CAL/CRAC_CalPrintStudio.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600 dark:bg-teal-900/40">
                                     <i class="ph-duotone ph-printer text-lg"></i>
                                 </div>
@@ -223,32 +217,32 @@
 
                 <!-- Resources Dropdown -->
                 <div class="relative group">
-                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Resources' ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' : 'text-slate-600 hover:text-amber-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight">
+                    <button class="flex items-center gap-1.5 px-3 py-2 text-xs font-black ${currentCat === 'Resources' ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' : 'text-slate-600 hover:text-amber-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'} rounded-lg transition-all uppercase tracking-tight focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                         <i class="ph-bold ph-book-bookmark"></i>
                         <span>Resources</span>
                         <i class="ph-bold ph-caret-down text-[10px] opacity-50"></i>
                     </button>
-                    <div class="absolute right-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right scale-95 group-hover:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
+                    <div class="absolute right-0 top-full mt-1 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all transform origin-top-right scale-95 group-hover:scale-100 group-focus-within:scale-100 z-50 p-3 dark:bg-slate-900 dark:border-slate-700">
                         <div class="grid gap-1">
-                            <a href="${rootPath}CRACResources.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}CRACResources.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 dark:bg-amber-900/40">
                                     <i class="ph-duotone ph-waves text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">CRAC Links</p><p class="text-[9px] font-normal opacity-60">Internal operations docs</p></div>
                             </a>
-                            <a href="${rootPath}YCPResources.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}YCPResources.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 dark:bg-amber-900/40">
                                     <i class="ph-duotone ph-drop text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">YCP Links</p><p class="text-[9px] font-normal opacity-60">Yamba Pool resources</p></div>
                             </a>
-                            <a href="${rootPath}Mult-Centre/SwimCertGen.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}Mult-Centre/SwimCertGen.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 dark:bg-amber-900/40">
                                     <i class="ph-duotone ph-certificate text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Cert Builder</p><p class="text-[9px] font-normal opacity-60">LTS Certificates</p></div>
                             </a>
-                            <a href="${rootPath}A3MenuBuilder.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800">
+                            <a href="${rootPath}A3MenuBuilder.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 dark:bg-amber-900/40">
                                     <i class="ph-duotone ph-list text-lg"></i>
                                 </div>
@@ -262,23 +256,23 @@
 
                 <!-- Tool Guide -->
                 ${!isHome ? `
-                <button id="open-help-btn" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition-all dark:hover:bg-slate-800" title="Tool Guide">
+                <button id="open-help-btn" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition-all dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none" title="Tool Guide">
                     <i class="ph-bold ph-info text-xl"></i>
                 </button>` : ''}
 
                 <!-- Theme Toggle -->
-                <button id="theme-toggle" class="p-2 text-slate-400 hover:text-amber-500 hover:bg-slate-100 rounded-xl transition-all dark:hover:bg-slate-800" title="Switch Theme">
+                <button id="theme-toggle" class="p-2 text-slate-400 hover:text-amber-500 hover:bg-slate-100 rounded-xl transition-all dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none" title="Switch Theme">
                     <i class="ph-bold ph-moon text-xl"></i>
                 </button>
 
-                <a href="${rootPath}SocialCal/soccal.html" class="ml-2 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-lg hover:bg-blue-600 transition-all shadow-sm flex items-center gap-2 uppercase tracking-tighter">
+                <a href="${rootPath}SocialCal/soccal.html" class="ml-2 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-lg hover:bg-blue-600 transition-all shadow-sm flex items-center gap-2 uppercase tracking-tighter focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                     <i class="ph-bold ph-paper-plane-tilt text-sm"></i>
                     <span>Comms Request</span>
                 </a>
             </nav>
 
             <!-- Mobile Toggle -->
-            <button id="mobile-menu-toggle" class="lg:hidden p-2 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors dark:text-slate-300">
+            <button id="mobile-menu-toggle" class="lg:hidden p-2 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors dark:text-slate-300 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                 <i class="ph-bold ph-list text-xl"></i>
             </button>
         </div>
@@ -309,7 +303,7 @@
                 ${helpContent}
             </div>
             
-            <button id="close-help-btn" class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-blue-600 transition-all shadow-xl uppercase tracking-tighter active:scale-95">
+            <button id="close-help-btn" class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-blue-600 transition-all shadow-xl uppercase tracking-tighter active:scale-95 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                 Close Guide
             </button>
         </div>
@@ -349,7 +343,7 @@
                             </div>
                             <h2 class="font-black text-slate-900 dark:text-white uppercase tracking-tighter">CRAC Hub</h2>
                         </div>
-                        <button id="mobile-menu-close" class="p-2 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <button id="mobile-menu-close" class="p-2 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                             <i class="ph-bold ph-x text-xl"></i>
                         </button>
                     </div>

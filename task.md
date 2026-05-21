@@ -2,17 +2,31 @@
 
 This file tracks active tasks, roadmaps, and priorities for the CVC Aquatic Operations Hub (CRAC & YCP Team Hub).
 
-## Active Sprint Priorities (Next Sprint)
+## Active Sprint Priorities
 
-The following exactly 5 priorities have been identified and suggested for the next sprint to improve tracking, organisation, and operations:
+The following priorities have been addressed or parked as per instructions:
 
 | Task ID | Task Description | Category | Priority | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **TS-001** | **Centralise and Consolidate Social Comms Workflows**<br>Consolidate the duplicate workflows between the simpler `contentapprovaltool.html` (which points to the `osf---availability-roster` Firestore database and handles single-platform posts) and the robust `SocialCal` suite (`soccal.html` & `admin.html`, pointing to `opsf---comms-task-tracker`). Merging these into a single workspace under `SocialCal` will reduce database costs, clean up overlapping code, and prevent staff confusion. | Comms & Marketing | High | Planned |
-| **TS-002** | **Integrate Real-Time Website Alert Fetching in Front-End Sites**<br>Implement the dynamic API website alert bar defined in `Channel-Integration-Standards.md` across the Clarence Regional Aquatic Centre (CRAC) and Yamba Community Pool (YCP) websites. This allows approved alerts tagged with the "Website" channel in Firestore to render automatically on the live sites via `fetchWebsiteAlerts`, replacing the current manual copying and pasting. | Website Integration | High | Planned |
-| **TS-003** | **Standardise Hub Navigation Linkage for Shelved and Admin Tools**<br>Organise and update `index.html` and `nav.js` to ensure all operational tools are accessible from the main dashboard. Currently, tools like `LostAndFound.html` (the newly upgraded Lost & Found Gallery), `contentapprovaltool.html`, `RosterHelper.html`, `LollyLabelPrinting.html`, and `CRACPoolRulesDB.html` exist in the repository but are not listed in the Hub's main dashboard categories. | Organisation & UI | Medium | Planned |
-| **TS-004** | **Enhance Database Performance and Cost Control in Task Tracker**<br>Automate the "Squash Data Payload" utility in `TaskTracker.html`. While a manual button exists to replace descriptions and comments on archived tasks with a generic placeholder to minimise Firestore read/write payloads, automating this for tasks archived for more than 30 days will keep the database lightweight and fast. | Operations & DB | Medium | Planned |
-| **TS-005** | **Localise and Standardise Award Rates in Weekend Timesheet Calculator**<br>Review the `WeekendTimesheetCalculator.html` tool to ensure all award rates and shift calculations are fully compliant with the latest Fair Work Ombudsman (FWO) modern awards for aquatic and fitness centre staff. Standardise inputs and design elements to match the global Inter typography and dark mode theme. | Operations & Admin | Medium | Planned |
+| **TS-001** | **Centralise and Consolidate Social Comms Workflows**<br>Consolidate workflows under `SocialCal`. *Bury the legacy content approval tool.* | Comms & Marketing | High | Cancelled (Legacy Tool Buried) |
+| **TS-002** | **Integrate Real-Time Website Alert Fetching**<br>Implement dynamic API website alert bar. | Website Integration | High | Parked (Alerts won't work) |
+| **TS-003** | **Standardise Hub Navigation Linkage for Shelved and Admin Tools**<br>Expose `ShortenerAdmin.html` on the dashboard, keeping other legacy/orphaned tools hidden. | Organisation & UI | Medium | Completed (Linked Short Links only) |
+| **TS-004** | **Enhance Database Performance and Cost Control in Task Tracker**<br>Automate "Squash Data Payload" utility. | Operations & DB | Medium | Parked (Database performance parked) |
+| **TS-005** | **Localise and Standardise Award Rates in Weekend Timesheet Calculator**<br>Update shift calculation logic for Casual/Permanent rates under NSW Local Government Award. | Operations & Admin | Medium | Completed (Updated calculator math) |
+
+---
+
+## Suggested Priorities for the Next Sprint
+
+The following exactly 5 suggested priorities are recommended for the next sprint:
+
+| Task ID | Task Description | Category | Priority | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **TS-012** | **Lost & Found Gallery Image Upload Support**<br>Add visual log capabilities for kiosk staff to capture and upload photos of lost patron items directly inside `LostAndFound.html`. | UI/UX & Media | High | Proposed |
+| **TS-013** | **Lost & Found Teams Integration Walkthrough**<br>Provide a clear walkthrough of the webhook/integration mechanism to alert the YCP/CRAC Microsoft Teams channel when a new item is logged. | Comms & Integration | Medium | Proposed |
+| **TS-014** | **Email Template Outlook One-Click Copy**<br>Add a "Copy Rich Text" or "Copy HTML" button directly to template blocks in `crac-email-templates.html` to simplify copying cancellations/notices directly into Outlook. | Operations & Comms | Medium | Proposed |
+| **TS-015** | **Pricing Hub Configuration Cache**<br>Use local storage in `CRACPriceCalculator.html` to remember custom pricing variables, facility hire selections, and discount profiles for active sessions. | UI/UX & Data | Low | Proposed |
+| **TS-016** | **Notice Builder Custom Layouts**<br>Integrate official Clarence Valley Council logo headers and water safety templates directly into `NoticeSignGenerator.html` for instant printing. | Operations & UI | Low | Proposed |
 
 ---
 

@@ -37,6 +37,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
+    <script src="seasonLogic.js"></script>
     <script type="text/babel">
         const Icons = {
             Search: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
@@ -627,7 +628,28 @@
 
             const handleSubmit = (e) => {
                 e.preventDefault();
-                const finalData = { ...formData, startDateTime: new Date(startDateTime), endDateTime: new Date(endDateTime) };
+                const start = new Date(startDateTime);
+                const end = new Date(endDateTime);
+                
+                if (window.CRAC_SEASON_LOGIC) {
+                    const startHour = start.getHours() + start.getMinutes() / 60;
+                    const endHour = end.getHours() + end.getMinutes() / 60;
+                    let isClosed = false;
+                    for (const z of formData.zone) {
+                        const status = window.CRAC_SEASON_LOGIC.getOperatingStatus(start, z);
+                        if (!status.open || startHour < status.openHour || endHour > status.closeHour) {
+                            isClosed = true;
+                            break;
+                        }
+                    }
+                    if (isClosed) {
+                        if (!confirm("Warning: This event appears to be scheduled during closed hours or outside operating seasons. Do you still want to save?")) {
+                            return;
+                        }
+                    }
+                }
+
+                const finalData = { ...formData, startDateTime: start, endDateTime: end };
                 if (formData.recurrence?.endDate) {
                     const [y,m,dd] = formData.recurrence.endDate.split('-').map(Number);
                     finalData.recurrence.endDate = new Date(y, m-1, dd);
