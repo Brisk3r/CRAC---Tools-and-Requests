@@ -166,7 +166,7 @@
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
                                     <i class="ph-duotone ph-warning-octagon text-lg"></i>
                                 </div>
-                                <div><p class="uppercase tracking-tight">Notice Builder</p><p class="text-[9px] font-normal opacity-60">PDF signs & posters</p></div>
+                                <div><p class="uppercase tracking-tight">A4 Sign Generator</p><p class="text-[9px] font-normal opacity-60">PDF signs & posters</p></div>
                             </a>
                             <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
@@ -370,7 +370,7 @@
                                     <i class="ph-duotone ph-paper-plane-tilt text-pink-500 text-xl"></i> Comms Request
                                 </a>
                                 <a href="${rootPath}NoticeSignGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                                    <i class="ph-duotone ph-warning-octagon text-pink-500 text-xl"></i> Notice Builder
+                                    <i class="ph-duotone ph-warning-octagon text-pink-500 text-xl"></i> A4 Sign Generator
                                 </a>
                                 <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                                     <i class="ph-duotone ph-qr-code text-pink-500 text-xl"></i> UTM & QR Builder
