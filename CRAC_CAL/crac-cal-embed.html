@@ -33,6 +33,16 @@
         .wave-path:nth-child(2) { animation: wavePulse 1.5s infinite ease-in-out 0.2s; }
         .wave-path:nth-child(3) { animation: wavePulse 1.5s infinite ease-in-out 0.4s; }
         @keyframes wavePulse { 0%, 100% { opacity: 0.4; transform: scaleY(0.8); } 50% { opacity: 1; transform: scaleY(1.2); } }
+
+        @media print {
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-full-height { height: auto !important; max-height: none !important; overflow: visible !important; }
+            .print-full-width { width: 100% !important; max-width: none !important; grid-column: span 12 !important; }
+            .print-break-inside-avoid { page-break-inside: avoid; break-inside: avoid; }
+            ::-webkit-scrollbar { display: none; }
+            .shadow-sm, .border { box-shadow: none !important; border-color: #e2e8f0 !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
@@ -74,13 +84,15 @@
             ChevronLeft: ({ size = 20 }) => <i className={`ph ph-caret-left`} style={{ fontSize: size }}></i>,
             ChevronRight: ({ size = 20 }) => <i className={`ph ph-caret-right`} style={{ fontSize: size }}></i>,
             Calendar: ({ size = 20 }) => <i className={`ph ph-calendar-blank`} style={{ fontSize: size }}></i>,
+            CalendarBlank: ({ size = 20, className = "" }) => <i className={`ph ph-calendar-blank ${className}`} style={{ fontSize: size }}></i>,
             Clock: ({ size = 20 }) => <i className={`ph ph-clock`} style={{ fontSize: size }}></i>,
             MapPin: ({ size = 20 }) => <i className={`ph ph-map-pin`} style={{ fontSize: size }}></i>,
             Waves: ({ size = 20 }) => <i className={`ph ph-waves`} style={{ fontSize: size }}></i>,
-            CheckCircle: ({ size = 20 }) => <i className={`ph ph-check-circle`} style={{ fontSize: size }}></i>,
+            CheckCircle: ({ size = 20, className = "" }) => <i className={`ph ph-check-circle ${className}`} style={{ fontSize: size }}></i>,
             Check: ({ size = 20, className = "" }) => <i className={`ph ph-check ${className}`} style={{ fontSize: size }}></i>,
             X: ({ size = 20 }) => <i className={`ph ph-x`} style={{ fontSize: size }}></i>,
-            AlertCircle: ({ size = 20, className="" }) => <i className={`ph ph-warning-circle ${className}`} style={{ fontSize: size }}></i>
+            AlertCircle: ({ size = 20, className="" }) => <i className={`ph ph-warning-circle ${className}`} style={{ fontSize: size }}></i>,
+            LockKey: ({ size = 20, className="" }) => <i className={`ph ph-lock-key ${className}`} style={{ fontSize: size }}></i>
         };
 
         // --- FIREBASE INITIALIZATION ---
@@ -116,7 +128,7 @@
             
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
-            const [viewMode, setViewMode] = useState('month'); 
+            const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
 
             // Responsive Layout State
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -138,7 +150,8 @@
             const isFirstRender = useRef(true);
 
             const activeZoneId = useMemo(() => {
-                if (settings && zoneFilter !== 'All Zones') {
+                if (zoneFilter === 'All Zones') return 'All Zones';
+                if (settings) {
                     const found = settings.zones.find(z => z.id === zoneFilter || z.children?.some(c => c.id === zoneFilter));
                     if (found) return found.id;
                 }
@@ -278,7 +291,7 @@
             return (
                 <div className="p-3 max-w-7xl mx-auto text-slate-800">
                     {/* Integrated Hub Command Strip - Balanced for Readability */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-4 flex flex-col md:flex-row items-center gap-4">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-4 flex flex-col md:flex-row items-center gap-4 no-print">
                         <div className="flex items-center gap-3 border-r border-slate-100 pr-4 mr-1">
                             <div className="flex bg-slate-100 p-1 rounded-lg">
                                 <button onClick={() => setViewMode('month')} className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
@@ -333,13 +346,11 @@
                                             {isActive ? (
                                                 <div className="bg-white/20 p-1 rounded-full"><Icons.Check size={12} className="text-white" /></div>
                                             ) : (
-                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black uppercase ${
-                                                    z.status === 'Good' ? 'bg-green-100 text-green-700' :
-                                                    z.status === 'Limited' ? 'bg-amber-100 text-amber-700' :
-                                                    'bg-red-100 text-red-700'
-                                                }`}>
-                                                    {z.status[0]}
-                                                </div>
+                                                <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${
+                                                    z.status === 'Good' ? 'bg-green-500' :
+                                                    z.status === 'Limited' ? 'bg-amber-500' :
+                                                    'bg-red-500'
+                                                }`}></div>
                                             )}
                                         </div>
                                         <div className="flex flex-col items-start leading-none text-left">
@@ -352,21 +363,21 @@
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[600px] lg:h-[650px]">
-                        <div className="lg:col-span-8 overflow-hidden h-full flex flex-col">
+                    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[600px] lg:h-[650px] print-full-height">
+                        <div className="lg:col-span-8 overflow-hidden h-full flex flex-col print-full-width print-full-height">
                             {viewMode === 'month' ? (
                                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto overflow-x-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={(day) => { setSelectedDay(day); if (isMobile) setViewMode('day'); }} /></div>
                             ) : viewMode === 'day' ? (
                                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                                    <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} />
+                                    <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} />
                                 </div>
                             ) : (
                                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
                             )}
                         </div>
                         {!isMobile && (
-                            <div className="lg:col-span-4 h-full">
-                                <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} />
+                            <div className="lg:col-span-4 h-full no-print">
+                                <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} />
                             </div>
                         )}
                     </div>
@@ -398,15 +409,24 @@
                 const hrs = []; for(let i = min; i < max; i++) hrs.push(i); return hrs;
             }, [settings, selectedDay]);
 
-            const zone = settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
+            const isAllZones = activeZoneId === 'All Zones';
+            const zone = isAllZones ? settings.zones[0] : settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
             const unitName = zone.id.toLowerCase().includes('program') ? 'Zones' : 'Lanes';
+
+            const getAbbr = (id) => {
+                const lower = id.toLowerCase();
+                if (lower.includes('50m')) return '50M';
+                if (lower.includes('program')) return 'PRG';
+                if (lower.includes('25m')) return '25M';
+                return id.substring(0, 3).toUpperCase();
+            };
 
             return (
                 <>
                     <div className="bg-slate-900 text-white p-3 flex justify-between items-center shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="bg-blue-600 p-1.5 rounded-lg"><Icons.Waves size={16} /></div>
-                            <span className="text-xs font-black uppercase tracking-widest">{zone.id} Weekly Schedule</span>
+                            <span className="text-xs font-black uppercase tracking-widest">{isAllZones ? 'Facility' : zone.id} Weekly Schedule</span>
                         </div>
                         <div className="flex gap-4 pr-2">
                             <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500"></div><span className="text-[10px] font-black uppercase text-slate-400">Free</span></div>
@@ -418,34 +438,149 @@
                         <table className="w-full text-left border-collapse table-fixed min-w-[800px] md:min-w-0 w-full">
                             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 text-slate-800">
                                 <tr>
-                                    <th className="w-20 p-3 text-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-100">Time</th>
+                                    <th className="w-20 p-0 align-top text-center border-r border-slate-100">
+                                        <div className="p-3 pb-2 text-[10px] font-black uppercase text-slate-400">Time</div>
+                                    </th>
                                     {daysInWeek.map(day => (
-                                        <th key={day.toISOString()} className={`p-3 text-center border-r border-slate-100 last:border-r-0 ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50/50' : ''}`}>
-                                            <div className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</div>
-                                            <div className="text-[11px] font-black text-slate-900">{day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}</div>
+                                        <th key={day.toISOString()} className={`p-0 align-top text-center border-r border-slate-100 last:border-r-0 ${day.toDateString() === new Date().toDateString() ? 'bg-blue-50/50' : ''}`}>
+                                            <div className="p-3 pb-2">
+                                                <div className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</div>
+                                                <div className="text-[11px] font-black text-slate-900">{day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}</div>
+                                            </div>
+                                            {isAllZones && (
+                                                <div className="flex flex-row w-full px-1 pb-1 pt-0 gap-0.5 border-t border-slate-100/50 mt-auto">
+                                                    {settings.zones.filter(z => !z.id.toLowerCase().includes('slide')).map(z => {
+                                                        const shortName = z.id.replace(/ pool/i, '').replace('50m', '50M');
+                                                        return (
+                                                            <div key={z.id} className="flex-1 text-[8px] font-black text-slate-400/80 uppercase truncate pt-1" title={z.id}>
+                                                                {shortName.substring(0, 3)}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {displayHours.map(hour => (
+                                {displayHours.map((hour, hourIndex) => (
                                     <tr key={hour} className="group">
                                         <td className="p-2 text-center bg-slate-50/50 border-r border-slate-100 text-[10px] font-bold text-slate-400">{hour === 12 ? '12 PM' : hour > 12 ? `${hour-12} PM` : `${hour} AM`}</td>
                                         {daysInWeek.map(day => {
                                             const cellStart = new Date(day); cellStart.setHours(hour, 0, 0, 0);
                                             const cellEnd = new Date(day); cellEnd.setHours(hour + 1, 0, 0, 0);
+                                            
+                                            if (isAllZones) {
+                                                let facDayClosed = false;
+                                                let facHourClosed = false;
+                                                let facReason = 'Closed';
+                                                if (window.CRAC_SEASON_LOGIC) {
+                                                    const status = window.CRAC_SEASON_LOGIC.getOperatingStatus(day, 'all');
+                                                    if (!status.open) { facDayClosed = true; facReason = status.reason || 'Closed'; }
+                                                    else if (hour < Math.floor(status.openHour) || hour >= Math.ceil(status.closeHour)) facHourClosed = true;
+                                                }
+                                                
+                                                if (facDayClosed) {
+                                                    if (hourIndex === 0) {
+                                                        return (
+                                                            <td key={day.toISOString()} rowSpan={displayHours.length} className="p-2 border-r border-slate-50 bg-slate-50/30 align-middle">
+                                                                <div className="flex flex-col items-center justify-center text-center h-full min-h-[200px]">
+                                                                    <Icons.LockKey size={24} className="mb-2 text-slate-300" />
+                                                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-relaxed break-words">{facReason}</span>
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }
+
+                                                if (facHourClosed) {
+                                                    return <td key={day.toISOString()} className="p-1 border-r border-slate-50 bg-slate-50/30"><div className="h-7 flex items-center justify-center text-[9px] font-black uppercase text-slate-300 tracking-widest">Closed</div></td>;
+                                                }
+                                                
+                                                return (
+                                                    <td key={day.toISOString()} onClick={() => onDayClick(day)} className="p-1 border-r border-slate-50 cursor-pointer hover:bg-slate-50 transition-all">
+                                                        <div className="flex flex-row gap-0.5 h-full min-h-[28px] w-full">
+                                                            {settings.zones.filter(z => !z.id.toLowerCase().includes('slide')).map(z => {
+                                                                let zOpen = true;
+                                                                if (window.CRAC_SEASON_LOGIC) {
+                                                                    const st = window.CRAC_SEASON_LOGIC.getOperatingStatus(day, z.id);
+                                                                    if (!st.open || hour < Math.floor(st.openHour) || hour >= Math.ceil(st.closeHour)) zOpen = false;
+                                                                } else {
+                                                                    const isSun = day.getDay() === 0, isSat = day.getDay() === 6;
+                                                                    if (isSun && (hour < 8 || hour >= 18)) zOpen = false;
+                                                                    else if (isSat && (hour < 7 || hour >= 19)) zOpen = false;
+                                                                    else if (hour < 5 || hour >= 19) zOpen = false;
+                                                                }
+                                                                
+                                                                if (!zOpen) {
+                                                                    return <div key={z.id} title={`${z.id} - Closed`} className="flex-1 flex items-center justify-center rounded bg-slate-100/80 text-slate-400 text-[10px] font-black tracking-widest uppercase overflow-hidden"><span>-</span></div>;
+                                                                }
+                                                                
+                                                                const cEvents = expandedEvents.filter(e => (e.startDateTime < cellEnd && e.endDateTime > cellStart) && (Array.isArray(e.zone) ? e.zone : [e.zone]).some(ez => ez === z.id || z.children?.some(c => c.id === ez)));
+                                                                let bUnits = new Set();
+                                                                cEvents.forEach(e => {
+                                                                    const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                                                                    if (eZones.includes(z.id)) z.children?.forEach(c => bUnits.add(c.id));
+                                                                    else eZones.forEach(ez => { if(z.children?.some(c => c.id === ez)) bUnits.add(ez); });
+                                                                });
+                                                                
+                                                                const tCap = z.children?.length || 1;
+                                                                const freeCount = tCap - bUnits.size;
+                                                                
+                                                                let bgc = "bg-green-100 text-green-700";
+                                                                let lbl = freeCount.toString();
+                                                                if (bUnits.size >= tCap) {
+                                                                    bgc = "bg-red-500 text-white shadow-inner";
+                                                                    lbl = "0";
+                                                                } else if (bUnits.size > 0 || cEvents.length > 0) {
+                                                                    bgc = "bg-amber-100 text-amber-800";
+                                                                }
+                                                                
+                                                                return <div key={z.id} title={`${z.id} - ${lbl} Free`} className={`flex-1 flex items-center justify-center rounded text-[11px] font-black uppercase overflow-hidden transition-all hover:opacity-80 ${bgc}`}><span>{lbl}</span></div>;
+                                                            })}
+                                                        </div>
+                                                    </td>
+                                                );
+                                            }
+
+                                            // Default single zone logic
                                             let open = true;
+                                            let dayClosed = false;
+                                            let dayReason = 'Closed';
+                                            
                                             if (window.CRAC_SEASON_LOGIC) {
                                                 const status = window.CRAC_SEASON_LOGIC.getOperatingStatus(day, zone.id);
-                                                if (!status.open || hour < Math.floor(status.openHour) || hour >= Math.ceil(status.closeHour)) open = false;
+                                                if (!status.open) {
+                                                    dayClosed = true;
+                                                    open = false;
+                                                    dayReason = status.reason || 'Closed';
+                                                } else if (hour < Math.floor(status.openHour) || hour >= Math.ceil(status.closeHour)) {
+                                                    open = false;
+                                                }
                                             } else {
                                                 const isSun = day.getDay() === 0, isSat = day.getDay() === 6;
                                                 if (isSun && (hour < 8 || hour >= 18)) open = false;
                                                 else if (isSat && (hour < 7 || hour >= 19)) open = false;
                                                 else if (hour < 5 || hour >= 19) open = false;
                                             }
- 
-                                            if (!open) return <td key={day.toISOString()} className="p-1 border-r border-slate-50 bg-slate-50/30"><div className="h-10 flex items-center justify-center text-[9px] font-black uppercase text-slate-300 tracking-widest">Closed</div></td>;
+
+                                            if (dayClosed) {
+                                                if (hourIndex === 0) {
+                                                    return (
+                                                        <td key={day.toISOString()} rowSpan={displayHours.length} className="p-2 border-r border-slate-50 bg-slate-50/30 align-middle">
+                                                            <div className="flex flex-col items-center justify-center text-center h-full min-h-[200px]">
+                                                                <Icons.LockKey size={24} className="mb-2 text-slate-300" />
+                                                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-relaxed break-words">{dayReason}</span>
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                }
+                                                return null;
+                                            }
+
+                                            if (!open) return <td key={day.toISOString()} className="p-1 border-r border-slate-50 bg-slate-50/30"><div className="h-7 flex items-center justify-center text-[9px] font-black uppercase text-slate-300 tracking-widest">Closed</div></td>;
  
                                             const cellEvents = expandedEvents.filter(e => (e.startDateTime < cellEnd && e.endDateTime > cellStart) && (Array.isArray(e.zone) ? e.zone : [e.zone]).some(z => z === zone.id || zone.children?.some(c => c.id === z)));
                                             let bookedUnits = new Set();
@@ -506,7 +641,7 @@
                                             
                                             return (
                                                 <td key={day.toISOString()} onClick={() => onDayClick(day)} className="p-1 border-r border-slate-50 cursor-pointer hover:bg-slate-50 transition-all">
-                                                    <div className={`h-10 rounded-lg border flex flex-col items-center justify-center transition-all ${bg}`}><span className="text-[10px] font-black uppercase tracking-tighter">{label}</span></div>
+                                                    <div className={`h-7 rounded-lg border flex flex-col items-center justify-center transition-all ${bg}`}><span className="text-[10px] font-black uppercase tracking-tighter">{label}</span></div>
                                                 </td>
                                             );
                                         })}
@@ -519,13 +654,17 @@
             );
         };
 
-        const CalendarPanel = ({ currentMonth, eventsByDate, onDayClick, selectedDay }) => {
-            const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-            const startDate = new Date(start); startDate.setDate(start.getDate() - start.getDay());
-            const endDate = new Date(end); endDate.setDate(end.getDate() + (6 - end.getDay()));
-            const days = []; let d = new Date(startDate);
-            while(d <= endDate) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
+        const CalendarPanel = React.memo(({ currentMonth, eventsByDate, onDayClick, selectedDay }) => {
+            const days = useMemo(() => {
+                const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+                const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+                const startDate = new Date(start); startDate.setDate(start.getDate() - start.getDay());
+                const endDate = new Date(end); endDate.setDate(end.getDate() + (6 - end.getDay()));
+                const arr = []; let d = new Date(startDate);
+                while(d <= endDate) { arr.push(new Date(d)); d.setDate(d.getDate() + 1); }
+                return arr;
+            }, [currentMonth]);
+
             return (
                 <div className="grid grid-cols-7 border-collapse h-full min-w-[500px] md:min-w-0">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (<div key={day} className="py-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 bg-slate-50/50">{day}</div>))}
@@ -541,9 +680,9 @@
                     })}
                 </div>
             );
-        };
+        });
 
-        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes }) => {
+        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId }) => {
             const sorted = [...events].sort((a,b) => a.startDateTime - b.startDateTime);
             
             const formatTime = (dt) => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -552,6 +691,9 @@
                 if (!text) return "";
                 return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
             };
+
+            const status = window.CRAC_SEASON_LOGIC?.getOperatingStatus(selectedDay, activeZoneId);
+            const isClosed = status && !status.open;
 
             return (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800">
@@ -564,48 +706,57 @@
                         </div>
                         <span className="text-xs font-black bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-slate-800">{events.length}</span>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-white text-slate-800">
-                        {sorted.length > 0 ? sorted.map(event => {
-                            const timeRange = `${formatTime(event.startDateTime)} – ${formatTime(event.endDateTime)}`;
-                            const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
-                            
-                            return (
-                                <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer bg-white text-slate-800">
-                                    <div className="flex items-start gap-3 text-slate-800">
-                                        <div className="w-1.5 self-stretch rounded-full flex-shrink-0 text-slate-800" style={{ backgroundColor: eventTypes[event.type] || '#9CA3AF' }}></div>
-                                        <div className="flex-1 min-w-0 text-slate-800">
-                                            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-black rounded text-white uppercase tracking-wider" style={{ backgroundColor: eventTypes[event.type] || '#6B7280' }}>
-                                                    {event.type}
-                                                </span>
-                                            </div>
-                                            <p className="font-black text-slate-800 truncate group-hover:text-blue-600 transition-colors text-xs uppercase tracking-tight leading-tight text-slate-800">{event.title}</p>
-                                            
-                                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 text-slate-800 mt-2">
-                                                <Icons.Clock size={12} />
-                                                <span>{timeRange}</span>
-                                            </div>
-                                            
-                                            {zonesList && (
-                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 text-slate-800 mt-1">
-                                                    <Icons.MapPin size={11} />
-                                                    <span className="truncate">{zonesList}</span>
-                                                </div>
-                                            )}
-                                            
-                                            {event.description && (
-                                                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed italic border-t border-slate-50 pt-1 text-slate-800">
-                                                    {truncateText(event.description, 80)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        }) : (
+                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white text-slate-800">
+                        {isClosed ? (
+                            <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400">
+                                <Icons.LockKey size={48} className="mb-4 text-slate-200" />
+                                <p className="text-sm font-bold uppercase tracking-widest text-slate-400 text-center">{status.reason || 'Closed'}</p>
+                            </div>
+                        ) : sorted.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-30 text-slate-800">
                                 <Icons.CheckCircle size={48} className="text-slate-300" />
                                 <p className="text-xs font-black uppercase tracking-[0.2em] mt-4 text-slate-800">Clear Schedule</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {sorted.map(event => {
+                                    const timeRange = `${formatTime(event.startDateTime)} – ${formatTime(event.endDateTime)}`;
+                                    const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
+                                    
+                                    return (
+                                        <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer bg-white text-slate-800">
+                                            <div className="flex items-start gap-3 text-slate-800">
+                                                <div className="w-1.5 self-stretch rounded-full flex-shrink-0 text-slate-800" style={{ backgroundColor: eventTypes[event.type] || '#9CA3AF' }}></div>
+                                                <div className="flex-1 min-w-0 text-slate-800">
+                                                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                                                        <span className="inline-block px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-wider" style={{ backgroundColor: (eventTypes[event.type] || '#6B7280') + '25', color: eventTypes[event.type] || '#6B7280' }}>
+                                                            {event.type}
+                                                        </span>
+                                                    </div>
+                                                    <p className="font-black text-slate-800 truncate group-hover:text-blue-600 transition-colors text-xs uppercase tracking-tight leading-tight text-slate-800">{event.title}</p>
+                                                    
+                                                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 text-slate-800 mt-2">
+                                                        <Icons.Clock size={12} />
+                                                        <span>{timeRange}</span>
+                                                    </div>
+                                                    
+                                                    {zonesList && (
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 text-slate-800 mt-1">
+                                                            <Icons.MapPin size={11} />
+                                                            <span className="truncate">{zonesList}</span>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {event.description && (
+                                                        <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed italic border-t border-slate-50 pt-1 text-slate-800">
+                                                            {truncateText(event.description, 80)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -619,7 +770,7 @@
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in" onClick={onClose}>
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800" onClick={e => e.stopPropagation()}>
                         <div className="p-6 text-slate-800">
-                            <div className="flex justify-between items-start mb-6 text-slate-800"><div><span className="inline-block px-2.5 py-0.5 text-[10px] font-black rounded-full text-white uppercase tracking-[0.2em] mb-3" style={{ backgroundColor: eventTypes[event.type] || '#6b7280' }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{event.title}</h3></div><button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button></div>
+                            <div className="flex justify-between items-start mb-6 text-slate-800"><div><span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-3" style={{ backgroundColor: (eventTypes[event.type] || '#6b7280') + '25', color: eventTypes[event.type] || '#6b7280' }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{event.title}</h3></div><button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button></div>
                             <div className="space-y-4">
                                 <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Clock size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Range</p><p className="font-black text-slate-800 text-sm">{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} — {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div></div>
                                 <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.MapPin size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assigned Zones</p><div className="flex flex-wrap gap-1 mt-1">{Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{z}</span>) : <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{event.zone}</span>}</div></div></div>

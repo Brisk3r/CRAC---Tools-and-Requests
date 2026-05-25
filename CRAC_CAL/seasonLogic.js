@@ -35,7 +35,7 @@ window.CRAC_SEASON_LOGIC = {
 
     getSeason(date) {
         const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const offPeak = new Date(date.getFullYear(), 5, 5); // Jun 5
+        const offPeak = new Date(date.getFullYear(), 5, 6); // Jun 6
         const regular = new Date(date.getFullYear(), 8, 7); // Sep 7
         
         if (d >= offPeak && d < regular) return 'OFF_PEAK';
@@ -43,7 +43,7 @@ window.CRAC_SEASON_LOGIC = {
     },
 
     getOperatingStatus(date, zoneStr = 'all') {
-        if (this.isClosedHoliday(date)) return { open: false };
+        if (this.isClosedHoliday(date)) return { open: false, reason: 'Public Holiday Closure' };
         
         const isPH = this.isOpenHoliday(date);
         const season = this.getSeason(date);
@@ -57,7 +57,7 @@ window.CRAC_SEASON_LOGIC = {
 
         if (season === 'OFF_PEAK') {
             if (isSaturday) { openHour = 7; closeHour = 18; }
-            else if (isSundayOrPH) { openHour = 9; closeHour = 16; }
+            else if (isSundayOrPH) { openHour = 8; closeHour = 16; }
             else { openHour = 5; closeHour = 19; } 
         } else {
             if (isSaturday) { openHour = 7; closeHour = 19; } // Assume normal Saturday
@@ -68,8 +68,8 @@ window.CRAC_SEASON_LOGIC = {
         // Zone overrides
         const zoneLower = (zoneStr || '').toLowerCase();
         
-        if (zoneLower.includes('50m pool')) {
-            const startClosure = new Date(date.getFullYear(), 5, 5); // June 5
+        if (zoneLower.includes('50m')) {
+            const startClosure = new Date(date.getFullYear(), 5, 6); // June 6
             const endClosure = new Date(date.getFullYear(), 9, 30); // Oct 30
 
             if (date >= startClosure && date <= endClosure) {
@@ -80,19 +80,25 @@ window.CRAC_SEASON_LOGIC = {
                         closeHour = 9;
                     }
                 } else {
-                    return { open: false }; // Closed completely between Jun 5 and Aug 31
+                    return { open: false, reason: 'Winter Season Closure' }; // Closed completely between Jun 6 and Aug 31
                 }
             }
         }
 
         if (zoneLower.includes('slide')) {
-            const august1 = new Date(date.getFullYear(), 7, 1);
-            if (date < august1) return { open: false }; // After July
-
-            if (isWeekendOrPH) {
+            const june6 = new Date(date.getFullYear(), 5, 6); // June 6
+            
+            if (date >= june6) {
+                // After June 6: NO SLIDES on Weekdays, ONLY weekends
+                if (!isWeekendOrPH) return { open: false, reason: 'Weekends Only' };
                 openHour = 9; closeHour = 16; // sessions within this time
             } else {
-                openHour = 15; closeHour = 18; // 3pm - 6pm
+                // Before June 6: Normal hours
+                if (isWeekendOrPH) {
+                    openHour = 9; closeHour = 16;
+                } else {
+                    openHour = 15; closeHour = 18;
+                }
             }
         }
 

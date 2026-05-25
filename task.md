@@ -13,6 +13,7 @@ The following priorities have been addressed or parked as per instructions:
 | **TS-003** | **Standardise Hub Navigation Linkage for Shelved and Admin Tools**<br>Expose `ShortenerAdmin.html` on the dashboard, keeping other legacy/orphaned tools hidden. | Organisation & UI | Medium | Completed (Linked Short Links only) |
 | **TS-004** | **Enhance Database Performance and Cost Control in Task Tracker**<br>Automate "Squash Data Payload" utility. | Operations & DB | Medium | Parked (Database performance parked) |
 | **TS-005** | **Localise and Standardise Award Rates in Weekend Timesheet Calculator**<br>Update shift calculation logic for Casual/Permanent rates under NSW Local Government Award. | Operations & Admin | Medium | Completed (Updated calculator math) |
+| **TS-006** | **Restore Zone Calendar Embeds & Embed Modal on Hub**<br>Add new 'Live Availability & Calendars' section with `crac-cal-embed.html` and `ycp-cal-embed.html`, and implement responsive iframe modal. | Organisation & UI | High | Completed (Restored embeds & built modal) |
 
 ---
 

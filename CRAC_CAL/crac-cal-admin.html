@@ -564,9 +564,20 @@
                         {days.map(day => {
                             const dayEvents = events.filter(e => e.startDateTime.toDateString() === day.toDateString());
                             const isCurr = day.getMonth() === currentMonth.getMonth();
+                            
+                            let isClosed = false;
+                            let closedReason = 'Closed';
+                            if (window.CRAC_SEASON_LOGIC) {
+                                const status = window.CRAC_SEASON_LOGIC.getOperatingStatus(day, 'all');
+                                if (!status.open) { isClosed = true; closedReason = status.reason || 'Closed'; }
+                            }
+
                             return (
-                                <div key={day.toISOString()} className={`p-2 flex flex-col gap-1 ${isCurr ? 'bg-white text-gray-800' : 'text-gray-400'}`} style={{backgroundColor: isCurr ? '' : 'rgba(249,250,251,0.5)'}}>
-                                    <div className="text-right text-xs font-medium mb-1">{day.getDate()}</div>
+                                <div key={day.toISOString()} className={`p-2 flex flex-col gap-1 ${isCurr ? 'bg-white text-gray-800' : 'text-gray-400'} ${isClosed ? 'bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#f8fafc_10px,#f8fafc_20px)]' : ''}`} style={{backgroundColor: isCurr ? (isClosed ? '#fdf2f2' : '') : 'rgba(249,250,251,0.5)'}}>
+                                    <div className="flex justify-between items-center mb-1">
+                                        {isClosed ? <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-white border border-red-100 shadow-sm px-1.5 py-0.5 rounded">{closedReason}</span> : <span></span>}
+                                        <span className="text-xs font-medium">{day.getDate()}</span>
+                                    </div>
                                     <div className="flex flex-col gap-1 overflow-y-auto no-scrollbar" style={{maxHeight: '150px'}}>
                                         {dayEvents.map(e => (
                                             <div key={e.id + e.startDateTime.toISOString()} onClick={() => onEdit(e)}
