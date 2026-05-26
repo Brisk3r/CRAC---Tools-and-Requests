@@ -76,8 +76,9 @@
 
             /* Ensure borders print correctly */
             .border-print-force {
-                border: 15mm solid !important; 
                 box-sizing: border-box !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
         }
 
@@ -109,6 +110,9 @@
         <div class="flex gap-2">
             <button onclick="saveCurrentState()" class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm">
                 <i data-lucide="save" class="w-4 h-4"></i> Save Preset
+            </button>
+            <button onclick="shareLink()" class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm">
+                <i data-lucide="share-2" class="w-4 h-4"></i> Share Link
             </button>
             <button onclick="printSign()" class="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition shadow-md font-bold">
                 <i data-lucide="printer" class="w-4 h-4"></i> Print
@@ -422,49 +426,50 @@
         <div class="xl:col-span-7 flex flex-col items-center">
             <div id="previewPane" class="relative">
                 
-                <!-- Page Border Layer (Z-Index Lowered) -->
-                <div id="previewBorder" class="absolute inset-0 pointer-events-none z-40"></div>
+                <!-- Page Border Wrapper (Wraps both header and content so they never overlap the border) -->
+                <div id="previewBorder" class="w-full h-full flex flex-col box-border overflow-hidden">
 
-                <!-- Safety Header (Z-Index Raised to overlap border) -->
-                <div id="safetyHeader" class="hidden w-full text-white text-center font-black uppercase tracking-widest flex items-center justify-center font-condensed z-50" style="height: 12%;">
-                    <div class="flex items-center justify-center gap-4 text-5xl">
-                        <span id="safetyHeaderText">DANGER</span>
-                    </div>
-                </div>
-
-                <!-- Main Content Container -->
-                <div id="previewContentContainer" class="flex-grow flex flex-col p-12 z-30 transition-colors duration-300">
-                    
-                    <!-- Top Logo -->
-                    <div class="flex justify-center mb-6 h-16 shrink-0">
-                        <img id="previewLogo" src="" class="h-full object-contain" onerror="this.style.display='none'">
+                    <!-- Safety Header -->
+                    <div id="safetyHeader" class="hidden w-full text-white text-center font-black uppercase tracking-widest flex items-center justify-center font-condensed shrink-0" style="height: 12%;">
+                        <div class="flex items-center justify-center gap-4 text-5xl">
+                            <span id="safetyHeaderText">DANGER</span>
+                        </div>
                     </div>
 
-                    <!-- Headline -->
-                    <div id="previewHeadline" class="font-bold mb-6 break-words leading-tight shrink-0"></div>
-
-                    <!-- Dynamic Content Area -->
-                    <div id="dynamicContentArea" class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden w-full">
+                    <!-- Main Content Container -->
+                    <div id="previewContentContainer" class="flex-grow flex flex-col p-12 transition-colors duration-300">
                         
-                        <!-- Multi-Icon Container -->
-                        <div id="previewIcon" class="flex flex-row justify-center items-center gap-8 shrink-0 transition-all duration-300 w-full flex-wrap"></div>
-
-                        <!-- Image -->
-                        <div id="previewImageContainer" class="hidden shrink-0">
-                            <img id="previewImage" src="" class="max-h-[300px] max-w-full object-contain shadow-sm rounded">
+                        <!-- Top Logo -->
+                        <div class="flex justify-center mb-6 h-16 shrink-0">
+                            <img id="previewLogo" src="" class="h-full object-contain" onerror="this.style.display='none'">
                         </div>
 
-                        <!-- Body Text -->
-                        <div id="previewBody" class="w-full break-words"></div>
+                        <!-- Headline -->
+                        <div id="previewHeadline" class="font-bold mb-6 break-words leading-tight shrink-0"></div>
+
+                        <!-- Dynamic Content Area -->
+                        <div id="dynamicContentArea" class="flex-grow flex flex-col items-center justify-center gap-6 overflow-hidden w-full">
+                            
+                            <!-- Multi-Icon Container -->
+                            <div id="previewIcon" class="flex flex-row justify-center items-center gap-8 shrink-0 transition-all duration-300 w-full flex-wrap"></div>
+
+                            <!-- Image -->
+                            <div id="previewImageContainer" class="hidden shrink-0">
+                                <img id="previewImage" src="" class="max-h-[300px] max-w-full object-contain shadow-sm rounded">
+                            </div>
+
+                            <!-- Body Text -->
+                            <div id="previewBody" class="w-full break-words"></div>
+
+                        </div>
+
+                        <!-- Footer -->
+                        <div id="footerContainer" class="mt-auto pt-8 border-t border-slate-300/50 flex justify-between items-end shrink-0">
+                            <div id="previewFooter" class="text-slate-600 font-medium"></div>
+                            <img id="previewQr" src="" class="hidden w-24 h-24 mix-blend-multiply">
+                        </div>
 
                     </div>
-
-                    <!-- Footer -->
-                    <div id="footerContainer" class="mt-auto pt-8 border-t border-slate-300/50 flex justify-between items-end shrink-0">
-                        <div id="previewFooter" class="text-slate-600 font-medium"></div>
-                        <img id="previewQr" src="" class="hidden w-24 h-24 mix-blend-multiply">
-                    </div>
-
                 </div>
             </div>
             
@@ -918,6 +923,39 @@
         }
     }
 
+    function shareLink() {
+        const params = new URLSearchParams();
+        params.set('headline', document.getElementById('headlineInput').value);
+        params.set('body', quill ? quill.root.innerHTML : '');
+        params.set('type', document.getElementById('signType').value);
+        params.set('logo', document.getElementById('logoSelect').value);
+        params.set('border', document.getElementById('borderStyle').value);
+        params.set('bg', document.getElementById('bgColor').value);
+        params.set('footer', document.getElementById('footerText').value);
+        
+        // Icons
+        params.set('icon1', document.getElementById('iconSelect1').value);
+        params.set('iconColor1', document.getElementById('iconColor1').value);
+        params.set('icon2', document.getElementById('iconSelect2').value);
+        params.set('iconColor2', document.getElementById('iconColor2').value);
+        params.set('icon3', document.getElementById('iconSelect3').value);
+        params.set('iconColor3', document.getElementById('iconColor3').value);
+        params.set('iconSize', document.getElementById('iconSize').value);
+        
+        // QR Code
+        params.set('qr', document.getElementById('qrUrl').value);
+        
+        const baseUrl = window.location.href.split('?')[0];
+        const shareUrl = `${baseUrl}?${params.toString()}`;
+        
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Shareable link copied to clipboard!');
+        }).catch(err => {
+            console.error('Could not copy link:', err);
+            prompt('Copy this link to share:', shareUrl);
+        });
+    }
+
     // Init & Check URL Parameters
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
@@ -941,15 +979,46 @@
 
         // Catch template data from the URL
         const params = new URLSearchParams(window.location.search);
+        
         const headlineParam = params.get('headline');
         const bodyParam = params.get('body');
+        const typeParam = params.get('type');
+        const logoParam = params.get('logo');
+        const borderParam = params.get('border');
+        const bgParam = params.get('bg');
+        const footerParam = params.get('footer');
+        
+        const icon1Param = params.get('icon1');
+        const iconColor1Param = params.get('iconColor1');
+        const icon2Param = params.get('icon2');
+        const iconColor2Param = params.get('iconColor2');
+        const icon3Param = params.get('icon3');
+        const iconColor3Param = params.get('iconColor3');
+        const iconSizeParam = params.get('iconSize');
+        const qrParam = params.get('qr');
 
-        if (headlineParam || bodyParam) {
-            if (headlineParam) document.getElementById('headlineInput').value = headlineParam;
-            if (bodyParam) quill.root.innerHTML = bodyParam;
+        let hasParams = false;
+        
+        if (headlineParam !== null) { document.getElementById('headlineInput').value = headlineParam; hasParams = true; }
+        if (bodyParam !== null) { quill.root.innerHTML = bodyParam; hasParams = true; }
+        if (typeParam !== null) { document.getElementById('signType').value = typeParam; hasParams = true; }
+        if (logoParam !== null) { document.getElementById('logoSelect').value = logoParam; hasParams = true; }
+        if (borderParam !== null) { document.getElementById('borderStyle').value = borderParam; hasParams = true; }
+        if (bgParam !== null) { document.getElementById('bgColor').value = bgParam; hasParams = true; }
+        if (footerParam !== null) { document.getElementById('footerText').value = footerParam; hasParams = true; }
+        
+        if (icon1Param !== null) { document.getElementById('iconSelect1').value = icon1Param; hasParams = true; }
+        if (iconColor1Param !== null) { document.getElementById('iconColor1').value = iconColor1Param; hasParams = true; }
+        if (icon2Param !== null) { document.getElementById('iconSelect2').value = icon2Param; hasParams = true; }
+        if (iconColor2Param !== null) { document.getElementById('iconColor2').value = iconColor2Param; hasParams = true; }
+        if (icon3Param !== null) { document.getElementById('iconSelect3').value = icon3Param; hasParams = true; }
+        if (iconColor3Param !== null) { document.getElementById('iconColor3').value = iconColor3Param; hasParams = true; }
+        if (iconSizeParam !== null) { document.getElementById('iconSize').value = iconSizeParam; hasParams = true; }
+        
+        if (qrParam !== null) { document.getElementById('qrUrl').value = qrParam; hasParams = true; }
 
-            // Automatically select "Notice" style to make it look good right away
-            document.getElementById('signType').value = 'notice';
+        if (hasParams) {
+            handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
             handleSignTypeChange();
         } else {
             // Default load
