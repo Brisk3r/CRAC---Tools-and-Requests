@@ -23,7 +23,17 @@
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .a3-canvas { margin: 0 !important; box-shadow: none !important; border: none !important; page-break-after: always; page-break-inside: avoid; transform: none !important; }
+            .a3-canvas { 
+                width: 297mm !important;
+                height: 420mm !important;
+                margin: 0 !important; 
+                padding: 0 !important;
+                box-shadow: none !important; 
+                border: none !important; 
+                page-break-after: always; 
+                page-break-inside: avoid; 
+                transform: none !important; 
+            }
         }
         
         .a3-canvas {
@@ -37,6 +47,24 @@
             display: flex;
             flex-direction: column;
             color: #0f172a !important; /* Always dark text for print preview */
+            transform-origin: top center;
+        }
+
+        /* Responsive preview scaling for screen sizes to prevent layout shift and overflow */
+        @media (min-width: 1440px) {
+            .a3-canvas { transform: scale(0.75); margin-bottom: -280px; }
+        }
+        @media (max-width: 1439px) and (min-width: 1280px) {
+            .a3-canvas { transform: scale(0.65); margin-bottom: -380px; }
+        }
+        @media (max-width: 1279px) and (min-width: 1024px) {
+            .a3-canvas { transform: scale(0.55); margin-bottom: -480px; }
+        }
+        @media (max-width: 1023px) and (min-width: 768px) {
+            .a3-canvas { transform: scale(0.5); margin-bottom: -520px; }
+        }
+        @media (max-width: 767px) {
+            .a3-canvas { transform: scale(0.32); margin-bottom: -720px; }
         }
 
         .brand-asset { position: absolute; pointer-events: none; z-index: 0; }
@@ -459,7 +487,7 @@
                             <button onClick={()=>setPreviewMode('graphic')} className={`px-6 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${previewMode === 'graphic' ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>Graphic Treats Mode</button>
                         </div>
 
-                        <div className="a3-canvas relative flex-shrink-0 print-font" style={{ transform: 'scale(0.8)', transformOrigin: 'top center', marginTop: '-40px' }}>
+                        <div className="a3-canvas relative flex-shrink-0 print-font">
                             
                             {/* Brand Assets */}
                             <img src="./assets/brand-swoop.svg" className="brand-asset" style={{ top: '-10%', left: '-10%', width: '60%', opacity: 0.1, transform: 'rotate(180deg)' }} />
@@ -575,6 +603,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-    <script src="./nav.js" data-title="Menu Builder" data-icon="ph-list"></script>
+    <script src="./nav.js" data-title="Menu Builder" data-icon="ph-list" data-help="Create and print professional A3 kiosk menus. Add items to categories, customise prices and descriptions, or search/upload product graphics to display visual deals. Click Print A3 Poster to print or save as PDF."></script>
 </body>
 </html>
