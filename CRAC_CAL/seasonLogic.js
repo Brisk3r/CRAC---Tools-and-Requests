@@ -5,11 +5,11 @@ window.CRAC_SEASON_LOGIC = {
         { month: 12, date: 26 }, // Boxing Day
         { month: 4, date: 3 }, // Good Friday 2026 (Apr 3)
         { month: 4, date: 5 }, // Easter Sunday 2026 (Apr 5)
-        { month: 6, date: 8 }, // June Long Weekend (Mon Jun 8 2026)
         { month: 4, date: 25 } // Anzac Day (Apr 25)
     ],
     // Known open holidays
     openHolidays: [
+        { month: 6, date: 8 }, // June Long Weekend (Mon Jun 8 2026)
         { month: 10, date: 5 }, // Oct Long Weekend (Mon Oct 5 2026)
         { month: 1, date: 26 } // Australia Day
     ],
