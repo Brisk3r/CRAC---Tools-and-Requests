@@ -668,6 +668,17 @@
                 cb.checked = channels.includes(cb.value);
             });
 
+            // Set active channels indicators on tabs
+            Object.keys(tabs).forEach(key => {
+                const isRequested = channels.includes(key);
+                const label = tabs[key];
+                if (isRequested) {
+                    label.innerHTML = key === 'Social' ? 'Social Media 🔵' : key === 'Newsletter' ? 'Newsletter / Email 🔴' : 'Website Alert 🟢';
+                } else {
+                    label.innerHTML = key === 'Social' ? 'Social Media' : key === 'Newsletter' ? 'Newsletter / Email' : 'Website Alert';
+                }
+            });
+
             const facilitySelect = document.getElementById('facilitySelect');
             if (data.facility) {
                 facilitySelect.value = data.facility.includes('Clarence') ? 'Clarence Regional Aquatic Centre' : 'Yamba Community Pool';
@@ -704,7 +715,10 @@
                 Newsletter: data.rewrittenNewsletter || '',
                 Website: data.rewrittenWebsite || ''
             };
-            switchTab('Social', true); // Reset to Social tab by default and skip saving previous state
+            
+            // Auto-switch to the first requested channel, default to 'Social' if empty
+            const defaultTab = channels.length > 0 ? channels[0] : 'Social';
+            switchTab(defaultTab, true);
             
             const statusInd = document.getElementById('statusIndicator');
             statusInd.innerText = isNew ? 'Draft' : data.status;
