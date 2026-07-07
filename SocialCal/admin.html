@@ -763,7 +763,7 @@
                 });
 
                 // 2. Trigger Apps Script surgically for THIS post only
-                await fetch(`https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec?docId=${currentEditingId}`, {mode: 'no-cors'});
+                await fetch(`https://script.google.com/macros/s/AKfycby6F1FkMmzZodSHmOmEHfeewMlYTH-1Rk7dDj96nyx5wntEDGXl_qpCaxdueT4Squjv/exec?docId=${currentEditingId}`, {mode: 'no-cors'});
                 
                 // Reset UI state after timeout
                 setTimeout(() => {
@@ -833,7 +833,7 @@
             const btn = document.getElementById('processAutoBtn');
             btn.innerHTML = `<div class="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full inline-block mr-2"></div> Running...`;
             try {
-                await fetch("https://script.google.com/macros/s/AKfycbyZ4_rxgM24WPwqbx_HHFFkKOjfkA907L03QvgarkzG29ZFQ7FGmEPLl1IAbHcM0sg8/exec", {mode: 'no-cors'});
+                await fetch("https://script.google.com/macros/s/AKfycby6F1FkMmzZodSHmOmEHfeewMlYTH-1Rk7dDj96nyx5wntEDGXl_qpCaxdueT4Squjv/exec", {mode: 'no-cors'});
                 setTimeout(() => { alert("Background Sequence Triggered."); btn.innerHTML = "Auto (Background)"; }, 2000);
             } catch (err) { btn.innerHTML = "Auto (Background)"; }
         };
