@@ -81,7 +81,7 @@
     // --- 4. CATEGORY DETECTION ---
     const getCategory = () => {
         const p = pageURL.pathname.toLowerCase();
-        if (p.includes('tasktracker') || p.includes('timesheet') || p.includes('rulesdb') || p.includes('price') || p.includes('laptracker')) return 'Operations';
+        if (p.includes('tasktracker') || p.includes('timesheet') || p.includes('rulesdb') || p.includes('price')) return 'Operations';
         if (p.includes('socialcal') || p.includes('noticesign') || p.includes('utmlink') || p.includes('qrcode') || p.includes('shorteneradmin')) return 'Marketing';
         if (p.includes('crac_cal') || p.includes('sim')) return 'Facilities';
         if (p.includes('resources') || p.includes('swimcert') || p.includes('a3menu')) return 'Resources';
@@ -142,12 +142,6 @@
                                     <i class="ph-duotone ph-clock text-lg"></i>
                                 </div>
                                 <div><p class="uppercase tracking-tight">Timesheet Tool</p><p class="text-[9px] font-normal opacity-60">Penalty hour calc</p></div>
-                            </a>
-                            <a href="${rootPath}LapTracker.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
-                                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
-                                    <i class="ph-duotone ph-swimmer text-lg"></i>
-                                </div>
-                                <div><p class="uppercase tracking-tight">Lap Tracker</p><p class="text-[9px] font-normal opacity-60">Swim Around Australia</p></div>
                             </a>
                         </div>
                     </div>
@@ -366,9 +360,6 @@
                                 </a>
                                 <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                                     <i class="ph-duotone ph-clock text-blue-500 text-xl"></i> Timesheet Tool
-                                </a>
-                                <a href="${rootPath}LapTracker.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                                    <i class="ph-duotone ph-swimmer text-blue-500 text-xl"></i> Lap Tracker
                                 </a>
                             </div>
                         </div>
