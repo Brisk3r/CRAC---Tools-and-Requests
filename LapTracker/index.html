@@ -148,6 +148,27 @@
             const [swimmerPos, setSwimmerPos] = useState({ x: 630, y: 440 });
             const [pathLength, setPathLength] = useState(0);
 
+            // Measure the SVG path length once it mounts
+            useEffect(() => {
+                const measurePath = () => {
+                    if (pathRef.current) {
+                        const len = pathRef.current.getTotalLength();
+                        setPathLength(len);
+                    }
+                };
+                // Retry a few times since SVG may not be ready immediately
+                const timer = setTimeout(measurePath, 200);
+                return () => clearTimeout(timer);
+            }, []);
+
+            // Move swimmer dot along the path whenever km progress changes
+            useEffect(() => {
+                if (!pathRef.current || pathLength === 0) return;
+                const pct = Math.min(challengePercentage / 100, 1);
+                const point = pathRef.current.getPointAtLength(pct * pathLength);
+                setSwimmerPos({ x: point.x, y: point.y });
+            }, [challengePercentage, pathLength]);
+
             // Toast helper
             const showToast = (message) => {
                 setToast({ show: true, message });
