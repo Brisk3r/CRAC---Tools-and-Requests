@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lap Challenge Progress ticker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800;900&display=swap');
+        
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            margin: 0; 
+            background-color: transparent; 
+        }
+        
+        /* Strict 320x60 dimensions for the LED display using the Brand Blue */
+        .ticker-container {
+            width: 320px;
+            height: 60px;
+            overflow: hidden;
+            background-color: #0d68cc; 
+            color: white;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        /* --- Ambient Aquatic Bubbles --- */
+        .bubbles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            bottom: -20px;
+            animation: floatUp infinite ease-in-out;
+        }
+
+        .bubble:nth-child(1) { left: 15%; width: 8px; height: 8px; animation-duration: 3s; animation-delay: 0s; }
+        .bubble:nth-child(2) { left: 45%; width: 14px; height: 14px; animation-duration: 4.5s; animation-delay: 1.5s; }
+        .bubble:nth-child(3) { left: 75%; width: 6px; height: 6px; animation-duration: 3.5s; animation-delay: 0.5s; }
+        .bubble:nth-child(4) { left: 90%; width: 10px; height: 10px; animation-duration: 4s; animation-delay: 2s; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            20% { opacity: 1; }
+            50% { transform: translateY(-40px) translateX(4px); }
+            100% { transform: translateY(-80px) translateX(-4px); opacity: 0; }
+        }
+
+        /* --- Smooth Vertical Scrolling Track --- */
+        .ticker-track {
+            position: relative;
+            z-index: 10;
+            transition: transform 1.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .ticker-slide {
+            width: 320px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+
+        /* Content Styling */
+        .rank-badge {
+            background: white;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 900;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        .laps-count {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffc600; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ticker-container" id="led-ticker">
+        <!-- Background Bubbles -->
+        <div class="bubbles">
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+        </div>
+
+        <!-- Scrolling Track -->
+        <div class="ticker-track" id="ticker-track">
+            <div class="ticker-slide justify-center">
+                <span class="text-sm font-bold uppercase tracking-widest text-white/80">Loading Progress...</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Coastline points to map percentages along the Australia coast
+        // 0 km: Sydney, 25,760 km: Back to Sydney
+        const MILESTONES = [
+            { name: "Sydney", targetKm: 0 },
+            { name: "Brisbane", targetKm: 1000 },
+            { name: "Cairns", targetKm: 2960 },
+            { name: "Darwin", targetKm: 6960 },
+            { name: "Broome", targetKm: 10000 },
+            { name: "Perth", targetKm: 14200 },
+            { name: "Adelaide", targetKm: 18800 },
+            { name: "Melbourne", targetKm: 21600 },
+            { name: "Hobart", targetKm: 23200 },
+            { name: "Sydney Finish", targetKm: 25760 }
+        ];
+
+        const TOTAL_CIRCUMFERENCE = 25760; // km
+
+        // Live osftools Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHYN7jk5en7V19pMfag6l8kG3fSjR2zYY",
+            authDomain: "osftools.firebaseapp.com",
+            projectId: "osftools",
+            storageBucket: "osftools.firebasestorage.app",
+            messagingSenderId: "42038303082",
+            appId: "1:42038303082:web:6fed53593f0e0c3d9ead13"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const appId = 'clarence-valley-laps';
+
+        let usersData = [];
+        let lapsData = [];
+        let intervalId = null;
+
+        const getMilestoneInfo = (km) => {
+            let currentIdx = 0;
+            for (let i = 0; i < MILESTONES.length; i++) {
+                if (km >= MILESTONES[i].targetKm) {
+                    currentIdx = i;
+                }
+            }
+            const current = MILESTONES[currentIdx];
+            const next = MILESTONES[currentIdx + 1] || MILESTONES[MILESTONES.length - 1];
+            const remaining = Math.max(0, next.targetKm - km);
+            return { current, next, remaining };
+        };
+
+        const updateTicker = () => {
+            const track = document.getElementById('ticker-track');
+            
+            // Build user approved lookup
+            const userMap = {};
+            usersData.forEach(u => {
+                userMap[u.id] = { isApproved: u.isApproved, facility: u.facility };
+            });
+
+            let grandTotalKm = 0;
+            lapsData.forEach(lap => {
+                const user = userMap[lap.userId];
+                if (user && user.isApproved) {
+                    const count = Number(lap.count) || 0;
+                    const poolLen = Number(lap.poolLength) || (user.facility === 'YCP' ? 25 : 50);
+                    grandTotalKm += count * (poolLen / 1000);
+                }
+            });
+
+            const { current, next, remaining } = getMilestoneInfo(grandTotalKm);
+            const pct = Math.min(100, (grandTotalKm / TOTAL_CIRCUMFERENCE) * 100);
+
+            // Construct 3 distinct slides for the ticker
+            const slides = [
+                // Slide 1: Grand Total Distance
+                `
+                <div class="ticker-slide">
+                    <div class="rank-badge" style="color: #0d68cc; font-size: 14px;">${pct.toFixed(0)}%</div>
+                    <div class="flex flex-col flex-grow ml-3">
+                        <span class="text-[9px] font-black uppercase text-white/60 tracking-wider">Total Progress</span>
+                        <span class="text-md font-black leading-none">${grandTotalKm.toLocaleString('en-AU', {minimumFractionDigits: 1, maximumFractionDigits: 1})} KM Swum</span>
+                    </div>
+                    <div class="laps-count">🌊</div>
+                </div>
+                `,
+                // Slide 2: Current Voyage Location
+                `
+                <div class="ticker-slide">
+                    <div class="rank-badge" style="color: #64748b; font-size: 14px;">📍</div>
+                    <div class="flex flex-col flex-grow ml-3">
+                        <span class="text-[9px] font-black uppercase text-white/60 tracking-wider">Current Station</span>
+                        <span class="text-md font-black leading-none truncate uppercase">${current.name}</span>
+                    </div>
+                </div>
+                `,
+                // Slide 3: Next Voyage Destination
+                `
+                <div class="ticker-slide">
+                    <div class="rank-badge" style="color: #ff5900; font-size: 14px;">🏁</div>
+                    <div class="flex flex-col flex-grow ml-3">
+                        <span class="text-[9px] font-black uppercase text-white/60 tracking-wider">Next: ${next.name}</span>
+                        <span class="text-xs font-black leading-none text-[#ffc600] uppercase tracking-wider">${remaining.toFixed(1)} KM remaining</span>
+                    </div>
+                </div>
+                `
+            ];
+
+            track.innerHTML = slides.join('');
+
+            // Seamless Loop Logic: clone the first slide to the end
+            if (slides.length > 1) {
+                const firstSlideClone = track.children[0].cloneNode(true);
+                track.appendChild(firstSlideClone);
+            }
+
+            startScrollAnimation(slides.length);
+        };
+
+        const startScrollAnimation = (itemCount) => {
+            if (itemCount <= 1) return; 
+            
+            if (intervalId) clearInterval(intervalId);
+
+            const track = document.getElementById('ticker-track');
+            let currentIndex = 0;
+            
+            // Reset position
+            track.style.transition = 'none';
+            track.style.transform = `translateY(0px)`;
+
+            intervalId = setInterval(() => {
+                currentIndex++;
+                
+                // Smooth vertical slide up over 1.5 seconds
+                track.style.transition = 'transform 1.5s cubic-bezier(0.4, 0.0, 0.2, 1)';
+                track.style.transform = `translateY(-${currentIndex * 60}px)`;
+
+                // Snap back to the true first slide seamlessly
+                if (currentIndex === itemCount) {
+                    setTimeout(() => {
+                        track.style.transition = 'none';
+                        currentIndex = 0;
+                        track.style.transform = `translateY(0px)`;
+                    }, 1500); // Matches the CSS transition duration
+                }
+            }, 6000); // Wait 6 seconds before scrolling to the next progress slide
+        };
+
+        // Real-Time Database Listeners (from approved lapUsers and laps collections)
+        const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'lapUsers');
+        onSnapshot(usersRef, (snapshot) => {
+            usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (lapsData.length > 0) updateTicker();
+        });
+
+        const lapsRef = collection(db, 'artifacts', appId, 'public', 'data', 'laps');
+        onSnapshot(lapsRef, (snapshot) => {
+            lapsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (usersData.length > 0) updateTicker();
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Service Portal | Lap Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Nunito', sans-serif; }
+        .view-content { display: none; }
+        .view-content.active { display: block; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: white; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 pb-20 min-h-screen">
+
+    <!-- Login View (Wrapped to prevent CSS flex conflicts) -->
+    <div id="view-login" class="view-content active">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full border border-slate-200">
+                <div class="flex justify-center mb-6 text-[#53a3a8]">
+                    <i data-lucide="shield-check" class="w-16 h-16"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-center text-slate-800 mb-2 uppercase tracking-wide">Staff Portal</h1>
+                <p class="text-center text-slate-500 text-sm mb-8 font-bold">Secure access for Clarence Valley Council</p>
+                
+                <form id="admin-login-form" class="space-y-4">
+                    <div>
+                        <input type="email" id="login-email" autocomplete="username" placeholder="Work Email" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-[#53a3a8] outline-none font-bold text-slate-700 bg-slate-50" required>
+                    </div>
+                    <div>
+                        <input type="password" id="login-password" autocomplete="current-password" placeholder="Password" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-[#53a3a8] outline-none font-bold text-slate-700 bg-slate-50" required>
+                    </div>
+                    <button type="submit" class="w-full bg-[#53a3a8] text-white font-extrabold py-4 rounded-xl hover:bg-[#448b90] transition-colors uppercase tracking-wider shadow-md flex justify-center items-center gap-2">
+                        <span id="login-text">Secure Login</span>
+                        <i data-lucide="loader-2" id="login-spinner" class="w-5 h-5 animate-spin hidden"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Main Area (Hidden until logged in) -->
+    <div id="view-dashboard" class="hidden">
+        
+        <!-- Admin Header (No Print) -->
+        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-10 no-print">
+            <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-[#53a3a8] p-2 rounded-lg">
+                        <i data-lucide="shield" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-extrabold tracking-tight uppercase">Lap Tracker Admin</h1>
+                        <p class="text-xs text-slate-300 font-bold tracking-wider">Logged in: <span id="logged-in-user-email" class="text-white"></span></p>
+                    </div>
+                </div>
+                <nav class="flex space-x-2 bg-slate-800 p-1 rounded-xl overflow-x-auto">
+                    <button id="btn-view-approvals" class="px-4 py-2 rounded-lg text-sm font-bold transition-colors bg-[#53a3a8] text-white whitespace-nowrap" onclick="switchAdminView('approvals')">
+                        Approvals (<span id="pending-count">0</span>)
+                    </button>
+                    <button id="btn-view-manual" class="px-4 py-2 rounded-lg text-sm font-bold transition-colors hover:bg-slate-700 text-white whitespace-nowrap" onclick="switchAdminView('manual')">
+                        Log Laps
+                    </button>
+                    <button id="btn-view-settings" class="px-4 py-2 rounded-lg text-sm font-bold transition-colors hover:bg-slate-700 text-white whitespace-nowrap" onclick="switchAdminView('settings')">
+                        Challenge Settings
+                    </button>
+                    <button id="btn-view-team" class="px-4 py-2 rounded-lg text-sm font-bold transition-colors hover:bg-slate-700 text-white whitespace-nowrap" onclick="switchAdminView('team')">
+                        Manage Team
+                    </button>
+                    <button id="btn-view-qr" class="px-4 py-2 rounded-lg text-sm font-bold transition-colors hover:bg-slate-700 text-white whitespace-nowrap" onclick="switchAdminView('qr')">
+                        QR Codes
+                    </button>
+                    <button onclick="handleLogout()" class="px-4 py-2 rounded-lg text-sm font-bold transition-colors hover:bg-red-500 text-red-300 hover:text-white whitespace-nowrap flex items-center gap-1 ml-4 border border-red-900">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Exit
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="max-w-5xl mx-auto px-4 py-8">
+            
+            <!-- Loading State -->
+            <div id="loading-state" class="text-center py-12 text-slate-500 no-print hidden">
+                <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-4 text-[#53a3a8]"></i>
+                <p class="font-bold tracking-wider uppercase">Loading Secure Data...</p>
+            </div>
+
+            <!-- Approvals View -->
+            <div id="admin-view-approvals" class="view-content active no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+                <h3 class="text-2xl font-extrabold mb-2 uppercase text-slate-800 tracking-wide">Name Approvals</h3>
+                <p class="text-sm text-slate-500 mb-8 font-bold">Review profiles to ensure display names are appropriate for the community boards.</p>
+                
+                <div id="approvals-list" class="space-y-4">
+                    <!-- Populated via JS -->
+                </div>
+                <div id="approvals-empty" class="hidden text-center p-12 text-slate-400 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                    <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-[#53a3a8] opacity-50"></i>
+                    <p class="font-extrabold uppercase tracking-widest">All caught up!</p>
+                </div>
+            </div>
+
+            <!-- Manual Entry View -->
+            <div id="admin-view-manual" class="view-content no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+                <h3 class="text-2xl font-extrabold mb-2 uppercase text-slate-800 tracking-wide">Manual Lap Entry</h3>
+                <p class="text-sm text-slate-500 mb-8 font-bold">Assist patrons by adding laps to their account directly from the front desk.</p>
+                
+                <div id="manual-search-section">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-4 top-4 text-slate-400 w-6 h-6"></i>
+                        <input type="text" id="patron-search" placeholder="Search approved patron by name..." class="w-full pl-12 p-4 border-2 border-slate-200 rounded-xl focus:border-[#53a3a8] outline-none font-bold text-slate-700 bg-slate-50">
+                    </div>
+                    <div id="search-results" class="mt-4 border border-slate-200 rounded-xl overflow-hidden hidden shadow-sm">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+
+                <div id="manual-entry-section" class="hidden bg-[#f0f9fa] p-8 rounded-2xl border-2 border-[#b0e0e3] mt-6">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h4 class="font-extrabold text-xl text-[#448b90] uppercase tracking-wide">Adding Laps For: <span id="selected-patron-name" class="text-slate-800"></span></h4>
+                            <p class="text-sm text-[#53a3a8] font-bold mt-1 uppercase tracking-wider">Current Total: <span id="selected-patron-total" class="text-xl"></span></p>
+                        </div>
+                        <button onclick="clearSelectedPatron()" class="text-sm font-bold text-slate-400 hover:text-slate-700 uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">Cancel</button>
+                    </div>
+                    
+                    <form id="admin-log-form" class="flex flex-col sm:flex-row gap-4 items-center">
+                        <input type="number" id="admin-lap-count" placeholder="Number of laps to add" min="1" class="flex-1 p-4 border-2 border-[#b0e0e3] rounded-xl focus:border-[#53a3a8] outline-none font-extrabold text-xl text-slate-700 text-center sm:text-left" required>
+                        
+                        <div id="admin-pool-selector-container" class="hidden flex gap-2 items-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase">Pool Size:</span>
+                            <select id="admin-pool-length" class="p-3 text-xs font-bold border-2 border-[#b0e0e3] rounded-xl text-slate-700 outline-none bg-white">
+                                <option value="50">50m (Outdoor)</option>
+                                <option value="25">25m (Indoor)</option>
+                            </select>
+                        </div>
+                        <p id="admin-ycp-pool-desc" class="hidden text-xs font-bold text-[#53a3a8] uppercase">Pool: 25m</p>
+
+                        <button type="submit" class="bg-[#53a3a8] text-white px-8 py-4 rounded-xl font-extrabold hover:bg-[#448b90] uppercase tracking-wider shadow-md whitespace-nowrap">
+                            Submit Laps
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Challenge Settings View -->
+            <div id="admin-view-settings" class="view-content no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="timer" class="w-8 h-8 text-[#53a3a8]"></i>
+                    <h3 class="text-2xl font-extrabold uppercase text-slate-800 tracking-wide">Challenge Settings</h3>
+                </div>
+                <p class="text-sm text-slate-500 mb-8 font-bold">Configure the start and end dates for the community leaderboard countdown timer.</p>
+                
+                <div class="bg-slate-50 border border-slate-200 p-6 rounded-xl max-w-2xl">
+                    <form id="settings-form" class="space-y-6">
+                        <div class="grid sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-2">Challenge Start Date & Time</label>
+                                <input type="datetime-local" id="setting-start" class="w-full p-3 border-2 border-slate-200 rounded-lg focus:border-[#53a3a8] outline-none font-bold text-slate-700" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-2">Challenge End Date & Time</label>
+                                <input type="datetime-local" id="setting-end" class="w-full p-3 border-2 border-slate-200 rounded-lg focus:border-[#53a3a8] outline-none font-bold text-slate-700" required>
+                            </div>
+                        </div>
+                        <div class="flex justify-end pt-4 border-t border-slate-200">
+                            <button type="submit" class="bg-[#53a3a8] text-white px-6 py-3 rounded-xl font-extrabold hover:bg-[#448b90] uppercase tracking-wider shadow-md flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Manage Team View -->
+            <div id="admin-view-team" class="view-content no-print bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="users" class="w-8 h-8 text-[#53a3a8]"></i>
+                    <h3 class="text-2xl font-extrabold uppercase text-slate-800 tracking-wide">Manage Team</h3>
+                </div>
+                <p class="text-sm text-slate-500 mb-8 font-bold">Promote existing patrons to Customer Service staff so they can access this portal.</p>
+                
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <h4 class="font-extrabold text-lg text-[#448b90] uppercase tracking-wide mb-4">Promote Patron</h4>
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-4 top-4 text-slate-400 w-6 h-6"></i>
+                            <input type="text" id="team-search" placeholder="Search approved patron by name..." class="w-full pl-12 p-4 border-2 border-slate-200 rounded-xl focus:border-[#53a3a8] outline-none font-bold text-slate-700 bg-slate-50">
+                        </div>
+                        <div id="team-search-results" class="mt-4 border border-slate-200 rounded-xl overflow-hidden hidden shadow-sm">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-extrabold text-lg text-[#448b90] uppercase tracking-wide mb-4">Current Staff Access</h4>
+                        <div id="current-staff-list" class="space-y-3">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Codes View (Printable) -->
+            <div id="admin-view-qr" class="view-content bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center space-y-6">
+                <h3 class="text-2xl font-extrabold uppercase text-slate-800 tracking-wide no-print">Sign-up QR Codes</h3>
+                <p class="text-sm text-slate-500 max-w-lg mx-auto font-bold no-print">
+                    Print these posters for the front desk. Patrons can scan them to instantly open the tracker and achieve their fitness goals.
+                </p>
+                
+                <div class="grid sm:grid-cols-2 gap-12 mt-8">
+                    <!-- CRAC -->
+                    <div class="border-2 border-slate-100 p-8 rounded-2xl space-y-6 print:border-none">
+                        <h4 class="font-black text-3xl text-[#448b90] uppercase tracking-wider">Clarence Regional<br>Aquatic Centre</h4>
+                        <p class="text-md text-slate-500 font-bold pb-6 border-b-2 border-slate-100 uppercase tracking-wide">State-of-the-art regional facility</p>
+                        <div class="bg-white inline-block p-6 border-4 border-[#b0e0e3] shadow-lg rounded-[2rem] mx-auto transform rotate-1 hover:rotate-0 transition-transform">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fbrisk3r.github.io%2FCRAC---Tools-and-Requests%2FLapTracker%2Findex.html" alt="CRAC QR Code" class="mx-auto w-56 h-56 rounded-xl">
+                        </div>
+                        <p class="text-lg font-extrabold text-slate-800 mt-6 uppercase tracking-widest">Scan to join the challenge!</p>
+                        <button onclick="window.print()" class="mt-6 bg-[#53a3a8] text-white font-extrabold py-3 px-6 rounded-xl hover:bg-[#448b90] transition-colors uppercase tracking-wider shadow-md w-full no-print flex items-center justify-center gap-2">
+                            <i data-lucide="printer" class="w-5 h-5"></i> Print Poster
+                        </button>
+                    </div>
+                    
+                    <!-- YCP -->
+                    <div class="border-2 border-slate-100 p-8 rounded-2xl space-y-6 print:border-none print:break-before-page">
+                        <h4 class="font-black text-3xl text-[#448b90] uppercase tracking-wider">Yamba Community<br>Pool</h4>
+                        <p class="text-md text-slate-500 font-bold pb-6 border-b-2 border-slate-100 uppercase tracking-wide">Welcoming, heated community haven</p>
+                        <div class="bg-white inline-block p-6 border-4 border-[#b0e0e3] shadow-lg rounded-[2rem] mx-auto transform -rotate-1 hover:rotate-0 transition-transform">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fbrisk3r.github.io%2FCRAC---Tools-and-Requests%2FLapTracker%2Findex.html" alt="YCP QR Code" class="mx-auto w-56 h-56 rounded-xl">
+                        </div>
+                        <p class="text-lg font-extrabold text-slate-800 mt-6 uppercase tracking-widest">Scan to log your laps!</p>
+                        <button onclick="window.print()" class="mt-6 bg-[#53a3a8] text-white font-extrabold py-3 px-6 rounded-xl hover:bg-[#448b90] transition-colors uppercase tracking-wider shadow-md w-full no-print flex items-center justify-center gap-2">
+                            <i data-lucide="printer" class="w-5 h-5"></i> Print Poster
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl items-center gap-3 hidden transition-all duration-300 opacity-0 z-[60] border border-slate-700 w-[90%] max-w-md no-print">
+        <i data-lucide="info" class="w-6 h-6 text-[#53a3a8] shrink-0"></i>
+        <span id="toast-msg" class="text-sm font-extrabold uppercase tracking-wide leading-tight"></span>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State
+        let currentUser = null;
+        let isVerifiedStaff = false;
+        let usersData = [];
+        let lapsData = [];
+        let staffData = [];
+        let selectedPatronId = null;
+
+        // UI Management
+        window.switchAdminView = (view) => {
+            document.querySelectorAll('#view-dashboard .view-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`admin-view-${view}`).classList.add('active');
+            
+            const btnClassBase = "px-4 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap";
+            document.getElementById('btn-view-approvals').className = `${btnClassBase} ${view === 'approvals' ? 'bg-[#53a3a8] text-white' : 'hover:bg-slate-700 text-white'}`;
+            document.getElementById('btn-view-manual').className = `${btnClassBase} ${view === 'manual' ? 'bg-[#53a3a8] text-white' : 'hover:bg-slate-700 text-white'}`;
+            document.getElementById('btn-view-settings').className = `${btnClassBase} ${view === 'settings' ? 'bg-[#53a3a8] text-white' : 'hover:bg-slate-700 text-white'}`;
+            document.getElementById('btn-view-team').className = `${btnClassBase} ${view === 'team' ? 'bg-[#53a3a8] text-white' : 'hover:bg-slate-700 text-white'}`;
+            document.getElementById('btn-view-qr').className = `${btnClassBase} ${view === 'qr' ? 'bg-[#53a3a8] text-white' : 'hover:bg-slate-700 text-white'}`;
+        };
+
+        const showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => toast.classList.remove('opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('flex');
+                }, 300);
+            }, 3000);
+        };
+
+        const setLoading = (isLoading) => {
+            const btnText = document.getElementById('login-text');
+            const spinner = document.getElementById('login-spinner');
+            if (isLoading) {
+                btnText.innerText = "Verifying...";
+                spinner.classList.remove('hidden');
+            } else {
+                btnText.innerText = "Secure Login";
+                spinner.classList.add('hidden');
+            }
+        };
+
+        // Initialize Firebase with osftools config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHYN7jk5en7V19pMfag6l8kG3fSjR2zYY",
+            authDomain: "osftools.firebaseapp.com",
+            projectId: "osftools",
+            storageBucket: "osftools.firebasestorage.app",
+            messagingSenderId: "42038303082",
+            appId: "1:42038303082:web:6fed53593f0e0c3d9ead13",
+            measurementId: "G-C2BTP1N5RT"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        
+        // Safely Initialize Analytics
+        let analytics = null;
+        isSupported().then((supported) => {
+            if (supported) {
+                analytics = getAnalytics(app);
+            }
+        });
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'clarence-valley-laps';
+
+        lucide.createIcons();
+
+        // Authentication & Security Check
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Check if they are in the secure staff collection
+                try {
+                    const staffDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'staff', user.uid);
+                    const staffDocSnap = await getDoc(staffDocRef);
+                    
+                    if (staffDocSnap.exists()) {
+                        currentUser = user;
+                        isVerifiedStaff = true;
+                        
+                        setLoading(false); // Reset loading spinner upon success
+                        document.getElementById('view-login').classList.remove('active');
+                        document.getElementById('view-dashboard').classList.remove('hidden');
+                        document.getElementById('loading-state').classList.remove('hidden');
+                        
+                        // Show current user email in header
+                        document.getElementById('logged-in-user-email').innerText = user.email;
+
+                        fetchData();
+                    } else {
+                        // Not an authorized staff member, kick them out
+                        await signOut(auth);
+                        showToast("Unauthorized. Staff access only.");
+                        setLoading(false);
+                    }
+                } catch (error) {
+                    console.error("Auth check failed:", error);
+                    await signOut(auth);
+                    showToast("Security check failed. Please try again.");
+                    setLoading(false);
+                }
+            } else {
+                // Logged out
+                currentUser = null;
+                isVerifiedStaff = false;
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-login').classList.add('active');
+                setLoading(false);
+            }
+        });
+
+        // Login Handler
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setLoading(true);
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged handles the rest
+            } catch (error) {
+                console.error(error);
+                showToast("Invalid credentials or network issue.");
+                setLoading(false);
+            }
+        });
+
+        // Logout Handler
+        window.handleLogout = async () => {
+            try {
+                await signOut(auth);
+                showToast("Securely logged out.");
+            } catch (error) {
+                showToast("Error during logout.");
+            }
+        };
+
+        // Data Fetching for Dashboard
+        let unsubscribeUsers = null;
+        let unsubscribeLaps = null;
+        let unsubscribeSettings = null;
+        let unsubscribeStaff = null;
+
+        const fetchData = () => {
+            if (!isVerifiedStaff) return;
+
+            // Approvals & Manual Entry Data
+            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'lapUsers');
+            unsubscribeUsers = onSnapshot(usersRef, (snapshot) => {
+                usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUI();
+                document.getElementById('loading-state').classList.add('hidden');
+            }, (err) => console.error("Users error:", err));
+
+            const lapsRef = collection(db, 'artifacts', appId, 'public', 'data', 'laps');
+            unsubscribeLaps = onSnapshot(lapsRef, (snapshot) => {
+                lapsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUI();
+            }, (err) => console.error("Laps error:", err));
+
+            // Challenge Settings Data
+            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'appSettings', 'challengeConfig');
+            unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    const formatForInput = (isoString) => {
+                        if (!isoString) return '';
+                        const d = new Date(isoString);
+                        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                        return d.toISOString().slice(0, 16);
+                    };
+
+                    if (data.startTime) document.getElementById('setting-start').value = formatForInput(data.startTime);
+                    if (data.endTime) document.getElementById('setting-end').value = formatForInput(data.endTime);
+                }
+            }, (err) => console.error("Settings error:", err));
+
+            // Staff Access Data
+            const staffRef = collection(db, 'artifacts', appId, 'public', 'data', 'staff');
+            unsubscribeStaff = onSnapshot(staffRef, (snapshot) => {
+                staffData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUI();
+            }, (err) => console.error("Staff error:", err));
+        };
+
+        // Render Logic
+        const getAggregatedData = () => {
+            return usersData.map(u => {
+                const userLaps = lapsData.filter(l => l.userId === u.id);
+                const totalLaps = userLaps.reduce((sum, lap) => sum + (Number(lap.count) || 0), 0);
+                return { ...u, totalLaps };
+            });
+        };
+
+        const renderApprovals = () => {
+            const pending = usersData.filter(u => !u.isApproved);
+            document.getElementById('pending-count').innerText = pending.length;
+            
+            const listContainer = document.getElementById('approvals-list');
+            const emptyState = document.getElementById('approvals-empty');
+
+            if (pending.length === 0) {
+                listContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                listContainer.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                listContainer.innerHTML = pending.map(u => `
+                    <div class="flex items-center justify-between p-5 border-2 border-slate-100 rounded-2xl bg-white shadow-sm">
+                        <div>
+                            <p class="font-extrabold text-slate-800 text-lg uppercase tracking-wide">${u.publicName}</p>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                <i data-lucide="map-pin" class="w-3 h-3 inline"></i> 
+                                ${u.facility === 'CRAC' ? 'Clarence Regional Aquatic Centre' : 'Yamba Community Pool'}
+                                ${u.previousName ? ` | Former: ${u.previousName}` : ''}
+                            </p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="approveUser('${u.id}')" class="bg-[#53a3a8] text-white px-5 py-2.5 rounded-xl text-sm font-extrabold hover:bg-[#448b90] flex items-center gap-1.5 uppercase tracking-wider shadow-md">
+                                <i data-lucide="check" class="w-4 h-4"></i> Approve
+                            </button>
+                            <button onclick="rejectUser('${u.id}')" class="bg-red-500 text-white px-5 py-2.5 rounded-xl text-sm font-extrabold hover:bg-red-600 flex items-center gap-1.5 uppercase tracking-wider shadow-md">
+                                <i data-lucide="x" class="w-4 h-4"></i> Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+        };
+
+        window.approveUser = async (userId) => {
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'lapUsers', userId);
+            await updateDoc(userRef, { isApproved: true, previousName: null });
+            showToast("Profile approved for public display.");
+        };
+
+        window.rejectUser = async (userId) => {
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'lapUsers', userId);
+            const user = usersData.find(u => u.id === userId);
+            
+            if (user && user.previousName) {
+                await updateDoc(userRef, {
+                    publicName: user.previousName,
+                    isApproved: true,
+                    previousName: null
+                });
+                showToast("Name change rejected. Reverted to previous name.");
+            } else {
+                await deleteDoc(userRef);
+                showToast("Profile registration rejected and deleted.");
+            }
+        };
+
+        // Manual Entry Logic
+        window.selectPatron = (id, name, facility, total) => {
+            selectedPatronId = id;
+            document.getElementById('manual-search-section').classList.add('hidden');
+            document.getElementById('manual-entry-section').classList.remove('hidden');
+            document.getElementById('selected-patron-name').innerText = name;
+            document.getElementById('selected-patron-total').innerText = total;
+            document.getElementById('admin-lap-count').value = '';
+            
+            const poolSelect = document.getElementById('admin-pool-selector-container');
+            const ycpDesc = document.getElementById('admin-ycp-pool-desc');
+            
+            if (facility === 'CRAC') {
+                poolSelect.classList.remove('hidden');
+                ycpDesc.classList.add('hidden');
+                document.getElementById('admin-pool-length').value = "50";
+            } else {
+                poolSelect.classList.add('hidden');
+                ycpDesc.classList.remove('hidden');
+            }
+        };
+
+        window.clearSelectedPatron = () => {
+            selectedPatronId = null;
+            document.getElementById('manual-search-section').classList.remove('hidden');
+            document.getElementById('manual-entry-section').classList.add('hidden');
+            document.getElementById('patron-search').value = '';
+            document.getElementById('search-results').classList.add('hidden');
+        };
+
+        document.getElementById('patron-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const resultsContainer = document.getElementById('search-results');
+            
+            if (!term) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            const usersWithTotals = getAggregatedData();
+            const results = usersWithTotals.filter(u => u.isApproved && u.publicName.toLowerCase().includes(term));
+
+            resultsContainer.classList.remove('hidden');
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `<div class="p-6 text-sm font-bold text-slate-400 text-center uppercase tracking-widest bg-white">No patrons found.</div>`;
+            } else {
+                resultsContainer.innerHTML = results.map(u => `
+                    <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-white hover:bg-slate-50 cursor-pointer transition-colors" onclick="selectPatron('${u.id}', '${u.publicName.replace(/'/g, "\\'")}', '${u.facility}', ${u.totalLaps})">
+                        <div>
+                            <p class="font-extrabold text-slate-800 uppercase tracking-wide">${u.publicName}</p>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Total Laps: ${u.totalLaps} | ${u.facility === 'CRAC' ? 'CRAC' : 'Yamba'}</p>
+                        </div>
+                        <button class="text-[#53a3a8] text-sm font-extrabold uppercase tracking-wider bg-[#f0f9fa] px-3 py-1.5 rounded-lg border border-[#b0e0e3]">Select</button>
+                    </div>
+                `).join('');
+            }
+        });
+
+        document.getElementById('admin-log-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const countInput = document.getElementById('admin-lap-count');
+            const count = Number(countInput.value);
+            
+            if (!selectedPatronId || !count || count <= 0) return;
+
+            const patron = usersData.find(u => u.id === selectedPatronId);
+            const facility = patron ? patron.facility : 'CRAC';
+            const selectedLength = facility === 'CRAC' 
+                ? Number(document.getElementById('admin-pool-length').value) 
+                : 25;
+
+            const lapsRef = collection(db, 'artifacts', appId, 'public', 'data', 'laps');
+            await addDoc(lapsRef, {
+                userId: selectedPatronId,
+                count: count,
+                date: new Date().toISOString(),
+                addedBy: 'STAFF_' + currentUser.uid,
+                poolLength: selectedLength
+            });
+            
+            showToast(`Added ${count} laps for patron.`);
+            clearSelectedPatron();
+        });
+
+        // Settings Logic
+        document.getElementById('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const startVal = document.getElementById('setting-start').value;
+            const endVal = document.getElementById('setting-end').value;
+
+            if (!startVal || !endVal) {
+                showToast("Please select both start and end times.");
+                return;
+            }
+
+            try {
+                const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'appSettings', 'challengeConfig');
+                await setDoc(configRef, {
+                    startTime: new Date(startVal).toISOString(),
+                    endTime: new Date(endVal).toISOString()
+                }, { merge: true });
+                
+                showToast("Challenge dates saved! The public tracker will update instantly.");
+            } catch (error) {
+                console.error("Error saving settings:", error);
+                showToast("Failed to save settings. Check permissions.");
+            }
+        });
+
+        // --- Team Management Logic ---
+        const renderTeam = () => {
+            const listContainer = document.getElementById('current-staff-list');
+            
+            if (staffData.length === 0) {
+                listContainer.innerHTML = `<div class="p-6 text-sm font-bold text-slate-400 text-center uppercase tracking-widest bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">No staff found.</div>`;
+            } else {
+                listContainer.innerHTML = staffData.map(s => {
+                    const profile = usersData.find(u => u.id === s.id);
+                    // Updated to use the email field you manually added in the Firebase Console
+                    const displayName = profile ? profile.publicName : (s.name || s.email || "System Admin");
+                    
+                    return `
+                        <div class="flex items-center justify-between p-4 border-2 border-slate-100 rounded-xl bg-white shadow-sm hover:border-[#b0e0e3] transition-colors">
+                            <div>
+                                <p class="font-extrabold text-slate-800 uppercase tracking-wide">${displayName}</p>
+                                <p class="text-[10px] font-bold text-slate-400 tracking-widest mt-1">ID: ${s.id.substring(0, 8)}...</p>
+                            </div>
+                            <button id="btn-revoke-${s.id}" onclick="revokeStaff('${s.id}')" class="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors w-20 text-center font-bold text-xs" title="Remove Access">
+                                <i data-lucide="trash-2" class="w-5 h-5 mx-auto pointer-events-none"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            }
+        };
+
+        document.getElementById('team-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const resultsContainer = document.getElementById('team-search-results');
+            
+            if (!term) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            const results = usersData.filter(u => 
+                u.isApproved && 
+                u.publicName.toLowerCase().includes(term) &&
+                !staffData.some(s => s.id === u.id)
+            );
+
+            resultsContainer.classList.remove('hidden');
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `<div class="p-6 text-sm font-bold text-slate-400 text-center uppercase tracking-widest bg-white">No eligible patrons found.</div>`;
+            } else {
+                resultsContainer.innerHTML = results.map(u => `
+                    <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-white hover:bg-slate-50 transition-colors">
+                        <div>
+                            <p class="font-extrabold text-slate-800 uppercase tracking-wide">${u.publicName}</p>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">${u.facility === 'CRAC' ? 'CRAC' : 'Yamba'}</p>
+                        </div>
+                        <button id="btn-promote-${u.id}" onclick="promoteToStaff('${u.id}', '${u.publicName.replace(/'/g, "\\'")}')" class="text-white text-sm font-extrabold uppercase tracking-wider bg-[#53a3a8] hover:bg-[#448b90] px-4 py-2 rounded-lg shadow-sm transition-colors w-28 text-center">Promote</button>
+                    </div>
+                `).join('');
+            }
+        });
+
+        window.promoteToStaff = async (userId, name) => {
+            const btn = document.getElementById(`btn-promote-${userId}`);
+            // Force a double-click confirmation to prevent accidental promotions
+            if (btn && !btn.classList.contains('confirming')) {
+                btn.classList.add('confirming');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = 'Confirm?';
+                btn.classList.replace('bg-[#53a3a8]', 'bg-amber-500');
+                btn.classList.replace('hover:bg-[#448b90]', 'hover:bg-amber-600');
+                
+                // Reset the button if they don't click again within 3 seconds
+                setTimeout(() => {
+                    if(btn && btn.classList.contains('confirming')) {
+                        btn.classList.remove('confirming');
+                        btn.innerHTML = originalHTML;
+                        btn.classList.replace('bg-amber-500', 'bg-[#53a3a8]');
+                        btn.classList.replace('hover:bg-amber-600', 'hover:bg-[#448b90]');
+                    }
+                }, 3000);
+                return;
+            }
+
+            try {
+                const staffRef = doc(db, 'artifacts', appId, 'public', 'data', 'staff', userId);
+                await setDoc(staffRef, { name: name, promotedAt: new Date().toISOString() });
+                showToast(`${name} promoted to Staff!`);
+                document.getElementById('team-search').value = '';
+                document.getElementById('team-search-results').classList.add('hidden');
+            } catch (error) {
+                showToast("Error promoting staff. Check permissions.");
+                console.error(error);
+            }
+        };
+
+        window.revokeStaff = async (userId) => {
+            if (userId === currentUser.uid) {
+                showToast("You cannot revoke your own access.");
+                return;
+            }
+
+            const btn = document.getElementById(`btn-revoke-${userId}`);
+            // Force a double-click confirmation for removing staff
+            if (btn && !btn.classList.contains('confirming')) {
+                btn.classList.add('confirming');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = 'Sure?';
+                btn.classList.add('bg-red-500', 'text-white');
+                btn.classList.remove('text-red-400', 'hover:text-red-600', 'hover:bg-red-50');
+                
+                setTimeout(() => {
+                    if(btn && btn.classList.contains('confirming')) {
+                        btn.classList.remove('confirming');
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('bg-red-500', 'text-white');
+                        btn.classList.add('text-red-400', 'hover:text-red-600', 'hover:bg-red-50');
+                    }
+                }, 3000);
+                return;
+            }
+
+            try {
+                const staffRef = doc(db, 'artifacts', appId, 'public', 'data', 'staff', userId);
+                await deleteDoc(staffRef);
+                showToast("Staff access revoked.");
+            } catch (error) {
+                showToast("Error removing staff. Check permissions.");
+                console.error(error);
+            }
+        };
+
+        const renderUI = () => {
+            renderApprovals();
+            renderTeam();
+            if (selectedPatronId) {
+                const updatedTotal = getAggregatedData().find(u => u.id === selectedPatronId)?.totalLaps || 0;
+                document.getElementById('selected-patron-total').innerText = updatedTotal;
+            }
+        };
+
+    </script>
+</body>
+</html>

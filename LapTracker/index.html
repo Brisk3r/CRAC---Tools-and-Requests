@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swim Around Australia | Community Challenge Dashboard</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdn.tailwindcss.com?version=3.4.4"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.0"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;850&display=swap" rel="stylesheet">
+    
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Outfit', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif']
+                    },
+                    colors: {
+                        ocean: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            900: '#164e63',
+                        },
+                        indigoCustom: {
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        },
+                        slate: {
+                            750: '#1e293b',
+                            850: '#0f172a',
+                            950: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Firebase Configuration Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        
+        window.firebaseModules = { initializeApp, getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, getFirestore, collection, doc, addDoc, setDoc, getDocs, query, where, onSnapshot };
+    </script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.4s, color 0.4s; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.1); border-radius: 20px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); }
+        
+        /* Map Animations */
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }
+        .animated-coast {
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            animation: dash 5s linear forwards;
+        }
+
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col min-h-screen">
+
+    <!-- React Root -->
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <!-- App Logic -->
+    <script type="text/babel" data-type="module" data-presets="react">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        const ADJECTIVES = ['Aqua', 'Blue', 'Coastal', 'Deep', 'Emerald', 'Fast', 'Glide', 'Happy', 'Indigo', 'Joyful', 'King', 'Little', 'Mighty', 'Ocean', 'Polar', 'Quick', 'Rapid', 'Speedy', 'Tidal', 'Wave'];
+        const ANIMALS = ['Dolphin', 'Frog', 'Guppy', 'Hippo', 'Jellyfish', 'Lobster', 'Marlin', 'Otter', 'Penguin', 'Seal', 'Shark', 'Turtle', 'Whale', 'Seahorse', 'Stingray'];
+        const WORDS = ['swim', 'pool', 'lap', 'splash', 'dive', 'glide', 'water', 'ocean', 'wave', 'blue', 'deep', 'fast', 'cool', 'fresh', 'kick', 'stroke', 'lane', 'speed', 'tide', 'reef'];
+
+        // Coastline points to map percentages along the Australia coast
+        // 0 km: Sydney, 25,760 km: Back to Sydney
+        const MILESTONES = [
+            { name: "Sydney (Start)", targetKm: 0, x: 630, y: 440, desc: "The voyage begins at Sydney Harbour." },
+            { name: "Brisbane", targetKm: 1000, x: 620, y: 320, desc: "Sunny Brisbane River & Gold Coast beaches." },
+            { name: "Cairns", targetKm: 2960, x: 512, y: 155, desc: "Gateway to the Great Barrier Reef." },
+            { name: "Darwin", targetKm: 6960, x: 310, y: 110, desc: "Tropical Top End and Darwin Harbour." },
+            { name: "Broome", targetKm: 10000, x: 170, y: 190, desc: "Beautiful Cable Beach sunsets." },
+            { name: "Perth", targetKm: 14200, x: 90, y: 405, desc: "Swan River and coastal Indian Ocean." },
+            { name: "Adelaide", targetKm: 18800, x: 425, y: 480, desc: "St Vincent Gulf and rolling vineyards." },
+            { name: "Melbourne", targetKm: 21600, x: 535, y: 520, desc: "Port Phillip Bay cultural capital." },
+            { name: "Hobart", targetKm: 23200, x: 565, y: 580, desc: "Derwent River crossing in Tasmania." },
+            { name: "Sydney (Finish)", targetKm: 25760, x: 630, y: 440, desc: "Home stretch back to where we started!" }
+        ];
+
+        const TOTAL_CIRCUMFERENCE = 25760; // km
+
+        // Live osftools Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHYN7jk5en7V19pMfag6l8kG3fSjR2zYY",
+            authDomain: "osftools.firebaseapp.com",
+            projectId: "osftools",
+            storageBucket: "osftools.firebasestorage.app",
+            messagingSenderId: "42038303082",
+            appId: "1:42038303082:web:6fed53593f0e0c3d9ead13"
+        };
+
+        const MainApp = () => {
+            const [usersData, setUsersData] = useState([]);
+            const [lapsData, setLapsData] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [theme, setTheme] = useState(localStorage.getItem('laptracker-theme') || 'light');
+            const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+            // Authentication & Personal Portal States
+            const [currentUser, setCurrentUser] = useState(null); // Anonymous Session user profile state
+            const [portalMode, setPortalMode] = useState('cta'); // 'cta' | 'login' | 'register' | 'logged-in'
+            const [toast, setToast] = useState({ show: false, message: '' });
+
+            // Form inputs
+            const [passphraseInput, setPassphraseInput] = useState('');
+            const [nameInput, setNameInput] = useState('');
+            const [facilityInput, setFacilityInput] = useState('CRAC');
+            const [lapsInput, setLapsInput] = useState('');
+            const [poolLength, setPoolLength] = useState(50);
+            const [settingsExpanded, setSettingsExpanded] = useState(false);
+
+            const pathRef = useRef(null);
+            const [swimmerPos, setSwimmerPos] = useState({ x: 630, y: 440 });
+            const [pathLength, setPathLength] = useState(0);
+
+            // Toast helper
+            const showToast = (message) => {
+                setToast({ show: true, message });
+                setTimeout(() => setToast({ show: false, message: '' }), 4000);
+            };
+
+            // Random generator helpers
+            const generateRandomName = () => {
+                const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+                const ani = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+                const num = Math.floor(Math.random() * 90) + 10;
+                setNameInput(`${adj}${ani}${num}`);
+            };
+
+            const generateRandomPassphrase = () => {
+                const w1 = WORDS[Math.floor(Math.random() * WORDS.length)];
+                const w2 = WORDS[Math.floor(Math.random() * WORDS.length)];
+                const num = Math.floor(Math.random() * 900) + 100;
+                setPassphraseInput(`${w1}-${w2}-${num}`);
+            };
+
+            // Theme Sync Effect
+            useEffect(() => {
+                const doc = document.documentElement;
+                if (theme === 'dark') {
+                    doc.classList.add('dark');
+                } else {
+                    doc.classList.remove('dark');
+                }
+                localStorage.setItem('laptracker-theme', theme);
+            }, [theme]);
+
+            const toggleTheme = () => {
+                setTheme(prev => prev === 'light' ? 'dark' : 'light');
+            };
+
+            // Calculate metrics based on live approved data
+            const totals = useMemo(() => {
+                let totalKm = 0;
+                let cracKm = 0;
+                let ycpKm = 0;
+                const individualTotals = {};
+
+                const approvedUsers = new Set(usersData.filter(u => u.isApproved).map(u => u.id));
+                const userMap = {};
+                usersData.forEach(u => {
+                    userMap[u.id] = { name: u.publicName, facility: u.facility };
+                });
+
+                lapsData.forEach(lap => {
+                    if (approvedUsers.has(lap.userId)) {
+                        const count = Number(lap.count) || 0;
+                        const facility = userMap[lap.userId]?.facility;
+                        // Support custom pool length per log, fallback to facility default
+                        const poolLengthMeters = Number(lap.poolLength) || (facility === 'YCP' ? 25 : 50);
+                        const dist = count * (poolLengthMeters / 1000);
+
+                        totalKm += dist;
+                        if (facility === 'YCP') {
+                            ycpKm += dist;
+                        } else {
+                            cracKm += dist;
+                        }
+
+                        const swimmerName = userMap[lap.userId]?.name || 'Anonymous';
+                        individualTotals[swimmerName] = (individualTotals[swimmerName] || 0) + dist;
+                    }
+                });
+
+                // Leaderboard sorting
+                const leaderboard = Object.keys(individualTotals).map(name => ({
+                    name,
+                    distanceKm: individualTotals[name],
+                    facility: usersData.find(u => u.publicName === name)?.facility || 'CRAC'
+                })).sort((a, b) => b.distanceKm - a.distanceKm).slice(0, 10);
+
+                return {
+                    totalKm,
+                    cracKm,
+                    ycpKm,
+                    leaderboard,
+                    participantsCount: approvedUsers.size
+                };
+            }, [usersData, lapsData]);
+
+            // Percentage completion
+            const challengePercentage = useMemo(() => {
+                if (totals.totalKm === 0) return 0;
+                const pct = (totals.totalKm / TOTAL_CIRCUMFERENCE) * 100;
+                return Math.min(Number(pct.toFixed(2)), 100);
+            }, [totals.totalKm]);
+
+            // Find current milestone location
+            const currentMilestoneIndex = useMemo(() => {
+                let currentIndex = 0;
+                for (let i = 0; i < MILESTONES.length; i++) {
+                    if (totals.totalKm >= MILESTONES[i].targetKm) {
+                        currentIndex = i;
+                    }
+                }
+                return currentIndex;
+            }, [totals.totalKm]);
+
+            const currentMilestone = MILESTONES[currentMilestoneIndex];
+            const nextMilestone = MILESTONES[currentMilestoneIndex + 1] || MILESTONES[MILESTONES.length - 1];
+            const kmToNextMilestone = useMemo(() => {
+                if (currentMilestoneIndex >= MILESTONES.length - 1) return 0;
+                return Math.max(0, nextMilestone.targetKm - totals.totalKm);
+            }, [totals.totalKm, currentMilestoneIndex, nextMilestone]);
+
+            // Recent approved activity feed
+            const recentLogs = useMemo(() => {
+                const approvedUsers = new Set(usersData.filter(u => u.isApproved).map(u => u.id));
+                const userMap = {};
+                usersData.forEach(u => {
+                    userMap[u.id] = { name: u.publicName, facility: u.facility };
+                });
+
+                return lapsData.map(lap => {
+                    if (!approvedUsers.has(lap.userId)) return null;
+                    const facility = userMap[lap.userId]?.facility;
+                    const poolLen = Number(lap.poolLength) || (facility === 'YCP' ? 25 : 50);
+                    return {
+                        id: lap.id,
+                        swimmerName: userMap[lap.userId]?.name || 'Anonymous',
+                        facility: facility === 'YCP' ? 'YCP (Yamba)' : 'CRAC (Grafton)',
+                        laps: lap.count,
+                        poolLength: poolLen,
+                        distanceKm: lap.count * (poolLen / 1000),
+                        date: lap.date ? new Date(lap.date).toLocaleDateString('en-AU', {day:'numeric', month:'short'}) : 'Just now',
+                        timestamp: lap.date ? new Date(lap.date) : new Date()
+                    };
+                }).filter(Boolean).sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+            }, [lapsData, usersData]);
+
+            // Personal lifetime totals
+            const myLifetimeStats = useMemo(() => {
+                if (!currentUser) return { laps: 0, km: 0 };
+                const userLaps = lapsData.filter(l => l.userId === currentUser.id);
+                const totalLaps = userLaps.reduce((sum, l) => sum + (Number(l.count) || 0), 0);
+                const facility = currentUser.facility || 'CRAC';
+                
+                let totalKm = 0;
+                userLaps.forEach(lap => {
+                    const count = Number(lap.count) || 0;
+                    const length = Number(lap.poolLength) || (facility === 'YCP' ? 25 : 50);
+                    totalKm += count * (length / 1000);
+                });
+                
+                return { laps: totalLaps, km: totalKm };
+            }, [currentUser, lapsData]);
+
+            // Sync user profile facility to poolLength defaults
+            useEffect(() => {
+                if (currentUser) {
+                    setPoolLength(currentUser.facility === 'YCP' ? 25 : 50);
+                }
+            }, [currentUser]);
+
+            // Firebase Initialization & LocalStorage Session Check
+            useEffect(() => {
+                const initFirebase = async () => {
+                    try {
+                        const fm = window.firebaseModules;
+                        const app = fm.initializeApp(firebaseConfig);
+                        const auth = fm.getAuth(app);
+                        const firestore = fm.getFirestore(app);
+
+                        const sharedEmail = 'patron-swim@clarencevalley.gov.au';
+                        const sharedPass = 'PatronSwim2026!';
+                        
+                        const authenticateShared = async () => {
+                            try {
+                                await fm.signInWithEmailAndPassword(auth, sharedEmail, sharedPass);
+                            } catch (err) {
+                                if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                                    try {
+                                        await fm.createUserWithEmailAndPassword(auth, sharedEmail, sharedPass);
+                                    } catch (regErr) {
+                                        console.error('Registering shared patron account failed:', regErr);
+                                    }
+                                } else {
+                                    console.error('Authenticating shared patron account failed:', err);
+                                }
+                            }
+                        };
+                        
+                        await authenticateShared();
+                        const appId = 'clarence-valley-laps';
+
+                        // Database Listeners
+                        const usersRef = fm.collection(firestore, 'artifacts', appId, 'public', 'data', 'lapUsers');
+                        const lapsRef = fm.collection(firestore, 'artifacts', appId, 'public', 'data', 'laps');
+                        
+                        const handleUsersSnapshot = (snapshot) => {
+                            const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            setUsersData(users);
+                            
+                            const savedSessionId = localStorage.getItem('laptracker_session_id');
+                            if (savedSessionId) {
+                                const matchedUser = users.find(u => u.id === savedSessionId);
+                                if (matchedUser) {
+                                    setCurrentUser(matchedUser);
+                                    setPortalMode('logged-in');
+                                } else {
+                                    localStorage.removeItem('laptracker_session_id');
+                                }
+                            }
+                        };
+
+                        const handleLapsSnapshot = (snapshot) => {
+                            setLapsData(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                            setLoading(false);
+                        };
+
+                        // Subscribe with error callbacks
+                        fm.onSnapshot(usersRef, handleUsersSnapshot, (err) => {
+                            console.error("Users snapshot error:", err);
+                            // Fallback to one-time read
+                            fm.getDocs(usersRef).then(handleUsersSnapshot).catch(fetchErr => {
+                                console.error("One-time users fetch failed:", fetchErr);
+                                showToast("Local file protocol (file://) blocked database access. Please run a local web server (e.g. npx serve) to test locally.");
+                            });
+                        });
+
+                        fm.onSnapshot(lapsRef, handleLapsSnapshot, (err) => {
+                            console.error("Laps snapshot error:", err);
+                            fm.getDocs(lapsRef).then(handleLapsSnapshot).catch(fetchErr => {
+                                console.error("One-time laps fetch failed:", fetchErr);
+                                setLoading(false);
+                            });
+                        });
+
+                    } catch (err) {
+                        console.error("Firebase init failed:", err);
+                        setLoading(false);
+                    }
+                };
+                initFirebase();
+            }, []);
+
+            // Profanity Filter Validation
+            const isProfane = (text) => {
+                const inappropriateWords = ['donkey', 'fuck', 'shit', 'cunt', 'bitch', 'asshole', 'piss', 'crap', 'bastard'];
+                const cleanText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return inappropriateWords.some(word => cleanText.includes(word));
+            };
+
+            // Anonymous Passphrase Authentication Handlers
+            const handlePassphraseLogin = (e) => {
+                e.preventDefault();
+                const matchedUser = usersData.find(u => u.passphrase && u.passphrase.toLowerCase().trim() === passphraseInput.toLowerCase().trim());
+                if (matchedUser) {
+                    setCurrentUser(matchedUser);
+                    localStorage.setItem('laptracker_session_id', matchedUser.id);
+                    setPortalMode('logged-in');
+                    showToast(`Welcome back, ${matchedUser.publicName}!`);
+                    setPassphraseInput('');
+                } else {
+                    showToast("Passphrase not found. Check spelling and try again.");
+                }
+            };
+
+            const handlePassphraseRegister = async (e) => {
+                e.preventDefault();
+                const trimmedName = nameInput.trim();
+                const trimmedPass = passphraseInput.toLowerCase().trim();
+
+                if (!trimmedName || !trimmedPass) {
+                    showToast("Please fill in both fields.");
+                    return;
+                }
+
+                if (isProfane(trimmedName)) {
+                    showToast("Display name contains inappropriate language. Choose another.");
+                    return;
+                }
+
+                // Check passphrase uniqueness
+                const exists = usersData.some(u => u.passphrase && u.passphrase.toLowerCase().trim() === trimmedPass);
+                if (exists) {
+                    showToast("This passphrase is taken. Please create a unique passphrase.");
+                    return;
+                }
+
+                const { getFirestore, doc, setDoc } = window.firebaseModules;
+                const db = getFirestore();
+                const appId = 'clarence-valley-laps';
+
+                try {
+                    // Generate random id
+                    const randomId = 'ANON_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'lapUsers', randomId);
+                    
+                    const newUserProfile = {
+                        publicName: trimmedName,
+                        passphrase: trimmedPass,
+                        facility: facilityInput,
+                        isApproved: false, // Wait for staff approval
+                        createdAt: new Date().toISOString()
+                    };
+
+                    await setDoc(userRef, newUserProfile);
+
+                    // Auto-login registered user
+                    setCurrentUser({ id: randomId, ...newUserProfile });
+                    localStorage.setItem('laptracker_session_id', randomId);
+                    setPortalMode('logged-in');
+                    showToast("Account created successfully!");
+                    setNameInput('');
+                    setPassphraseInput('');
+                } catch (error) {
+                    console.error(error);
+                    showToast("Failed to register profile.");
+                }
+            };
+
+            const handleProfileUpdate = async (e) => {
+                e.preventDefault();
+                const trimmedName = nameInput.trim();
+                const trimmedPass = passphraseInput.toLowerCase().trim();
+
+                if (trimmedName && isProfane(trimmedName)) {
+                    showToast("Display name contains inappropriate language. Choose another.");
+                    return;
+                }
+
+                const { getFirestore, doc, setDoc } = window.firebaseModules;
+                const db = getFirestore();
+                const appId = 'clarence-valley-laps';
+
+                try {
+                    // If passphrase updated, verify uniqueness
+                    if (trimmedPass && trimmedPass !== currentUser.passphrase) {
+                        const exists = usersData.some(u => u.passphrase && u.passphrase.toLowerCase().trim() === trimmedPass);
+                        if (exists) {
+                            showToast("This passphrase is taken.");
+                            return;
+                        }
+                    }
+
+                    const nameChanged = trimmedName && trimmedName !== currentUser.publicName;
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'lapUsers', currentUser.id);
+                    const updatedFields = {
+                        publicName: trimmedName || currentUser.publicName,
+                        passphrase: trimmedPass || currentUser.passphrase,
+                        facility: facilityInput || currentUser.facility,
+                        isApproved: nameChanged ? false : currentUser.isApproved
+                    };
+
+                    if (nameChanged) {
+                        updatedFields.previousName = currentUser.publicName;
+                    }
+
+                    await setDoc(userRef, updatedFields, { merge: true });
+
+                    // Update local React state session
+                    const updatedUser = { ...currentUser, ...updatedFields };
+                    setCurrentUser(updatedUser);
+                    showToast("Profile settings updated!");
+                    setSettingsExpanded(false);
+                    setNameInput('');
+                    setPassphraseInput('');
+                } catch (error) {
+                    showToast("Failed to update profile settings.");
+                }
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('laptracker_session_id');
+                setCurrentUser(null);
+                setPortalMode('cta');
+                showToast("Signed out successfully.");
+            };
+
+            const handleLapSubmission = async (e) => {
+                e.preventDefault();
+                const count = Number(lapsInput);
+                if (!count || count <= 0) return;
+
+                const { getFirestore, collection, addDoc } = window.firebaseModules;
+                const db = getFirestore();
+                const appId = 'clarence-valley-laps';
+
+                try {
+                    const lapsRef = collection(db, 'artifacts', appId, 'public', 'data', 'laps');
+                    await addDoc(lapsRef, {
+                        userId: currentUser.id,
+                        count: count,
+                        date: new Date().toISOString(),
+                        addedBy: currentUser.id,
+                        poolLength: Number(poolLength)
+                    });
+
+                    showToast(`Successfully logged +${count} laps!`);
+                    setLapsInput('');
+                } catch (error) {
+                    showToast("Error submitting laps.");
+                }
+            };
+
+            return (
+                <div className="flex flex-col min-h-screen">
+                    {/* Standalone Community Header */}
+                    <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-all duration-300">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-cyan-600 text-white p-1.5 rounded-lg shadow-sm">
+                                    <i className="ph-bold ph-waves text-xl"></i>
+                                </div>
+                                <div>
+                                    <h1 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Swim Around Australia</h1>
+                                    <p className="text-[9px] text-cyan-600 font-bold dark:text-cyan-400 uppercase tracking-widest leading-none">Community Lap Challenge</p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                {/* Help Button */}
+                                <button onClick={() => setIsHelpOpen(true)} className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all" title="How it works">
+                                    <i className="ph-bold ph-info text-xl"></i>
+                                </button>
+                                {/* Theme Toggle */}
+                                <button onClick={toggleTheme} className="p-2 text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all" title="Toggle Theme">
+                                    <i className={`ph-bold ph-${theme === 'dark' ? 'sun' : 'moon'} text-xl`}></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8 flex-grow">
+                        
+                        {/* Hero Section */}
+                        <section className="bg-gradient-to-r from-cyan-600 to-blue-700 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-400/20 via-transparent to-transparent"></div>
+                            <div className="relative z-10 space-y-3 max-w-xl">
+                                <div className="flex items-center gap-3">
+                                    <span className="bg-white/20 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">Community Challenge</span>
+                                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 animate-pulse"></span>
+                                </div>
+                                <h2 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight">Swim Around Australia</h2>
+                                <p className="text-slate-100 text-sm md:text-base leading-relaxed">
+                                    Join forces with swimmers from both CRAC and YCP. Every lap you complete helps us navigate the 25,760 km coastline of Australia. Log your distance, reach new coastal towns, and help us conquer the loop!
+                                </p>
+                            </div>
+
+                            {/* Large Bento Circular Progress */}
+                            <div className="relative z-10 w-40 h-40 bg-white/10 backdrop-blur-md rounded-full border border-white/20 flex flex-col items-center justify-center p-4">
+                                <svg className="absolute inset-0 transform -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.1)" strokeWidth="6" fill="transparent" />
+                                    <circle cx="50" cy="50" r="42" stroke="#22d3ee" strokeWidth="6" fill="transparent"
+                                        strokeDasharray="264" strokeDashoffset={264 - (264 * challengePercentage) / 100}
+                                        className="transition-all duration-1000" />
+                                </svg>
+                                <span className="text-3xl font-display font-black leading-none">{challengePercentage}%</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">Completed</span>
+                                <span className="text-[9px] font-mono mt-1 opacity-60">{(totals.totalKm).toLocaleString()} km</span>
+                            </div>
+                        </section>
+
+                        {/* Dashboard metrics grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="glass-card p-5 rounded-2xl shadow-sm border flex flex-col justify-between">
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total Swum</span>
+                                <div className="mt-2 flex items-baseline gap-1">
+                                    <span className="text-2xl md:text-3xl font-display font-black">{(totals.totalKm).toLocaleString()}</span>
+                                    <span className="text-xs text-slate-500">km</span>
+                                </div>
+                                <span className="text-[9px] text-cyan-600 dark:text-cyan-400 font-bold uppercase mt-2">Target: 25,760 km</span>
+                            </div>
+                            <div className="glass-card p-5 rounded-2xl shadow-sm border flex flex-col justify-between">
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Current Port</span>
+                                <div className="mt-2 text-lg md:text-xl font-bold truncate">
+                                    {currentMilestone.name}
+                                </div>
+                                <span className="text-[9px] text-slate-400 uppercase mt-2">{currentMilestone.desc}</span>
+                            </div>
+                            <div className="glass-card p-5 rounded-2xl shadow-sm border flex flex-col justify-between">
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Next Destination</span>
+                                <div className="mt-2 text-lg md:text-xl font-bold truncate text-cyan-600 dark:text-cyan-400">
+                                    {nextMilestone.name}
+                                </div>
+                                <span className="text-[9px] text-slate-500 uppercase mt-2">In {kmToNextMilestone.toLocaleString()} km</span>
+                            </div>
+                            <div className="glass-card p-5 rounded-2xl shadow-sm border flex flex-col justify-between">
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Swimmers</span>
+                                <div className="mt-2 flex items-baseline gap-1">
+                                    <span className="text-2xl md:text-3xl font-display font-black">{totals.participantsCount}</span>
+                                    <span className="text-xs text-slate-500">contributors</span>
+                                </div>
+                                <span className="text-[9px] text-slate-400 uppercase mt-2">Across CRAC & YCP</span>
+                            </div>
+                        </div>
+
+                        {/* Main Layout Area */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                            {/* Map & Milestones Section (Left, 7 Columns) */}
+                            <div className="lg:col-span-7 space-y-6">
+                                
+                                {/* Map Container */}
+                                <div className="glass-card p-6 rounded-3xl shadow-sm border relative">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div>
+                                            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white uppercase tracking-tight">Challenge Voyage Map</h3>
+                                            <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black leading-none mt-0.5">Real-Time Coastal Position</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/30 px-3 py-1 rounded-full">
+                                            <i className="ph-bold ph-swimmer text-sm animate-bounce"></i>
+                                            <span>Coastline Route Active</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative aspect-[4/3] bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 overflow-hidden">
+                                        <svg id="map-svg" viewBox="0 0 800 600" className="w-full h-full">
+                                            {/* Australia Map Stylized Grid Lines */}
+                                            <line x1="0" y1="150" x2="800" y2="150" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                                            <line x1="0" y1="300" x2="800" y2="300" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                                            <line x1="0" y1="450" x2="800" y2="450" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                                            <line x1="200" y1="0" x2="200" y2="600" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                                            <line x1="400" y1="0" x2="400" y2="600" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                                            <line x1="600" y1="0" x2="600" y2="600" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+
+                                            {/* Dashed background coast path */}
+                                            <path id="coastline-background-path" 
+                                                d="M 630 440 C 625 470, 615 500, 610 520 C 590 530, 560 540, 550 550 C 540 540, 530 535, 520 530 C 480 520, 440 500, 410 490 C 360 490, 300 480, 250 480 C 210 480, 150 470, 120 470 C 100 470, 90 470, 80 460 C 70 440, 72 420, 70 410 C 60 370, 45 340, 40 310 C 40 280, 45 270, 50 260 C 70 240, 80 230, 100 220 C 120 205, 135 200, 150 190 C 160 180, 170 175, 180 170 C 195 170, 210 170, 220 170 C 240 160, 270 135, 290 120 C 310 120, 330 115, 350 120 C 360 130, 365 140, 370 150 C 380 170, 390 190, 400 200 C 410 190, 420 170, 430 150 C 440 120, 450 100, 460 80 C 470 100, 475 120, 480 130 C 490 145, 495 155, 500 160 C 510 175, 515 185, 520 190 C 535 210, 545 220, 550 230 C 565 245, 575 255, 580 260 C 595 275, 605 285, 610 290 C 615 310, 618 320, 620 330 C 625 335, 628 338, 630 340 C 628 360, 626 380, 625 390 C 622 405, 621 415, 620 420 C 625 430, 628 440, 630 440 Z" 
+                                                fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+
+                                            {/* Dynamic Active Progress Coastline Path */}
+                                            <path id="coastline-path" ref={pathRef}
+                                                d="M 630 440 C 625 470, 615 500, 610 520 C 590 530, 560 540, 550 550 C 540 540, 530 535, 520 530 C 480 520, 440 500, 410 490 C 360 490, 300 480, 250 480 C 210 480, 150 470, 120 470 C 100 470, 90 470, 80 460 C 70 440, 72 420, 70 410 C 60 370, 45 340, 40 310 C 40 280, 45 270, 50 260 C 70 240, 80 230, 100 220 C 120 205, 135 200, 150 190 C 160 180, 170 175, 180 170 C 195 170, 210 170, 220 170 C 240 160, 270 135, 290 120 C 310 120, 330 115, 350 120 C 360 130, 365 140, 370 150 C 380 170, 390 190, 400 200 C 410 190, 420 170, 430 150 C 440 120, 450 100, 460 80 C 470 100, 475 120, 480 130 C 490 145, 495 155, 500 160 C 510 175, 515 185, 520 190 C 535 210, 545 220, 550 230 C 565 245, 575 255, 580 260 C 595 275, 605 285, 610 290 C 615 310, 618 320, 620 330 C 625 335, 628 338, 630 340 C 628 360, 626 380, 625 390 C 622 405, 621 415, 620 420 C 625 430, 628 440, 630 440 Z" 
+                                                fill="none" stroke="url(#coastGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" 
+                                                strokeDasharray={pathLength} strokeDashoffset={pathLength - (pathLength * challengePercentage) / 100}
+                                                className="transition-all duration-1000" />
+
+                                            {/* Coast Gradient Definition */}
+                                            <defs>
+                                                <linearGradient id="coastGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stopColor="#06b6d4" />
+                                                    <stop offset="50%" stopColor="#3b82f6" />
+                                                    <stop offset="100%" stopColor="#10b981" />
+                                                </linearGradient>
+                                            </defs>
+
+                                            {/* Milestones Dots */}
+                                            {MILESTONES.map((m, idx) => {
+                                                const isReached = totals.totalKm >= m.targetKm;
+                                                return (
+                                                    <g key={idx}>
+                                                        <circle cx={m.x} cy={m.y} r="5" 
+                                                            fill={isReached ? "#10b981" : "#475569"} 
+                                                            stroke={isReached ? "#a7f3d0" : "#1e293b"} 
+                                                            strokeWidth="2.5" />
+                                                        <text x={m.x} y={m.y - 10} textAnchor="middle" 
+                                                            fill={isReached ? "#f8fafc" : "#94a3b8"} 
+                                                            fontSize="8" fontWeight="bold" fontFamily="sans-serif">
+                                                            {m.name.split(' ')[0]}
+                                                        </text>
+                                                    </g>
+                                                );
+                                            })}
+
+                                            {/* Hobart detour link line */}
+                                            <line x1="535" y1="520" x2="565" y2="580" stroke="rgba(255,255,255,0.08)" strokeWidth="2" strokeDasharray="4 4" />
+
+                                            {/* Swimmer Pulse Marker */}
+                                            <g id="swimmer-group" transform={`translate(${swimmerPos.x}, ${swimmerPos.y})`} style={{ transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                                                <circle cx="0" cy="0" r="16" fill="#22d3ee" opacity="0.4" className="animate-ping" />
+                                                <circle cx="0" cy="0" r="8" fill="#06b6d4" stroke="#ffffff" strokeWidth="2" />
+                                                <text x="0" y="3.5" textAnchor="middle" fontSize="9" fill="#ffffff" fontWeight="black" fontFamily="sans-serif">🏊</text>
+                                            </g>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Milestones / Ports List */}
+                                <div className="glass-card p-6 rounded-3xl shadow-sm border">
+                                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-white uppercase tracking-tight mb-4">Voyage Milestones</h3>
+                                    <div className="max-h-[300px] overflow-y-auto custom-scroll space-y-3">
+                                        {MILESTONES.map((m, idx) => {
+                                            const isReached = totals.totalKm >= m.targetKm;
+                                            const isCurrent = currentMilestoneIndex === idx;
+                                            const progressPct = m.targetKm === 0 ? 100 : Math.min(100, Math.floor((totals.totalKm / m.targetKm) * 100));
+
+                                            return (
+                                                <div key={idx} className={`p-4 rounded-xl border flex items-center justify-between transition-all ${isCurrent ? 'bg-cyan-500/10 border-cyan-500 dark:bg-cyan-900/20' : 'bg-slate-100/50 border-slate-200/60 dark:bg-slate-800/40 dark:border-slate-800'}`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black ${isReached ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500'}`}>
+                                                            {isReached ? <i className="ph-bold ph-check"></i> : <span>{idx + 1}</span>}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold text-sm">{m.name}</h4>
+                                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest">{m.targetKm.toLocaleString()} km marker</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-right">
+                                                        {isReached ? (
+                                                            <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">🎯 Reached</span>
+                                                        ) : (
+                                                            <div className="space-y-1">
+                                                                <span className="text-xs font-bold text-slate-500">{(m.targetKm - totals.totalKm).toLocaleString()} km left</span>
+                                                                <div className="w-20 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                                                    <div className="bg-cyan-500 h-full" style={{width: `${progressPct}%`}}></div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Stats & Leaderboard Section (Right, 5 Columns) */}
+                            <div className="lg:col-span-5 space-y-6">
+
+                                {/* Unified Patron Log Portal */}
+                                <div className="glass-card p-6 rounded-3xl shadow-sm border border-cyan-100 dark:border-cyan-900/50 relative overflow-hidden">
+                                    
+                                    {/* Portal Mode: CTA */}
+                                    {portalMode === 'cta' && (
+                                        <div className="text-center space-y-4 py-4">
+                                            <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center mx-auto text-cyan-600 dark:text-cyan-400">
+                                                <i className="ph-bold ph-swimmer text-2xl animate-pulse"></i>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="font-extrabold text-md uppercase">Are you swimming today?</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Log your laps locally under a completely anonymous passphrase profile.</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 pt-2">
+                                                <button onClick={() => setPortalMode('login')} className="py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-xl transition-all shadow-md text-xs uppercase tracking-wider">
+                                                    Sign In
+                                                </button>
+                                                <button onClick={() => setPortalMode('register')} className="py-3 border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 font-black rounded-xl transition-all text-xs uppercase tracking-wider">
+                                                    Register
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Portal Mode: Login */}
+                                    {portalMode === 'login' && (
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+                                                <h4 className="font-extrabold text-xs uppercase tracking-widest text-slate-400">Swimmer Login</h4>
+                                                <button onClick={() => setPortalMode('cta')} className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Back</button>
+                                            </div>
+                                            <form onSubmit={handlePassphraseLogin} className="space-y-3">
+                                                <div className="space-y-1">
+                                                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Enter Your Passphrase</label>
+                                                    <input type="text" placeholder="e.g. swim-fast-99" value={passphraseInput} onChange={e => setPassphraseInput(e.target.value)} required
+                                                        className="w-full p-3 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-xl focus:border-cyan-500 outline-none font-bold" />
+                                                </div>
+                                                <button type="submit" className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md">
+                                                    Log In
+                                                </button>
+                                            </form>
+                                            <div className="text-center text-[10px] font-bold text-slate-400 pt-2">
+                                                <button onClick={() => setPortalMode('register')} className="hover:text-cyan-600">Need a profile? Register here</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Portal Mode: Register */}
+                                    {portalMode === 'register' && (
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+                                                <h4 className="font-extrabold text-xs uppercase tracking-widest text-slate-400">Register Profile</h4>
+                                                <button onClick={() => setPortalMode('cta')} className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Back</button>
+                                            </div>
+                                            
+                                            <p className="text-[10px] text-amber-500 dark:text-amber-400 font-extrabold border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-2.5 rounded-xl uppercase leading-relaxed text-center">
+                                                ⚠️ Disclaimer: Do not use your real name, email, or any personal details. Display names are displayed publicly.
+                                            </p>
+
+                                            <form onSubmit={handlePassphraseRegister} className="space-y-3">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Display Nickname</label>
+                                                        <button type="button" onClick={generateRandomName} className="text-[9px] font-black text-cyan-600 uppercase hover:underline">🎲 Randomise</button>
+                                                    </div>
+                                                    <input type="text" placeholder="Choose a display nickname" maxLength="30" value={nameInput} onChange={e => setNameInput(e.target.value)} required
+                                                        className="w-full p-3 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-xl focus:border-cyan-500 outline-none font-bold" />
+                                                </div>
+
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Choose Passphrase</label>
+                                                        <button type="button" onClick={generateRandomPassphrase} className="text-[9px] font-black text-cyan-600 uppercase hover:underline">🎲 Randomise</button>
+                                                    </div>
+                                                    <input type="text" placeholder="Create a code (e.g. glide-kick-82)" value={passphraseInput} onChange={e => setPassphraseInput(e.target.value)} required
+                                                        className="w-full p-3 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-xl focus:border-cyan-500 outline-none font-bold" />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Home Facility</label>
+                                                    <select value={facilityInput} onChange={e => setFacilityInput(e.target.value)}
+                                                        className="w-full p-3 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-xl focus:border-cyan-500 outline-none font-bold text-slate-500">
+                                                        <option value="CRAC">Clarence Regional Aquatic Centre</option>
+                                                        <option value="YCP">Yamba Community Pool</option>
+                                                    </select>
+                                                </div>
+
+                                                <button type="submit" className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md">
+                                                    Sign Up
+                                                </button>
+                                            </form>
+                                            <div className="text-center text-[10px] font-bold text-slate-400 pt-2">
+                                                <button onClick={() => setPortalMode('login')} className="hover:text-cyan-600">Already registered? Sign In</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Portal Mode: Logged-in Swimmer App */}
+                                    {portalMode === 'logged-in' && currentUser && (
+                                        <div className="space-y-5">
+                                            {/* Header summary */}
+                                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                                                <div>
+                                                    <h4 className="font-extrabold text-xs uppercase tracking-tight text-slate-400">Logged in,</h4>
+                                                    <h3 className="font-black text-md text-slate-900 dark:text-white truncate max-w-[150px]">{currentUser.publicName}</h3>
+                                                </div>
+                                                <div className="text-right">
+                                                    {currentUser.isApproved ? (
+                                                        <span className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider border border-emerald-100 dark:border-emerald-900">Approved</span>
+                                                    ) : (
+                                                        <span className="bg-amber-50 dark:bg-amber-950/20 text-amber-600 text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider border border-amber-100 dark:border-amber-900">Pending</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Submit laps form */}
+                                            <form onSubmit={handleLapSubmission} className="space-y-3 bg-slate-50/50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Log laps swum today</label>
+                                                <div className="flex flex-col gap-2.5">
+                                                    <input type="number" placeholder="Laps completed" min="1" max="500" value={lapsInput} onChange={e => setLapsInput(e.target.value)} required
+                                                        className="w-full p-3 text-sm border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-xl focus:border-cyan-500 outline-none font-black text-center" />
+                                                    
+                                                    {currentUser.facility === 'CRAC' ? (
+                                                        <div className="flex gap-2 items-center justify-center">
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pool Size:</span>
+                                                            <select value={poolLength} onChange={e => setPoolLength(Number(e.target.value))}
+                                                                className="text-xs font-bold border border-slate-200 dark:border-slate-800 dark:bg-slate-900 p-1.5 rounded-lg text-slate-600 dark:text-slate-350 outline-none">
+                                                                <option value={50}>50m (Outdoor)</option>
+                                                                <option value={25}>25m (Indoor)</option>
+                                                            </select>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[9px] text-slate-400 text-center font-bold uppercase">Pool length: 25m (YCP)</p>
+                                                    )}
+
+                                                    <button type="submit" className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-xl uppercase tracking-wider text-xs shadow-md transition-colors flex items-center justify-center gap-1.5">
+                                                        <i className="ph-bold ph-plus-circle text-md"></i> Submit Laps
+                                                    </button>
+                                                </div>
+                                            </form>
+
+                                            {/* Stats summary */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">My Total Laps</span>
+                                                    <p className="text-xl font-black mt-0.5">{myLifetimeStats.laps}</p>
+                                                </div>
+                                                <div className="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">My Total Km</span>
+                                                    <p className="text-xl font-black mt-0.5">{myLifetimeStats.km.toFixed(2)} km</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Settings accordion */}
+                                            <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                                                <button onClick={() => setSettingsExpanded(!settingsExpanded)}
+                                                    className="w-full flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                    <span>Profile Settings</span>
+                                                    <i className={`ph-bold ph-caret-${settingsExpanded ? 'up' : 'down'}`}></i>
+                                                </button>
+
+                                                {settingsExpanded && (
+                                                    <form onSubmit={handleProfileUpdate} className="mt-3 space-y-3 pt-2">
+                                                        <div>
+                                                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Display Nickname</label>
+                                                            <input type="text" placeholder={currentUser.publicName} value={nameInput} onChange={e => setNameInput(e.target.value)}
+                                                                className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-lg focus:border-cyan-500 outline-none font-bold" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Edit Passphrase</label>
+                                                            <input type="text" placeholder={currentUser.passphrase} value={passphraseInput} onChange={e => setPassphraseInput(e.target.value)}
+                                                                className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-lg focus:border-cyan-500 outline-none font-bold" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Home Facility</label>
+                                                            <select value={facilityInput} onChange={e => setFacilityInput(e.target.value)}
+                                                                className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-800 dark:bg-slate-900 rounded-lg focus:border-cyan-500 outline-none font-bold text-slate-500">
+                                                                <option value="CRAC">Clarence Regional Aquatic Centre</option>
+                                                                <option value="YCP">Yamba Community Pool</option>
+                                                            </select>
+                                                        </div>
+                                                        <button type="submit" className="w-full py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs uppercase tracking-wider hover:bg-slate-300 transition-colors">
+                                                            Save Changes
+                                                        </button>
+                                                    </form>
+                                                )}
+                                            </div>
+
+                                            {/* Sign out link */}
+                                            <div className="flex justify-between items-center pt-2">
+                                                <div className="text-[9px] text-slate-400 font-bold">
+                                                    Passphrase: <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded select-all">{currentUser.passphrase}</span>
+                                                </div>
+                                                <button onClick={handleLogout} className="text-red-500 hover:text-red-600 text-xs font-black uppercase tracking-wider flex items-center gap-1">
+                                                    <i className="ph-bold ph-sign-out"></i> Sign Out
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Friendly Rivalry Box */}
+                                <div className="glass-card p-6 rounded-3xl shadow-sm border">
+                                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <i className="ph-duotone ph-trophy text-amber-500 text-lg"></i>
+                                        <span>Centre Rivalry</span>
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        {/* CRAC Progress */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between text-xs font-black uppercase tracking-tight">
+                                                <span className="text-indigo-600 dark:text-indigo-400">CRAC (Grafton)</span>
+                                                <span>{totals.cracKm.toFixed(1)} km</span>
+                                            </div>
+                                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
+                                                <div className="bg-indigo-600 h-full rounded-full transition-all duration-1000" 
+                                                    style={{width: `${totals.totalKm === 0 ? 0 : (totals.cracKm / totals.totalKm) * 100}%`}}></div>
+                                            </div>
+                                        </div>
+
+                                        {/* YCP Progress */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between text-xs font-black uppercase tracking-tight">
+                                                <span className="text-emerald-600 dark:text-emerald-400">Yamba Community Pool</span>
+                                                <span>{totals.ycpKm.toFixed(1)} km</span>
+                                            </div>
+                                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
+                                                <div className="bg-emerald-600 h-full rounded-full transition-all duration-1000" 
+                                                    style={{width: `${totals.totalKm === 0 ? 0 : (totals.ycpKm / totals.totalKm) * 100}%`}}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Top Swimmers Leaderboard */}
+                                <div className="glass-card p-6 rounded-3xl shadow-sm border">
+                                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center justify-between">
+                                        <span>Top Swimmers Leaderboard</span>
+                                        <i className="ph-bold ph-medal text-xl text-amber-500"></i>
+                                    </h3>
+                                    
+                                    <div className="space-y-2">
+                                        {totals.leaderboard.length === 0 ? (
+                                            <p className="text-slate-400 text-xs italic py-4 text-center">No logs recorded yet. Be the first!</p>
+                                        ) : (
+                                            totals.leaderboard.map((swimmer, idx) => {
+                                                const placeColors = idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-slate-200 text-slate-700' : idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500 dark:bg-slate-800';
+                                                return (
+                                                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-100/40 dark:bg-slate-800/20 border border-slate-200/50 dark:border-slate-800 rounded-xl">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${placeColors}`}>
+                                                                {idx + 1}
+                                                            </span>
+                                                            <div>
+                                                                <h4 className="font-bold text-xs">{swimmer.name}</h4>
+                                                                <span className="text-[8px] text-slate-400 font-bold uppercase">{swimmer.facility.includes('YCP') ? 'YCP' : 'CRAC'}</span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-xs font-black text-cyan-600 dark:text-cyan-400">{swimmer.distanceKm.toFixed(2)} km</span>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Area: Recent Activity Log */}
+                        <section className="glass-card p-6 rounded-3xl shadow-sm border">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-white uppercase tracking-tight">Recent Log Entries</h3>
+                                    <p className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black leading-none mt-0.5">Community Logs (Live Feed)</p>
+                                </div>
+                                <span className="text-xs text-slate-400">{recentLogs.length} logs displayed</span>
+                            </div>
+
+                            {loading ? (
+                                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                                    <i className="ph-duotone ph-spinner animate-spin text-3xl text-cyan-500"></i>
+                                    <span className="text-xs text-slate-400">Fetching live feed...</span>
+                                </div>
+                            ) : recentLogs.length === 0 ? (
+                                <p className="text-slate-400 text-xs italic py-12 text-center border border-dashed rounded-2xl">No logged sessions recorded. Log your first swim above!</p>
+                            ) : (
+                                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                    <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                                        <thead className="bg-slate-100/50 dark:bg-slate-900/50">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Swimmer</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Facility</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Laps Logged</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Distance</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Date Logged</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white dark:bg-slate-900/50 divide-y divide-slate-100 dark:divide-slate-800">
+                                            {recentLogs.map((log, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-850/50 transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-xs font-bold">{log.swimmerName}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${log.facility.includes('YCP') ? 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900 dark:text-emerald-400' : 'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:border-indigo-900 dark:text-indigo-400'}`}>
+                                                            {log.facility.includes('YCP') ? 'YCP' : 'CRAC'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">{log.laps} laps ({log.poolLength}m)</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-cyan-600 dark:text-cyan-400">{log.distanceKm.toFixed(2)} km</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-400">{log.date}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </section>
+                    </main>
+
+                    {/* Standalone Help Modal */}
+                    {isHelpOpen && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsHelpOpen(false)}>
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="bg-cyan-100 text-cyan-600 p-3 rounded-xl dark:bg-cyan-900/30">
+                                        <i className="ph-bold ph-swimmer text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Lap Challenge Guide</h3>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black opacity-60">Quick Reference</p>
+                                    </div>
+                                </div>
+                                
+                                <div className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mb-6 space-y-3 font-medium">
+                                    <p><strong>Goal:</strong> Collectively swim 25,760 km—the length of the Australian coastline!</p>
+                                    <p><strong>How to contribute:</strong></p>
+                                    <ul className="list-disc pl-4 space-y-1">
+                                        <li>Register an anonymous profile choosing a display nickname and a unique login passphrase.</li>
+                                        <li>Log the number of laps you completed at CRAC or YCP.</li>
+                                        <li>The app automatically calculates your distance in km and adds it to the global total.</li>
+                                    </ul>
+                                    <p><strong>Tracking progress:</strong> Watch the swimmer icon move along the coastline path on the map as the filled blue line expands in real-time!</p>
+                                </div>
+                                
+                                <button onClick={() => setIsHelpOpen(false)} className="w-full py-3 bg-slate-900 dark:bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-xl transition-all shadow-md uppercase tracking-wider text-xs">
+                                    Got It!
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Inline toast notification */}
+                    {toast.show && (
+                        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white dark:bg-slate-800 px-6 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2 z-50 animate-bounce">
+                            <i className="ph-bold ph-info text-cyan-400 text-lg"></i>
+                            <span className="text-xs font-bold">{toast.message}</span>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<MainApp />);
+    </script>
+</body>
+</html>
