@@ -161,13 +161,6 @@
                 return () => clearTimeout(timer);
             }, []);
 
-            // Move swimmer dot along the path whenever km progress changes
-            useEffect(() => {
-                if (!pathRef.current || pathLength === 0) return;
-                const pct = Math.min(challengePercentage / 100, 1);
-                const point = pathRef.current.getPointAtLength(pct * pathLength);
-                setSwimmerPos({ x: point.x, y: point.y });
-            }, [challengePercentage, pathLength]);
 
             // Toast helper
             const showToast = (message) => {
@@ -260,6 +253,14 @@
                 const pct = (totals.totalKm / TOTAL_CIRCUMFERENCE) * 100;
                 return Math.min(Number(pct.toFixed(2)), 100);
             }, [totals.totalKm]);
+
+            // Move swimmer dot along the path whenever km progress changes
+            useEffect(() => {
+                if (!pathRef.current || pathLength === 0) return;
+                const pct = Math.min(challengePercentage / 100, 1);
+                const point = pathRef.current.getPointAtLength(pct * pathLength);
+                setSwimmerPos({ x: point.x, y: point.y });
+            }, [challengePercentage, pathLength]);
 
             // Find current milestone location
             const currentMilestoneIndex = useMemo(() => {
