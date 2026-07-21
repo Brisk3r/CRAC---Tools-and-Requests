@@ -117,7 +117,7 @@
             );
         };
 
-        const TaskCard = ({ task, onEdit, onArchive }) => {
+        const TaskCard = ({ task, onEdit, onArchive, onMoveStatus }) => {
             const priority = priorityMap[task.priority] || priorityMap.Medium;
             const today = new Date(); today.setHours(0,0,0,0);
             const dueDate = new Date(task.dueDate);
@@ -174,15 +174,29 @@
                         <div className={`flex items-center gap-1.5 font-bold ${priority.color}`}>
                             <i className={priority.icon}></i> {task.priority}
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            {/* Quick status shifts for touch screens */}
+                            {task.status !== 'To Do' && (
+                                <button onClick={(e) => { e.stopPropagation(); onMoveStatus(task, task.status === 'Completed' ? 'In Progress' : 'To Do'); }}
+                                    className="lg:hidden p-1 text-slate-400 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors" title="Move Back">
+                                    <i className="ph-bold ph-caret-left"></i>
+                                </button>
+                            )}
+                            {task.status !== 'Completed' && (
+                                <button onClick={(e) => { e.stopPropagation(); onMoveStatus(task, task.status === 'To Do' ? 'In Progress' : 'Completed'); }}
+                                    className="lg:hidden p-1 text-slate-400 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors" title="Move Forward">
+                                    <i className="ph-bold ph-caret-right"></i>
+                                </button>
+                            )}
+                            
                             {task.dueDate && (
-                                <div className={`flex items-center gap-1 ${dateColor}`} title="Due Date">
+                                <div className={`flex items-center gap-1 ${dateColor} ml-2`} title="Due Date">
                                     <i className="ph-bold ph-calendar-blank"></i>
                                     <span>{new Date(task.dueDate).toLocaleDateString('en-AU', {month:'short', day:'numeric'})}</span>
                                 </div>
                             )}
                             {task.updates?.length > 0 && (
-                                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400" title="Comments">
+                                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 ml-2" title="Comments">
                                     <i className="ph-bold ph-chat-circle"></i> <span>{task.updates.length}</span>
                                 </div>
                             )}
@@ -432,9 +446,10 @@
             );
         };
 
-        const KanbanColumn = ({ title, tasks, onAddTask, onEditTask, onArchiveAll, onArchiveTask, onDropTask }) => {
+        const KanbanColumn = ({ title, tasks, onAddTask, onEditTask, onArchiveAll, onArchiveTask, onDropTask, onQuickAdd, onMoveStatus }) => {
             const statusConfig = statusMap[title] || statusMap['To Do'];
             const [isOver, setIsOver] = useState(false);
+            const [quickTitle, setQuickTitle] = useState('');
             
             const handleDragOver = (e) => {
                 e.preventDefault();
@@ -453,12 +468,19 @@
                 if (taskId) onDropTask(taskId, title);
             };
 
+            const handleQuickSubmit = (e) => {
+                if (e.key === 'Enter' && quickTitle.trim()) {
+                    onQuickAdd(quickTitle.trim(), title);
+                    setQuickTitle('');
+                }
+            };
+
             return (
                 <div 
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`flex-1 flex flex-col rounded-2xl transition-all border-2 duration-200 ${isOver ? 'border-orange-500 bg-orange-50/10 scale-[1.01]' : 'border-transparent bg-slate-100/50 dark:bg-slate-900/50'}`}>
+                    className={`flex-grow flex-shrink flex-1 flex flex-col rounded-2xl transition-all border-2 duration-200 w-full ${isOver ? 'border-orange-500 bg-orange-50/10 scale-[1.01]' : 'border-transparent bg-slate-100/50 dark:bg-slate-900/50'}`}>
                     <div className={`flex items-center justify-between p-4 border-t-4 bg-white dark:bg-slate-800 rounded-t-2xl shadow-sm border-x border-b border-slate-200 dark:border-slate-700 ${statusConfig.borderTop}`}>
                         <h2 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             {title}
@@ -472,7 +494,25 @@
                     </div>
                     
                     <div className="p-3 flex-grow rounded-b-2xl space-y-3 min-h-[400px] custom-scroll">
-                        {tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} onArchive={onArchiveTask} />)}
+                        {title !== 'Completed' && (
+                            <div className="relative mb-2">
+                                <input 
+                                    type="text" 
+                                    placeholder="+ Quick add task..." 
+                                    value={quickTitle}
+                                    onChange={e => setQuickTitle(e.target.value)}
+                                    onKeyDown={handleQuickSubmit}
+                                    className="w-full pl-3 pr-8 py-2.5 bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder-slate-400"
+                                />
+                                {quickTitle.trim() && (
+                                    <button onClick={() => { onQuickAdd(quickTitle.trim(), title); setQuickTitle(''); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-orange-500 text-sm hover:text-orange-600 font-bold">
+                                        <i className="ph-bold ph-plus"></i>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {tasks.map(task => <TaskCard key={task.id} task={task} onEdit={onEditTask} onArchive={onArchiveTask} onMoveStatus={onMoveStatus} />)}
                         
                         {title !== 'Completed' && (
                             <button onClick={onAddTask} className="w-full flex items-center justify-center gap-2 text-sm p-3 rounded-xl text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 border-dashed hover:bg-white dark:hover:bg-slate-800 hover:text-orange-500 dark:hover:text-orange-400 hover:border-orange-300 dark:hover:border-orange-500 transition-all group">
@@ -592,6 +632,9 @@
             const [darkMode, setDarkMode] = useState(localStorage.getItem('osf-theme') === 'dark');
             const [userFilter, setUserFilter] = useState('all');
             const [categoryFilter, setCategoryFilter] = useState('all');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [sortBy, setSortBy] = useState('created');
+            const [mobileColumn, setMobileColumn] = useState('To Do');
 
             // Dark Mode Effect
             useEffect(() => {
@@ -642,7 +685,7 @@
 
             const uniqueUsers = useMemo(() => ['all', ...new Set(allTasks.map(t => t.assignedTo).filter(Boolean))], [allTasks]);
 
-            // Filter out archived tasks for main view and apply user/category filters
+            // Filter out archived tasks for main view and apply filters + sorting
             const activeTasks = useMemo(() => {
                 let tasks = allTasks.filter(t => t.status !== 'Archived');
                 if (localUserName !== 'Admin') {
@@ -654,9 +697,35 @@
                 if (categoryFilter !== 'all') {
                     tasks = tasks.filter(t => t.category === categoryFilter);
                 }
+
+                if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase();
+                    tasks = tasks.filter(t => 
+                        (t.title && t.title.toLowerCase().includes(q)) || 
+                        (t.description && t.description.toLowerCase().includes(q))
+                    );
+                }
+
+                // Sort lists dynamically
+                tasks.sort((a, b) => {
+                    if (sortBy === 'priority') {
+                        const valA = priorityMap[a.priority]?.value || 2;
+                        const valB = priorityMap[b.priority]?.value || 2;
+                        return valB - valA; // High to Low
+                    } else if (sortBy === 'due') {
+                        if (!a.dueDate) return 1;
+                        if (!b.dueDate) return -1;
+                        return new Date(a.dueDate) - new Date(b.dueDate);
+                    } else {
+                        // Default: Newest created first
+                        const dateA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : new Date(a.startDate || 0).getTime();
+                        const dateB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : new Date(b.startDate || 0).getTime();
+                        return dateB - dateA;
+                    }
+                });
                 
                 return tasks;
-            }, [allTasks, localUserName, userFilter, categoryFilter]);
+            }, [allTasks, localUserName, userFilter, categoryFilter, searchQuery, sortBy]);
 
             const archivedTasks = useMemo(() => {
                 let tasks = allTasks.filter(t => t.status === 'Archived');
@@ -670,8 +739,16 @@
                     tasks = tasks.filter(t => t.category === categoryFilter);
                 }
 
+                if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase();
+                    tasks = tasks.filter(t => 
+                        (t.title && t.title.toLowerCase().includes(q)) || 
+                        (t.description && t.description.toLowerCase().includes(q))
+                    );
+                }
+
                 return tasks;
-            }, [allTasks, localUserName, userFilter, categoryFilter]);
+            }, [allTasks, localUserName, userFilter, categoryFilter, searchQuery]);
 
             const columns = useMemo(() => ({
                 'To Do': activeTasks.filter(t => t.status === 'To Do'),
@@ -778,6 +855,33 @@
                 }
             };
 
+            const handleQuickAdd = async (title, status) => {
+                const { collection, addDoc, serverTimestamp } = window.firebaseModules;
+                const tasksCollection = collection(db, 'tasks');
+                try {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const payload = {
+                        title: title.trim(),
+                        description: '',
+                        priority: 'Medium',
+                        category: categoryFilter !== 'all' ? categoryFilter : 'General',
+                        startDate: todayStr,
+                        dueDate: todayStr,
+                        status: status,
+                        assignedTo: localUserName === 'Admin' ? '' : localUserName,
+                        createdAt: serverTimestamp(),
+                        updates: []
+                    };
+                    await addDoc(tasksCollection, payload);
+                } catch (err) {
+                    console.error("Error quick adding task:", err);
+                }
+            };
+
+            const handleMoveStatus = async (task, newStatus) => {
+                await handleSaveTask({ ...task, status: newStatus }, false);
+            };
+
             if (!localUserName) return <LoginScreen onLogin={handleLogin} isAuthReady={isAuthReady} error={error} />;
 
             return (
@@ -798,6 +902,31 @@
                         </div>
                     </div>
 
+                    {/* Completion Progress Header Banner */}
+                    {activeTasks.length > 0 && (
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 p-4 rounded-2xl shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 p-2.5 rounded-xl border border-orange-100 dark:border-orange-900/30">
+                                    <i className="ph-bold ph-chart-line-up text-xl animate-pulse"></i>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">Active Sprint Completion</h3>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                        {activeTasks.filter(t => t.status === 'Completed').length} of {activeTasks.length} tasks completed
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 w-full sm:w-64">
+                                <div className="flex-grow bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
+                                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full transition-all duration-1000" style={{ width: `${activeTasks.length > 0 ? Math.round((activeTasks.filter(t => t.status === 'Completed').length / activeTasks.length) * 100) : 0}%` }}></div>
+                                </div>
+                                <span className="font-display font-black text-slate-800 dark:text-white text-base leading-none w-10 text-right">
+                                    {activeTasks.length > 0 ? Math.round((activeTasks.filter(t => t.status === 'Completed').length / activeTasks.length) * 100) : 0}%
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Toolbar */}
                     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
                         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -810,39 +939,84 @@
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap justify-end">
-                            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="bg-white dark:bg-slate-900 text-sm font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
+                        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                            {/* Real-time Search Input */}
+                            <div className="relative w-full sm:w-48">
+                                <i className="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="Search tasks..." 
+                                    value={searchQuery} 
+                                    onChange={e => setSearchQuery(e.target.value)} 
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder-slate-400"
+                                />
+                            </div>
+
+                            {/* Sort Selector */}
+                            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
+                                <option value="created">Newest Created</option>
+                                <option value="priority">Highest Priority</option>
+                                <option value="due">Soonest Due</option>
+                            </select>
+
+                            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
                                 <option value="all">All Categories</option>
                                 {categoryOptions.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
+                            
                             {localUserName === 'Admin' && (
-                                <select value={userFilter} onChange={e => setUserFilter(e.target.value)} className="bg-white dark:bg-slate-900 text-sm font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
+                                <select value={userFilter} onChange={e => setUserFilter(e.target.value)} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
                                     <option value="all">All Users</option>
                                     {uniqueUsers.filter(u => u !== 'all').map(user => <option key={user} value={user}>{user}</option>)}
                                 </select>
                             )}
-                            <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                                <button onClick={() => setView('board')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${view === 'board' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+
+                            <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm w-full sm:w-auto">
+                                <button onClick={() => setView('board')} className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${view === 'board' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                     <i className="ph-bold ph-kanban"></i> Board
                                 </button>
-                                <button onClick={() => setView('timeline')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${view === 'timeline' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <button onClick={() => setView('timeline')} className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${view === 'timeline' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                     <i className="ph-bold ph-chart-bar"></i> Timeline
                                 </button>
                             </div>
                         </div>
                     </div>
 
+                    {/* Mobile Column Segment Tab bar */}
+                    {view === 'board' && (
+                        <div className="flex lg:hidden bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/85 mb-6 w-full">
+                            {['To Do', 'In Progress', 'Completed', 'View All'].map(status => {
+                                const count = status === 'View All' ? activeTasks.length : columns[status].length;
+                                const isActive = mobileColumn === status;
+                                return (
+                                    <button key={status} onClick={() => setMobileColumn(status)} 
+                                        className={`flex-1 px-3 py-2 rounded-lg text-[10px] uppercase tracking-wider font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${isActive ? 'bg-white dark:bg-slate-800 text-orange-600 dark:text-orange-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50' : 'text-slate-500 hover:bg-slate-50/50 dark:hover:bg-slate-800/50'}`}>
+                                        <span>{status === 'View All' ? 'All' : status}</span>
+                                        <span className={`text-[9px] font-black opacity-80 ${isActive ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400'}`}>({count})</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     {view === 'board' ? (
-                        <div className="flex flex-col lg:flex-row gap-6 items-start pb-10">
-                            {['To Do', 'In Progress', 'Completed'].map(status => (
-                                <KanbanColumn key={status} title={status} tasks={columns[status]} 
-                                    onAddTask={() => { setSelectedTask(null); setNewColumnStatus(status); setIsModalOpen(true); }}
-                                    onEditTask={(t) => { setSelectedTask(t); setNewColumnStatus(null); setIsModalOpen(true); }}
-                                    onArchiveTask={handleArchiveTask}
-                                    onArchiveAll={status === 'Completed' ? handleArchiveAllCompleted : null}
-                                    onDropTask={handleDropTask}
-                                />
-                            ))}
+                        <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-start pb-10 w-full">
+                            {['To Do', 'In Progress', 'Completed'].map(status => {
+                                const isVisibleOnMobile = mobileColumn === 'View All' || mobileColumn === status;
+                                return (
+                                    <div key={status} className={`${isVisibleOnMobile ? 'flex' : 'hidden lg:flex'} flex-grow flex-shrink flex-1 flex-col`}>
+                                        <KanbanColumn title={status} tasks={columns[status]} 
+                                            onAddTask={() => { setSelectedTask(null); setNewColumnStatus(status); setIsModalOpen(true); }}
+                                            onEditTask={(t) => { setSelectedTask(t); setNewColumnStatus(null); setIsModalOpen(true); }}
+                                            onArchiveTask={handleArchiveTask}
+                                            onArchiveAll={status === 'Completed' ? handleArchiveAllCompleted : null}
+                                            onDropTask={handleDropTask}
+                                            onQuickAdd={handleQuickAdd}
+                                            onMoveStatus={handleMoveStatus}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <TimelineView tasks={activeTasks} onEditTask={(t) => { setSelectedTask(t); setNewColumnStatus(null); setIsModalOpen(true); }} />
