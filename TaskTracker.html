@@ -62,6 +62,13 @@
     <!-- App Logic -->
     <script type="text/babel" data-type="module" data-presets="react">
         const { useState, useEffect, useMemo, useRef } = React;
+
+        const isAssigned = (assignedTo, userName) => {
+            if (!assignedTo) return false;
+            if (userName === 'Admin') return true;
+            return assignedTo.split(',').map(name => name.trim().toLowerCase()).includes(userName.toLowerCase());
+        };
+
         
         // --- Styles & Maps ---
         const priorityMap = { 
@@ -162,10 +169,17 @@
                         )}
                     </div>
                     
-                    <div className="flex items-center gap-2 mb-3">
-                        {task.assignedTo && (
-                            <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold px-2 py-1 rounded-md border border-slate-200 dark:border-slate-600 truncate max-w-[100px]">
-                                {task.assignedTo}
+                    <div className="flex flex-wrap gap-1 mb-3">
+                        {task.assignedTo ? task.assignedTo.split(',').map((name, i) => (
+                            <span key={i} className="text-[9px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">
+                                {name.trim()}
+                            </span>
+                        )) : (
+                            <span className="text-[9px] text-slate-400 italic">Unassigned</span>
+                        )}
+                        {task.createdBy && task.createdBy !== task.assignedTo && (
+                            <span className="text-[9px] text-slate-400 font-medium ml-1">
+                                via {task.createdBy}
                             </span>
                         )}
                     </div>
@@ -277,7 +291,7 @@
             const today = new Date().toISOString().split('T')[0];
             const [formData, setFormData] = useState({
                 title: '', description: '', priority: 'Medium', category: 'General', startDate: today, dueDate: today,
-                assignedTo: currentUser === 'Admin' ? '' : currentUser
+                assignedTo: ''
             });
             const [newUpdate, setNewUpdate] = useState('');
             const [isSaving, setIsSaving] = useState(false);
@@ -632,6 +646,7 @@
             const [darkMode, setDarkMode] = useState(localStorage.getItem('osf-theme') === 'dark');
             const [userFilter, setUserFilter] = useState('all');
             const [categoryFilter, setCategoryFilter] = useState('all');
+            const [teamViewFilter, setTeamViewFilter] = useState('my');
             const [searchQuery, setSearchQuery] = useState('');
             const [sortBy, setSortBy] = useState('created');
             const [mobileColumn, setMobileColumn] = useState('To Do');
@@ -688,10 +703,18 @@
             // Filter out archived tasks for main view and apply filters + sorting
             const activeTasks = useMemo(() => {
                 let tasks = allTasks.filter(t => t.status !== 'Archived');
+                
                 if (localUserName !== 'Admin') {
-                    tasks = tasks.filter(t => t.assignedTo === localUserName);
-                } else if (userFilter !== 'all') {
-                    tasks = tasks.filter(t => t.assignedTo === userFilter);
+                    if (teamViewFilter === 'my') {
+                        tasks = tasks.filter(t => isAssigned(t.assignedTo, localUserName));
+                    } else if (teamViewFilter === 'created') {
+                        tasks = tasks.filter(t => t.createdBy === localUserName);
+                    }
+                    // If 'all', do not filter by user
+                } else {
+                    if (userFilter !== 'all') {
+                        tasks = tasks.filter(t => isAssigned(t.assignedTo, userFilter));
+                    }
                 }
                 
                 if (categoryFilter !== 'all') {
@@ -730,9 +753,15 @@
             const archivedTasks = useMemo(() => {
                 let tasks = allTasks.filter(t => t.status === 'Archived');
                 if (localUserName !== 'Admin') {
-                    tasks = tasks.filter(t => t.assignedTo === localUserName);
-                } else if (userFilter !== 'all') {
-                    tasks = tasks.filter(t => t.assignedTo === userFilter);
+                    if (teamViewFilter === 'my') {
+                        tasks = tasks.filter(t => isAssigned(t.assignedTo, localUserName));
+                    } else if (teamViewFilter === 'created') {
+                        tasks = tasks.filter(t => t.createdBy === localUserName);
+                    }
+                } else {
+                    if (userFilter !== 'all') {
+                        tasks = tasks.filter(t => isAssigned(t.assignedTo, userFilter));
+                    }
                 }
 
                 if (categoryFilter !== 'all') {
@@ -774,6 +803,7 @@
                         const payload = { ...taskData };
                         payload.status = newColumnStatus || 'To Do';
                         payload.createdAt = serverTimestamp();
+                        payload.createdBy = localUserName;
                         payload.updates = payload.updates || [];
                         await addDoc(tasksCollection, payload);
                     }
@@ -870,6 +900,7 @@
                         status: status,
                         assignedTo: localUserName === 'Admin' ? '' : localUserName,
                         createdAt: serverTimestamp(),
+                        createdBy: localUserName,
                         updates: []
                     };
                     await addDoc(tasksCollection, payload);
@@ -951,6 +982,15 @@
                                     className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder-slate-400"
                                 />
                             </div>
+
+                            {/* Team Task Visibility Selector */}
+                            {localUserName !== 'Admin' && (
+                                <select value={teamViewFilter} onChange={e => setTeamViewFilter(e.target.value)} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
+                                    <option value="my">My Tasks</option>
+                                    <option value="created">Assigned By Me</option>
+                                    <option value="all">All Team Tasks</option>
+                                </select>
+                            )}
 
                             {/* Sort Selector */}
                             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl py-2.5 px-4 border border-slate-200 dark:border-slate-800 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer">
