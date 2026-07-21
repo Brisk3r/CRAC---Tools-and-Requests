@@ -64,7 +64,7 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         const isAssigned = (assignedTo, userName) => {
-            if (!assignedTo) return false;
+            if (!assignedTo || !userName) return false;
             if (userName === 'Admin') return true;
             return assignedTo.split(',').map(name => name.trim().toLowerCase()).includes(userName.toLowerCase());
         };
