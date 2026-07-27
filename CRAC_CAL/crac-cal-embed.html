@@ -129,6 +129,7 @@
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [selectedHourBlock, setSelectedHourBlock] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
+            const [activityFilter, setActivityFilter] = useState('All');
             const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
 
             // Responsive Layout State
@@ -245,6 +246,18 @@
 
             const selectedDayEvents = useMemo(() => eventsByDate[selectedDay.toDateString()] || [], [eventsByDate, selectedDay]);
 
+            const filteredDayEvents = useMemo(() => {
+                if (activityFilter === 'All') return selectedDayEvents;
+                return selectedDayEvents.filter(e => e.type === activityFilter);
+            }, [selectedDayEvents, activityFilter]);
+
+            const daysInSelectedWeek = useMemo(() => {
+                const days = []; const start = new Date(selectedDay); const dayNum = start.getDay() === 0 ? 7 : start.getDay();
+                start.setDate(start.getDate() - dayNum + 1);
+                for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+                return days;
+            }, [selectedDay]);
+
             const zoneForecast = useMemo(() => {
                 if (!settings?.zones) return [];
                 const dayEvents = expandedEvents.filter(e => e.startDateTime.toDateString() === selectedDay.toDateString());
@@ -309,46 +322,41 @@
             return (
                 <div className="p-3 max-w-7xl mx-auto text-slate-800">
                     {/* Integrated Hub Command Strip - Balanced for Readability */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-4 flex flex-col md:flex-row items-center gap-4 no-print">
-                        <div className="flex items-center gap-3 border-r border-slate-100 pr-4 mr-1">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-3 flex flex-col md:flex-row items-center gap-3 no-print">
+                        <div className="flex items-center justify-between w-full md:w-auto gap-3">
                             <div className="flex bg-slate-100 p-1 rounded-lg">
-                                <button onClick={() => setViewMode('month')} className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
+                                <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
                                 {isMobile ? (
-                                    <button onClick={() => setViewMode('day')} className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>
+                                    <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>
                                 ) : (
-                                    <button onClick={() => setViewMode('week')} className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
+                                    <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
                                 )}
                             </div>
-                        </div>
 
-                        <div className="flex items-center gap-3 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
-                            <button onClick={() => {
-                                if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
-                                else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
-                                else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
-                            }} className="p-1 text-slate-400 hover:text-blue-600 transition-colors"><Icons.ChevronLeft size={18} /></button>
-                            <div className="flex flex-col items-center justify-center min-w-[140px]">
-                                <span className="text-[13px] font-black uppercase tracking-tight text-slate-900 leading-tight">
-                                    {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
+                            <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                                <button onClick={() => {
+                                    if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
+                                    else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
+                                    else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
+                                }} className="p-1 text-slate-400 hover:text-blue-600 transition-colors"><Icons.ChevronLeft size={16} /></button>
+                                <span className="text-[12px] font-black uppercase tracking-tight text-slate-900 min-w-[90px] text-center">
+                                    {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
                                 </span>
-                                {window.CRAC_SEASON_LOGIC && (
-                                    <span className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${window.CRAC_SEASON_LOGIC.getSeason(selectedDay) === 'REGULAR' ? 'text-green-600' : 'text-blue-500'}`}>
-                                        {window.CRAC_SEASON_LOGIC.getSeason(selectedDay) === 'REGULAR' ? 'Regular Season' : 'Off-Peak Season'}
-                                    </span>
-                                )}
+                                <button onClick={() => {
+                                    if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
+                                    else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
+                                    else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
+                                }} className="p-1 text-slate-400 hover:text-blue-600 transition-colors"><Icons.ChevronRight size={16} /></button>
                             </div>
-                            <button onClick={() => {
-                                if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
-                                else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
-                                else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
-                            }} className="p-1 text-slate-400 hover:text-blue-600 transition-colors"><Icons.ChevronRight size={18} /></button>
                         </div>
 
-                        {/* Interactive Status Pills (Tabs) - More Informative */}
-                        <div className="flex flex-wrap items-center gap-2 flex-grow justify-center md:justify-start">
+                        {/* Interactive Zone Availability Badges with Visual Lane Capacity Meters */}
+                        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1">
                             {zoneForecast.filter(z => z.name.toLowerCase().includes('pool')).map(z => {
                                 const isActive = zoneFilter === z.name;
-                                const unit = z.name.toLowerCase().includes('program') ? 'Zones' : 'Lanes';
+                                const totalCap = z.total || 1;
+                                const freeCount = Math.max(0, z.free);
+                                const bookedCount = totalCap - freeCount;
                                 const colors = { 
                                     Good: 'bg-green-50 text-green-800 border-green-200', 
                                     Limited: 'bg-amber-50 text-amber-800 border-amber-200', 
@@ -358,27 +366,54 @@
                                     <button 
                                         key={z.name} 
                                         onClick={() => setZoneFilter(prev => prev === z.name ? 'All Zones' : z.name)}
-                                        className={`px-4 py-2 rounded-xl border-2 flex items-center gap-3 transition-all active:scale-95 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-4 ring-blue-100' : colors[z.status] + ' hover:bg-white'}`}
+                                        className={`px-3 py-1.5 rounded-xl border-2 flex flex-col items-start gap-1 transition-all flex-shrink-0 active:scale-95 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md' : colors[z.status] + ' hover:bg-white'}`}
                                     >
-                                        <div className="flex items-center justify-center">
-                                            {isActive ? (
-                                                <div className="bg-white/20 p-1 rounded-full"><Icons.Check size={12} className="text-white" /></div>
-                                            ) : (
-                                                <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${
-                                                    z.status === 'Good' ? 'bg-green-500' :
-                                                    z.status === 'Limited' ? 'bg-amber-500' :
-                                                    'bg-red-500'
-                                                }`}></div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col items-start leading-none text-left">
+                                        <div className="flex items-center justify-between w-full gap-3">
                                             <span className="text-[11px] font-black uppercase tracking-tight">{z.name}</span>
-                                            <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>{z.free} {unit} Free</span>
+                                            <span className={`text-[10px] font-bold ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>{freeCount}/{totalCap} Free</span>
+                                        </div>
+                                        {/* Visual Capacity Meter */}
+                                        <div className="flex gap-0.5 w-full min-w-[80px]">
+                                            {Array.from({ length: Math.min(totalCap, 8) }).map((_, i) => (
+                                                <div 
+                                                    key={i} 
+                                                    className={`h-1 flex-1 rounded-full ${
+                                                        i < freeCount 
+                                                            ? (isActive ? 'bg-emerald-300' : 'bg-green-500') 
+                                                            : (isActive ? 'bg-blue-400' : 'bg-slate-300')
+                                                    }`}
+                                                />
+                                            ))}
                                         </div>
                                     </button>
                                 );
                             })}
                         </div>
+                    </div>
+
+                    {/* 7-Day Horizontal Date Selector Carousel (Mobile/Touch Friendly) */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 mb-4 flex gap-1.5 overflow-x-auto custom-scrollbar no-print">
+                        {daysInSelectedWeek.map(day => {
+                            const isSelected = day.toDateString() === selectedDay.toDateString();
+                            const isToday = day.toDateString() === getGraftonDate().toDateString();
+                            return (
+                                <button
+                                    key={day.toISOString()}
+                                    onClick={() => setSelectedDay(day)}
+                                    className={`flex-1 min-w-[50px] py-2 px-1 rounded-lg flex flex-col items-center justify-center transition-all border ${
+                                        isSelected
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-200'
+                                            : isToday
+                                            ? 'bg-blue-50 text-blue-800 border-blue-200 font-bold'
+                                            : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    <span className="text-[9px] font-black uppercase tracking-widest">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</span>
+                                    <span className="text-sm font-black leading-none mt-1">{day.getDate()}</span>
+                                    {isToday && <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-blue-600'}`}></span>}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[600px] lg:h-[650px] print-full-height">
@@ -387,7 +422,7 @@
                                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto overflow-x-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={(day) => { setSelectedDay(day); if (isMobile) setViewMode('day'); }} /></div>
                             ) : viewMode === 'day' ? (
                                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                                    <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} />
+                                    <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
                                 </div>
                             ) : (
                                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
@@ -395,7 +430,7 @@
                         </div>
                         {!isMobile && (
                             <div className="lg:col-span-4 h-full no-print">
-                                <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} />
+                                <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
                             </div>
                         )}
                     </div>
@@ -701,8 +736,9 @@
             );
         });
 
-        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId }) => {
+        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId, activityFilter, onSelectActivityFilter, onSelectDay }) => {
             const sorted = [...events].sort((a,b) => a.startDateTime - b.startDateTime);
+            const touchStartX = useRef(null);
             
             const formatTime = (dt) => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             
@@ -714,20 +750,62 @@
             const status = window.CRAC_SEASON_LOGIC?.getOperatingStatus(selectedDay, activeZoneId);
             const isClosed = status && !status.open;
 
+            // Touch Swipe Left / Right to Change Day
+            const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+            const handleTouchEnd = (e) => {
+                if (touchStartX.current === null) return;
+                const diffX = e.changedTouches[0].clientX - touchStartX.current;
+                if (Math.abs(diffX) > 50) {
+                    if (diffX < 0) { // Swipe Left -> Next Day
+                        const d = new Date(selectedDay); d.setDate(d.getDate() + 1); onSelectDay(d);
+                    } else { // Swipe Right -> Previous Day
+                        const d = new Date(selectedDay); d.setDate(d.getDate() - 1); onSelectDay(d);
+                    }
+                }
+                touchStartX.current = null;
+            };
+
+            const activityOptions = ['All', 'Learn to Swim', 'Aqua Fitness', 'Public Swim', 'School Carnival', 'Lane Hire'];
+
             return (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800">
-                    <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-slate-800">
-                        <div className="flex items-center gap-3 text-slate-800">
+                <div 
+                    onTouchStart={handleTouchStart} 
+                    onTouchEnd={handleTouchEnd}
+                    className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800"
+                >
+                    <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-slate-800">
+                        <div className="flex items-center gap-2 text-slate-800">
                             <div className="bg-blue-100 text-blue-600 p-1.5 rounded-lg text-slate-800">
-                                <Icons.Calendar size={18} />
+                                <Icons.Calendar size={16} />
                             </div>
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-900 text-slate-800">Daily Agenda</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-900">Daily Agenda</span>
                         </div>
-                        <span className="text-xs font-black bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-slate-800">{events.length}</span>
+                        <span className="text-xs font-black bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full">{events.length}</span>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white text-slate-800">
+
+                    {/* Quick Activity Filter Chips ("Can I Swim Right Now?") */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar p-2 bg-slate-50/50 border-b border-slate-100 no-print">
+                        {activityOptions.map(type => {
+                            const isActive = (activityFilter || 'All') === type;
+                            return (
+                                <button
+                                    key={type}
+                                    onClick={() => onSelectActivityFilter && onSelectActivityFilter(type)}
+                                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all ${
+                                        isActive
+                                            ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-200'
+                                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    {type}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-white text-slate-800">
                         {sorted.length > 0 ? (
-                            <div className="space-y-3">
+                            <div className="space-y-2.5">
                                 {sorted.map(event => {
                                     const timeRange = `${formatTime(event.startDateTime)} – ${formatTime(event.endDateTime)}`;
                                     const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
@@ -786,9 +864,11 @@
         const EventModal = ({ event, onClose, eventTypes }) => {
             if (!event) return null;
             return (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 text-slate-800">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        {/* Mobile Handle */}
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
+                        <div className="p-6 text-slate-800 overflow-y-auto">
                             <div className="flex justify-between items-start mb-6 text-slate-800"><div><span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-3" style={{ backgroundColor: (eventTypes[event.type] || '#6b7280') + '25', color: eventTypes[event.type] || '#6b7280' }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{event.title}</h3></div><button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button></div>
                             <div className="space-y-4">
                                 <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Clock size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Range</p><p className="font-black text-slate-800 text-sm">{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} — {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div></div>
@@ -820,9 +900,11 @@
             const timeStr = `${startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
 
             return (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800" onClick={e => e.stopPropagation()}>
-                        <div className="p-6">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        {/* Mobile Handle */}
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
+                        <div className="p-6 overflow-y-auto">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
                                     <span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-widest bg-blue-100 text-blue-700 mb-3">{zone.id}</span>
