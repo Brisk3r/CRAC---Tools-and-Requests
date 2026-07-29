@@ -150,13 +150,19 @@
             const [selectedHourBlock, setSelectedHourBlock] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
             const [activityFilter, setActivityFilter] = useState('All');
-            const [viewMode, setViewMode] = useState('week'); 
+            const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
             const [localZoneTab, setLocalZoneTab] = useState(null);
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
             useEffect(() => {
                 const handleResize = () => {
-                    setIsMobile(window.innerWidth < 768);
+                    const mobile = window.innerWidth < 768;
+                    setIsMobile(mobile);
+                    setViewMode(prev => {
+                        if (mobile && prev === 'week') return 'day';
+                        if (!mobile && prev === 'day') return 'week';
+                        return prev;
+                    });
                 };
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
