@@ -353,8 +353,9 @@
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-3 flex flex-col md:flex-row items-center gap-3 text-slate-800">
                         <div className="flex items-center justify-between w-full md:w-auto gap-3">
                             <div className="flex bg-slate-100 p-1 rounded-lg">
-                                <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
+                                {isMobile && <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>}
                                 <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
+                                <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
                             </div>
 
                             <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
@@ -506,16 +507,22 @@
             }, [selectedDay]);
 
             const displayHours = useMemo(() => {
-                let min = 6, max = 18;
+                let min = 24, max = 0;
                 if (window.YCP_SEASON_LOGIC) {
-                    const limits = window.YCP_SEASON_LOGIC.getDisplayHoursLimits(selectedDay);
-                    min = limits.min; max = limits.max;
+                    daysInWeek.forEach(day => {
+                        const limits = window.YCP_SEASON_LOGIC.getDisplayHoursLimits(day);
+                        if (limits.min < min) min = limits.min;
+                        if (limits.max > max) max = limits.max;
+                    });
+                    if (min === 24) { min = 6; max = 18; }
                 } else if (settings?.openingHours?.length > 0) {
                     min = Math.min(...settings.openingHours.map(h => h.open));
                     max = Math.max(...settings.openingHours.map(h => h.close));
+                } else {
+                    min = 6; max = 18;
                 }
                 const hrs = []; for(let i = min; i < max; i++) hrs.push(i); return hrs;
-            }, [settings, selectedDay]);
+            }, [settings, daysInWeek]);
 
             const zone = settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
             const unitName = zone.id.toLowerCase().includes('program') ? 'Zones' : 'Lanes';
@@ -533,8 +540,8 @@
                             <div className="flex items-center gap-1.5 text-slate-800 text-white"><div className="w-2 h-2 rounded-full bg-red-500 text-white"></div><span className="text-[10px] font-black uppercase text-slate-400">Full</span></div>
                         </div>
                     </div>
-                    <div className="overflow-y-auto overflow-x-hidden custom-scrollbar flex-grow bg-white text-slate-800">
-                        <table className="w-full text-left border-collapse table-fixed min-w-0 w-full text-slate-800">
+                    <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-grow bg-white text-slate-800">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[700px] w-full text-slate-800">
                             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 text-slate-800">
                                 <tr>
                                     <th className="w-20 p-3 text-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-100">Time</th>

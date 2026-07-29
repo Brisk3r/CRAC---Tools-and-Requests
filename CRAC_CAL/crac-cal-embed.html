@@ -484,16 +484,22 @@
             }, [selectedDay]);
 
             const displayHours = useMemo(() => {
-                let min = 6, max = 19;
+                let min = 24, max = 0;
                 if (window.CRAC_SEASON_LOGIC) {
-                    const limits = window.CRAC_SEASON_LOGIC.getDisplayHoursLimits(selectedDay);
-                    min = limits.min; max = limits.max;
+                    daysInWeek.forEach(day => {
+                        const limits = window.CRAC_SEASON_LOGIC.getDisplayHoursLimits(day);
+                        if (limits.min < min) min = limits.min;
+                        if (limits.max > max) max = limits.max;
+                    });
+                    if (min === 24) { min = 6; max = 19; }
                 } else if (settings?.openingHours?.length > 0) {
                     min = Math.min(...settings.openingHours.map(h => h.open));
                     max = Math.max(...settings.openingHours.map(h => h.close));
+                } else {
+                    min = 6; max = 19;
                 }
                 const hrs = []; for(let i = min; i < max; i++) hrs.push(i); return hrs;
-            }, [settings, selectedDay]);
+            }, [settings, daysInWeek]);
 
             const isAllZones = activeZoneId === 'All Zones';
             const zone = isAllZones ? settings.zones[0] : settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
