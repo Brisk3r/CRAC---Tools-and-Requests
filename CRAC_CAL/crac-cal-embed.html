@@ -81,8 +81,16 @@
 
         // --- ICONS COMPONENT ---
         const Icons = {
-            ChevronLeft: ({ size = 20 }) => <i className={`ph ph-caret-left`} style={{ fontSize: size }}></i>,
-            ChevronRight: ({ size = 20 }) => <i className={`ph ph-caret-right`} style={{ fontSize: size }}></i>,
+            ChevronLeft: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            ),
+            ChevronRight: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            ),
             Calendar: ({ size = 20 }) => <i className={`ph ph-calendar-blank`} style={{ fontSize: size }}></i>,
             CalendarBlank: ({ size = 20, className = "" }) => <i className={`ph ph-calendar-blank ${className}`} style={{ fontSize: size }}></i>,
             Clock: ({ size = 20 }) => <i className={`ph ph-clock`} style={{ fontSize: size }}></i>,

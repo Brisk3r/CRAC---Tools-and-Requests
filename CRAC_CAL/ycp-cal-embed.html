@@ -69,8 +69,16 @@
 
         // --- ICONS COMPONENT ---
         const Icons = {
-            ChevronLeft: ({ size = 20 }) => <i className={`ph ph-caret-left`} style={{ fontSize: size }}></i>,
-            ChevronRight: ({ size = 20 }) => <i className={`ph ph-caret-right`} style={{ fontSize: size }}></i>,
+            ChevronLeft: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            ),
+            ChevronRight: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            ),
             Calendar: ({ size = 20 }) => <i className={`ph ph-calendar-blank`} style={{ fontSize: size }}></i>,
             Clock: ({ size = 20 }) => <i className={`ph ph-clock`} style={{ fontSize: size }}></i>,
             MapPin: ({ size = 20 }) => <i className={`ph ph-map-pin`} style={{ fontSize: size }}></i>,
@@ -118,19 +126,13 @@
             const [selectedHourBlock, setSelectedHourBlock] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
             const [activityFilter, setActivityFilter] = useState('All');
-            const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
+            const [viewMode, setViewMode] = useState('week'); 
             const [localZoneTab, setLocalZoneTab] = useState(null);
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
             useEffect(() => {
                 const handleResize = () => {
-                    const mobile = window.innerWidth < 768;
-                    setIsMobile(mobile);
-                    setViewMode(prev => {
-                        if (mobile && prev === 'week') return 'day';
-                        if (!mobile && prev === 'day') return 'week';
-                        return prev;
-                    });
+                    setIsMobile(window.innerWidth < 768);
                 };
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
@@ -328,20 +330,23 @@
                         <div className="flex items-center justify-between w-full md:w-auto gap-3">
                             <div className="flex bg-slate-100 p-1 rounded-lg">
                                 <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
-                                {isMobile ? (
-                                    <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>
-                                ) : (
-                                    <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
-                                )}
+                                <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
                             </div>
 
-                            <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                                <button onClick={() => {
-                                    if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
-                                    else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
-                                    else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
-                                }} className="p-1 text-slate-400 hover:text-cyan-600 transition-colors"><Icons.ChevronLeft size={16} /></button>
-                                <div className="flex flex-col items-center justify-center min-w-[120px]">
+                            <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
+                                <button 
+                                    onClick={() => {
+                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
+                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
+                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
+                                    }} 
+                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
+                                    title="Previous"
+                                >
+                                    <Icons.ChevronLeft size={16} />
+                                </button>
+                                
+                                <div className="flex flex-col items-center justify-center min-w-[120px] px-1">
                                     <span className="text-[12px] font-black uppercase tracking-tight text-slate-900 leading-tight">
                                         {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
                                     </span>
@@ -351,11 +356,18 @@
                                         </span>
                                     )}
                                 </div>
-                                <button onClick={() => {
-                                    if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
-                                    else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
-                                    else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
-                                }} className="p-1 text-slate-400 hover:text-cyan-600 transition-colors"><Icons.ChevronRight size={16} /></button>
+
+                                <button 
+                                    onClick={() => {
+                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
+                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
+                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
+                                    }} 
+                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
+                                    title="Next"
+                                >
+                                    <Icons.ChevronRight size={16} />
+                                </button>
                             </div>
                         </div>
 
@@ -425,21 +437,31 @@
                     </div>
 
                     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[calc(100vh-140px)] lg:h-[650px] text-slate-800">
-                        <div className="lg:col-span-8 overflow-hidden h-full text-slate-800">
-                            {viewMode === 'month' ? (
-                                <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
-                            ) : viewMode === 'day' ? (
-                                <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                        {isMobile ? (
+                            <div className="overflow-hidden h-full text-slate-800">
+                                {viewMode === 'month' ? (
+                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
+                                ) : viewMode === 'day' ? (
+                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                                        <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
+                                    </div>
+                                ) : (
+                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="lg:col-span-8 overflow-hidden h-full text-slate-800">
+                                    {viewMode === 'month' ? (
+                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
+                                    ) : (
+                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
+                                    )}
+                                </div>
+                                <div className="lg:col-span-4 h-full">
                                     <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
                                 </div>
-                            ) : (
-                                <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
-                            )}
-                        </div>
-                        {!isMobile && (
-                            <div className="lg:col-span-4 h-full">
-                                <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
-                            </div>
+                            </>
                         )}
                     </div>
 
