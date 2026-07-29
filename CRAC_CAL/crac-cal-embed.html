@@ -72,11 +72,35 @@
             }
         };
 
-        // --- HELPER: TIMEZONE HANDLING ---
+        // --- HELPER: TIMEZONE & EVENT GROUPING ---
         const getGraftonDate = () => {
             const now = new Date();
             const graftonString = now.toLocaleString("en-US", {timeZone: "Australia/Sydney"});
             return new Date(graftonString);
+        };
+
+        const groupEvents = (rawEvents) => {
+            if (!Array.isArray(rawEvents)) return [];
+            const grouped = [];
+            rawEvents.forEach(e => {
+                const startTs = e.startDateTime?.getTime ? e.startDateTime.getTime() : new Date(e.startDateTime).getTime();
+                const endTs = e.endDateTime?.getTime ? e.endDateTime.getTime() : new Date(e.endDateTime).getTime();
+                const key = `${(e.title || '').trim().toLowerCase()}_${e.type || ''}_${startTs}_${endTs}`;
+                const existing = grouped.find(g => g._groupKey === key);
+                const eZones = Array.isArray(e.zone) ? e.zone : (e.zone ? [e.zone] : []);
+                if (existing) {
+                    eZones.forEach(z => {
+                        if (!existing.zone.includes(z)) existing.zone.push(z);
+                    });
+                } else {
+                    grouped.push({
+                        ...e,
+                        _groupKey: key,
+                        zone: [...eZones]
+                    });
+                }
+            });
+            return grouped;
         };
 
         // --- ICONS COMPONENT ---
@@ -745,7 +769,7 @@
         });
 
         const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId, activityFilter, onSelectActivityFilter, onSelectDay }) => {
-            const sorted = [...events].sort((a,b) => a.startDateTime - b.startDateTime);
+            const sorted = useMemo(() => groupEvents(events).sort((a,b) => a.startDateTime - b.startDateTime), [events]);
             const touchStartX = useRef(null);
             
             const formatTime = (dt) => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -907,6 +931,8 @@
             const endTime = new Date(day); endTime.setHours(hour + 1, 0, 0, 0);
             const timeStr = `${startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
 
+            const displayEvents = useMemo(() => groupEvents(events), [events]);
+
             return (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
                     <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
@@ -931,10 +957,10 @@
                                 </div>
                             </div>
 
-                            {events.length > 0 ? (
+                            {displayEvents.length > 0 ? (
                                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Bookings During This Hour</p>
-                                    {events.map((event, idx) => (
+                                    {displayEvents.map((event, idx) => (
                                         <div key={idx} className="p-3 border border-slate-100 rounded-lg hover:border-slate-300 transition-colors bg-white shadow-sm">
                                             <div className="flex justify-between items-start mb-2">
                                                 <h4 className="font-bold text-slate-800 text-sm">{event.title}</h4>
