@@ -243,7 +243,10 @@
                         let current = new Date(event.startDateTime); current.setHours(0,0,0,0);
                         const end = new Date(event.recurrence.endDate);
                         const startH = event.startDateTime.getHours(), startM = event.startDateTime.getMinutes();
-                        const dur = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        const endH = event.endDateTime.getHours(), endM = event.endDateTime.getMinutes();
+                        let dur = ((endH * 60 + endM) - (startH * 60 + startM)) * 60000;
+                        if (dur <= 0) dur += 24 * 60 * 60 * 1000; // Handle overnight events
+                        
                         while(current <= end) {
                             if (event.recurrence.days.includes(current.toLocaleDateString('en-US', { weekday: 'long' }))) {
                                 const s = new Date(current); s.setHours(startH, startM, 0, 0);

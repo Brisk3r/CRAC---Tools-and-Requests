@@ -368,13 +368,15 @@
                         if (current < startRange) current = new Date(startRange);
 
                         const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
-                        const duration = event.endDateTime.getTime() - event.startDateTime.getTime();
+                        const endTime = { h: event.endDateTime.getHours(), m: event.endDateTime.getMinutes() };
+                        let dur = ((endTime.h * 60 + endTime.m) - (startTime.h * 60 + startTime.m)) * 60000;
+                        if (dur <= 0) dur += 24 * 60 * 60 * 1000; // Handle overnight events
 
                         while(current <= effectiveEnd) {
                             const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
                             if (event.recurrence.days.includes(dayName)) {
                                 const s = new Date(current); s.setHours(startTime.h, startTime.m, 0, 0);
-                                const e = new Date(s.getTime() + duration);
+                                const e = new Date(s.getTime() + dur);
                                 expanded.push({ ...event, startDateTime: s, endDateTime: e, isInstance: true });
                             }
                             current.setDate(current.getDate() + 1);

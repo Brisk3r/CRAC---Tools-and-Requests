@@ -1,43 +1,4 @@
-<!DOCTYPE html>
-<html lang="en-AU">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YCP Zone Availability</title>
-    
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com?version=3.4.4"></script>
-    
-    <!-- React and Firebase Libraries -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.24.5/babel.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web@2.1.0"></script>
 
-    <!-- Season Logic for YCP -->
-    <script src="./ycpSeasonLogic.js"></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
-        .wave-path { animation: waveMove 3s infinite linear; }
-        @keyframes waveMove { 0% { transform: translateX(0); } 100% { transform: translateX(-12px); } }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-900 min-h-screen text-slate-800">
-    <div id="root"></div>
-
-    <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- TRACKING UTILITY ---
@@ -60,49 +21,17 @@
             }
         };
 
-        // --- HELPER: TIMEZONE & EVENT GROUPING ---
+        // --- HELPER: TIMEZONE HANDLING ---
         const getGraftonDate = () => {
             const now = new Date();
             const graftonString = now.toLocaleString("en-US", {timeZone: "Australia/Sydney"});
             return new Date(graftonString);
         };
 
-        const groupEvents = (rawEvents) => {
-            if (!Array.isArray(rawEvents)) return [];
-            const grouped = [];
-            rawEvents.forEach(e => {
-                const startTs = e.startDateTime?.getTime ? e.startDateTime.getTime() : new Date(e.startDateTime).getTime();
-                const endTs = e.endDateTime?.getTime ? e.endDateTime.getTime() : new Date(e.endDateTime).getTime();
-                const key = `${(e.title || '').trim().toLowerCase()}_${e.type || ''}_${startTs}_${endTs}`;
-                const existing = grouped.find(g => g._groupKey === key);
-                const eZones = Array.isArray(e.zone) ? e.zone : (e.zone ? [e.zone] : []);
-                if (existing) {
-                    eZones.forEach(z => {
-                        if (!existing.zone.includes(z)) existing.zone.push(z);
-                    });
-                } else {
-                    grouped.push({
-                        ...e,
-                        _groupKey: key,
-                        zone: [...eZones]
-                    });
-                }
-            });
-            return grouped;
-        };
-
         // --- ICONS COMPONENT ---
         const Icons = {
-            ChevronLeft: ({ size = 20, className = "" }) => (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    <path d="M15 18l-6-6 6-6"/>
-                </svg>
-            ),
-            ChevronRight: ({ size = 20, className = "" }) => (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
-            ),
+            ChevronLeft: ({ size = 20 }) => <i className={`ph ph-caret-left`} style={{ fontSize: size }}></i>,
+            ChevronRight: ({ size = 20 }) => <i className={`ph ph-caret-right`} style={{ fontSize: size }}></i>,
             Calendar: ({ size = 20 }) => <i className={`ph ph-calendar-blank`} style={{ fontSize: size }}></i>,
             Clock: ({ size = 20 }) => <i className={`ph ph-clock`} style={{ fontSize: size }}></i>,
             MapPin: ({ size = 20 }) => <i className={`ph ph-map-pin`} style={{ fontSize: size }}></i>,
@@ -149,24 +78,10 @@
             const [selectedEvent, setSelectedEvent] = useState(null);
             const [selectedHourBlock, setSelectedHourBlock] = useState(null);
             const [zoneFilter, setZoneFilter] = useState('All Zones');
-            const [activityFilter, setActivityFilter] = useState('All');
-            const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
+            const [viewMode, setViewMode] = useState('month'); 
             const [localZoneTab, setLocalZoneTab] = useState(null);
-            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-            useEffect(() => {
-                const handleResize = () => {
-                    const mobile = window.innerWidth < 768;
-                    setIsMobile(mobile);
-                    setViewMode(prev => {
-                        if (mobile && prev === 'week') return 'day';
-                        if (!mobile && prev === 'day') return 'week';
-                        return prev;
-                    });
-                };
-                window.addEventListener('resize', handleResize);
-                return () => window.removeEventListener('resize', handleResize);
-            }, []);
+            const isFirstRender = useRef(true);
 
             const activeZoneId = useMemo(() => {
                 if (localZoneTab) return localZoneTab;
@@ -224,14 +139,11 @@
             const expandedEvents = useMemo(() => {
                 const all = [];
                 events.forEach(event => {
-                    if (event.recurrence && Array.isArray(event.recurrence.days) && event.recurrence.days.length > 0 && event.recurrence.endDate) {
+                    if (event.recurrence && event.recurrence.days && event.recurrence.endDate) {
                         let current = new Date(event.startDateTime); current.setHours(0,0,0,0);
                         const end = new Date(event.recurrence.endDate);
                         const startH = event.startDateTime.getHours(), startM = event.startDateTime.getMinutes();
-                        const endH = event.endDateTime.getHours(), endM = event.endDateTime.getMinutes();
-                        let dur = ((endH * 60 + endM) - (startH * 60 + startM)) * 60000;
-                        if (dur <= 0) dur += 24 * 60 * 60 * 1000; // Handle overnight events
-                        
+                        const dur = event.endDateTime.getTime() - event.startDateTime.getTime();
                         while(current <= end) {
                             if (event.recurrence.days.includes(current.toLocaleDateString('en-US', { weekday: 'long' }))) {
                                 const s = new Date(current); s.setHours(startH, startM, 0, 0);
@@ -277,18 +189,6 @@
 
             const selectedDayEvents = useMemo(() => eventsByDate[selectedDay.toDateString()] || [], [eventsByDate, selectedDay]);
 
-            const filteredDayEvents = useMemo(() => {
-                if (activityFilter === 'All') return selectedDayEvents;
-                return selectedDayEvents.filter(e => e.type === activityFilter);
-            }, [selectedDayEvents, activityFilter]);
-
-            const daysInSelectedWeek = useMemo(() => {
-                const days = []; const start = new Date(selectedDay); const dayNum = start.getDay() === 0 ? 7 : start.getDay();
-                start.setDate(start.getDate() - dayNum + 1);
-                for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
-                return days;
-            }, [selectedDay]);
-
             const zoneForecast = useMemo(() => {
                 if (!settings?.zones) return [];
                 const dayEvents = expandedEvents.filter(e => e.startDateTime.toDateString() === selectedDay.toDateString());
@@ -326,27 +226,10 @@
 
             if (isLoading || !settings) return (
                 <div className="flex items-center justify-center h-[400px] flex-col text-slate-400">
-                    <svg width="60" height="60" viewBox="0 0 120 120" className="mb-4">
-                        <defs>
-                            <path id="water" d="M-60,40 C-45,40 -45,20 -30,20 C-15,20 -15,40 0,40 C15,40 15,20 30,20 C45,20 45,40 60,40 C75,40 75,20 90,20 C105,20 105,40 120,40 V120 H-60 Z" />
-                            <clipPath id="circleClip">
-                                <circle cx="60" cy="60" r="50" />
-                            </clipPath>
-                        </defs>
-                        <circle cx="60" cy="60" r="50" fill="#e0f2fe" />
-                        <g clipPath="url(#circleClip)">
-                            <use href="#water" x="0" y="0" fill="#7dd3fc" opacity="0.6">
-                                <animate attributeName="x" from="0" to="-60" dur="3s" repeatCount="indefinite" />
-                            </use>
-                            <use href="#water" x="-60" y="5" fill="#38bdf8" opacity="0.8">
-                                <animate attributeName="x" from="-60" to="0" dur="2.5s" repeatCount="indefinite" />
-                            </use>
-                            <use href="#water" x="0" y="10" fill="#0ea5e9">
-                                <animate attributeName="x" from="0" to="-60" dur="1.8s" repeatCount="indefinite" />
-                            </use>
-                        </g>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 animate-pulse mb-4">
+                        <path className="wave-path" d="M2 6c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path className="wave-path" d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path className="wave-path" d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
                     </svg>
-                    <p className="text-xs font-black uppercase tracking-widest animate-pulse mt-2 text-cyan-600">Syncing Facility Data...</p>
+                    <p className="text-xs font-black uppercase tracking-widest animate-pulse">Syncing Facility Data...</p>
                 </div>
             );
 
@@ -359,61 +242,32 @@
                         </div>
                     )}
                     {/* Integrated Hub Command Strip - Balanced for Readability */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-3 flex flex-col md:flex-row items-center gap-3 text-slate-800">
-                        <div className="flex flex-col sm:flex-row items-center justify-between w-full md:w-auto gap-3">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-4 flex flex-col md:flex-row items-center gap-4 text-slate-800">
+                        <div className="flex items-center gap-3 border-r border-slate-100 pr-4 mr-1">
                             <div className="flex bg-slate-100 p-1 rounded-lg">
-                                <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
-                                {isMobile ? (
-                                    <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>
-                                ) : (
-                                    <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
-                                <button 
-                                    onClick={() => {
-                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
-                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
-                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
-                                    }} 
-                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
-                                    title="Previous"
-                                >
-                                    <Icons.ChevronLeft size={16} />
-                                </button>
-                                
-                                <div className="flex flex-col items-center justify-center min-w-[120px] px-1">
-                                    <span className="text-[12px] font-black uppercase tracking-tight text-slate-900 leading-tight">
-                                        {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
-                                    </span>
-                                    {window.YCP_SEASON_LOGIC && (
-                                        <span className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${window.YCP_SEASON_LOGIC.getSeason(selectedDay) === 'OFF_PEAK' ? 'text-blue-500' : 'text-amber-600'}`}>
-                                            {window.YCP_SEASON_LOGIC.getSeason(selectedDay) === 'OFF_PEAK' ? 'Off-Peak Season' : 'Winter Closure'}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <button 
-                                    onClick={() => {
-                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
-                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
-                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
-                                    }} 
-                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
-                                    title="Next"
-                                >
-                                    <Icons.ChevronRight size={16} />
-                                </button>
+                                <button onClick={() => setViewMode('month')} className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
+                                <button onClick={() => setViewMode('week')} className={`px-4 py-1.5 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
                             </div>
                         </div>
 
-                        {/* Zone Availability Badges with Visual Capacity Meters */}
-                        <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1">
+                        <div className="flex items-center gap-3 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+                            <button onClick={() => {
+                                if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
+                                else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
+                            }} className="p-1 text-slate-400 hover:text-cyan-600 transition-colors"><Icons.ChevronLeft size={18} /></button>
+                            <span className="text-[13px] font-black uppercase tracking-tight min-w-[140px] text-center text-slate-900">
+                                {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
+                            </span>
+                            <button onClick={() => {
+                                if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
+                                else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
+                            }} className="p-1 text-slate-400 hover:text-cyan-600 transition-colors"><Icons.ChevronRight size={18} /></button>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 flex-grow justify-center md:justify-start">
                             {zoneForecast.filter(z => z.name.toLowerCase().includes('pool')).map(z => {
                                 const isActive = activeZoneId === z.name && viewMode === 'week';
-                                const totalCap = z.total || 1;
-                                const freeCount = Math.max(0, z.free);
+                                const unit = z.name.toLowerCase().includes('program') ? 'Zones' : 'Lanes';
                                 const colors = { 
                                     Good: 'bg-green-50 text-green-800 border-green-200', 
                                     Limited: 'bg-amber-50 text-amber-800 border-amber-200', 
@@ -423,83 +277,34 @@
                                     <button 
                                         key={z.name} 
                                         onClick={() => { setLocalZoneTab(z.name); setViewMode('week'); }}
-                                        className={`px-3 py-1.5 rounded-xl border-2 flex flex-col items-start gap-1 flex-shrink-0 transition-all active:scale-95 ${isActive ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-4 ring-cyan-50' : colors[z.status] + ' hover:bg-white'}`}
+                                        className={`px-4 py-2 rounded-xl border-2 flex items-center gap-3 transition-all active:scale-95 ${isActive ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-4 ring-cyan-50' : colors[z.status] + ' hover:bg-white'}`}
                                     >
-                                        <div className="flex items-center justify-between w-full gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-white shadow-[0_0_8px_white]' : 'bg-current opacity-50'}`}></div>
+                                        <div className="flex flex-col items-start leading-none text-left">
                                             <span className="text-[11px] font-black uppercase tracking-tight">{z.name}</span>
-                                            <span className={`text-[10px] font-bold ${isActive ? 'text-cyan-100' : 'text-slate-500'}`}>{freeCount}/{totalCap} Free</span>
-                                        </div>
-                                        {/* Visual Capacity Meter */}
-                                        <div className="flex gap-0.5 w-full min-w-[70px]">
-                                            {Array.from({ length: Math.min(totalCap, 8) }).map((_, i) => (
-                                                <div 
-                                                    key={i} 
-                                                    className={`h-1 flex-1 rounded-full ${
-                                                        i < freeCount 
-                                                            ? (isActive ? 'bg-emerald-300' : 'bg-green-500') 
-                                                            : (isActive ? 'bg-cyan-300' : 'bg-slate-300')
-                                                    }`}
-                                                />
-                                            ))}
+                                            <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'text-cyan-100' : 'text-slate-500'}`}>{z.free} {unit} Free</span>
                                         </div>
                                     </button>
                                 );
                             })}
                         </div>
-                    </div>
 
-                    {/* 7-Day Horizontal Date Selector Carousel (Mobile/Touch Friendly) */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 mb-4 flex gap-1.5 overflow-x-auto custom-scrollbar no-print">
-                        {daysInSelectedWeek.map(day => {
-                            const isSelected = day.toDateString() === selectedDay.toDateString();
-                            const isToday = day.toDateString() === getGraftonDate().toDateString();
-                            return (
-                                <button
-                                    key={day.toISOString()}
-                                    onClick={() => setSelectedDay(day)}
-                                    className={`flex-1 min-w-[50px] py-2 px-1 rounded-lg flex flex-col items-center justify-center transition-all border ${
-                                        isSelected
-                                            ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-2 ring-cyan-200'
-                                            : isToday
-                                            ? 'bg-cyan-50 text-cyan-800 border-cyan-200 font-bold'
-                                            : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
-                                    }`}
-                                >
-                                    <span className="text-[9px] font-black uppercase tracking-widest">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</span>
-                                    <span className="text-sm font-black leading-none mt-1">{day.getDate()}</span>
-                                    {isToday && <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-cyan-600'}`}></span>}
-                                </button>
-                            );
-                        })}
+                        <select value={zoneFilter} onChange={e => { setZoneFilter(e.target.value); setLocalZoneTab(null); }} className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-black uppercase tracking-tight outline-none focus:ring-2 focus:ring-cyan-500/20 text-slate-700 cursor-pointer min-w-[140px]">
+                            {allZonesFlat.map(z => <option key={z} value={z}>{z}</option>)}
+                        </select>
                     </div>
 
                     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[calc(100vh-140px)] lg:h-[650px] text-slate-800">
-                        {isMobile ? (
-                            <div className="overflow-hidden h-full text-slate-800">
-                                {viewMode === 'month' ? (
-                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
-                                ) : viewMode === 'day' ? (
-                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                                        <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
-                                    </div>
-                                ) : (
-                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
-                                )}
-                            </div>
-                        ) : (
-                            <>
-                                <div className="lg:col-span-8 overflow-hidden h-full text-slate-800">
-                                    {viewMode === 'month' ? (
-                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
-                                    ) : (
-                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
-                                    )}
-                                </div>
-                                <div className="lg:col-span-4 h-full">
-                                    <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
-                                </div>
-                            </>
-                        )}
+                        <div className="lg:col-span-8 overflow-hidden h-full text-slate-800">
+                            {viewMode === 'month' ? (
+                                <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
+                            ) : (
+                                <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
+                            )}
+                        </div>
+                        <div className="lg:col-span-4 h-full">
+                            <DailyAgendaPanel selectedDay={selectedDay} events={selectedDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} />
+                        </div>
                     </div>
 
                     {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} eventTypes={settings.eventTypes} />}
@@ -519,22 +324,16 @@
             }, [selectedDay]);
 
             const displayHours = useMemo(() => {
-                let min = 24, max = 0;
+                let min = 6, max = 18;
                 if (window.YCP_SEASON_LOGIC) {
-                    daysInWeek.forEach(day => {
-                        const limits = window.YCP_SEASON_LOGIC.getDisplayHoursLimits(day);
-                        if (limits.min < min) min = limits.min;
-                        if (limits.max > max) max = limits.max;
-                    });
-                    if (min === 24) { min = 6; max = 18; }
+                    const limits = window.YCP_SEASON_LOGIC.getDisplayHoursLimits(selectedDay);
+                    min = limits.min; max = limits.max;
                 } else if (settings?.openingHours?.length > 0) {
                     min = Math.min(...settings.openingHours.map(h => h.open));
                     max = Math.max(...settings.openingHours.map(h => h.close));
-                } else {
-                    min = 6; max = 18;
                 }
                 const hrs = []; for(let i = min; i < max; i++) hrs.push(i); return hrs;
-            }, [settings, daysInWeek]);
+            }, [settings, selectedDay]);
 
             const zone = settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
             const unitName = zone.id.toLowerCase().includes('program') ? 'Zones' : 'Lanes';
@@ -552,8 +351,8 @@
                             <div className="flex items-center gap-1.5 text-slate-800 text-white"><div className="w-2 h-2 rounded-full bg-red-500 text-white"></div><span className="text-[10px] font-black uppercase text-slate-400">Full</span></div>
                         </div>
                     </div>
-                    <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-grow bg-white text-slate-800">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[700px] lg:min-w-0 w-full text-slate-800">
+                    <div className="overflow-y-auto overflow-x-hidden custom-scrollbar flex-grow bg-white text-slate-800">
+                        <table className="w-full text-left border-collapse table-fixed min-w-0 w-full text-slate-800">
                             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 text-slate-800">
                                 <tr>
                                     <th className="w-20 p-3 text-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-100">Time</th>
@@ -683,9 +482,8 @@
             );
         };
 
-        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId, activityFilter, onSelectActivityFilter, onSelectDay }) => {
-            const sorted = useMemo(() => groupEvents(events).sort((a,b) => a.startDateTime - b.startDateTime), [events]);
-            const touchStartX = useRef(null);
+        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes }) => {
+            const sorted = [...events].sort((a,b) => a.startDateTime - b.startDateTime);
             
             const formatTime = (dt) => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             
@@ -694,110 +492,56 @@
                 return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
             };
 
-            const status = window.YCP_SEASON_LOGIC?.getOperatingStatus(selectedDay, activeZoneId);
-            const isClosed = status && !status.open;
-
-            // Touch Swipe Left / Right to Change Day
-            const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-            const handleTouchEnd = (e) => {
-                if (touchStartX.current === null) return;
-                const diffX = e.changedTouches[0].clientX - touchStartX.current;
-                if (Math.abs(diffX) > 50) {
-                    if (diffX < 0) { // Swipe Left -> Next Day
-                        const d = new Date(selectedDay); d.setDate(d.getDate() + 1); onSelectDay(d);
-                    } else { // Swipe Right -> Previous Day
-                        const d = new Date(selectedDay); d.setDate(d.getDate() - 1); onSelectDay(d);
-                    }
-                }
-                touchStartX.current = null;
-            };
-
-            const activityOptions = ['All', 'Learn to Swim', 'Aqua Fitness', 'Public Swim', 'School Carnival', 'Lane Hire'];
-
             return (
-                <div 
-                    onTouchStart={handleTouchStart} 
-                    onTouchEnd={handleTouchEnd}
-                    className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800"
-                >
-                    <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-slate-800">
-                        <div className="flex items-center gap-2 text-slate-800">
-                            <div className="bg-cyan-100 text-cyan-600 p-1.5 rounded-lg text-slate-800">
-                                <Icons.Calendar size={16} />
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-slate-800">
+                        <div className="flex items-center gap-3 text-slate-800">
+                            <div className="bg-blue-100 text-blue-600 p-1.5 rounded-lg text-slate-800">
+                                <Icons.Calendar size={18} />
                             </div>
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-900">Daily Agenda</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-900 text-slate-800">Daily Agenda</span>
                         </div>
-                        <span className="text-xs font-black bg-cyan-100 text-cyan-700 px-2.5 py-0.5 rounded-full">{events.length}</span>
+                        <span className="text-xs font-black bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-slate-800">{events.length}</span>
                     </div>
-
-                    {/* Quick Activity Filter Chips ("Can I Swim Right Now?") */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar p-2 bg-slate-50/50 border-b border-slate-100 no-print">
-                        {activityOptions.map(type => {
-                            const isActive = (activityFilter || 'All') === type;
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-white text-slate-800">
+                        {sorted.length > 0 ? sorted.map(event => {
+                            const timeRange = `${formatTime(event.startDateTime)} – ${formatTime(event.endDateTime)}`;
+                            const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
+                            
                             return (
-                                <button
-                                    key={type}
-                                    onClick={() => onSelectActivityFilter && onSelectActivityFilter(type)}
-                                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all ${
-                                        isActive
-                                            ? 'bg-cyan-600 text-white shadow-sm ring-2 ring-cyan-200'
-                                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                                    }`}
-                                >
-                                    {type}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-white text-slate-800">
-                        {sorted.length > 0 ? (
-                            <div className="space-y-2.5">
-                                {sorted.map(event => {
-                                    const timeRange = `${formatTime(event.startDateTime)} – ${formatTime(event.endDateTime)}`;
-                                    const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
-                                    
-                                    return (
-                                        <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-xl border border-slate-100 hover:border-cyan-200 hover:shadow-md transition-all cursor-pointer bg-white text-slate-800">
-                                            <div className="flex items-start gap-3 text-slate-800">
-                                                <div className="w-1.5 self-stretch rounded-full flex-shrink-0 text-slate-800" style={{ backgroundColor: eventTypes[event.type] || '#9CA3AF' }}></div>
-                                                <div className="flex-1 min-w-0 text-slate-800">
-                                                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                                                        <span className="inline-block px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-wider" style={{ backgroundColor: (eventTypes[event.type] || '#6B7280') + '25', color: eventTypes[event.type] || '#6B7280' }}>
-                                                            {event.type}
-                                                        </span>
-                                                    </div>
-                                                    <p className="font-black text-slate-800 truncate group-hover:text-cyan-600 transition-colors text-xs uppercase tracking-tight leading-tight text-slate-800">{event.title}</p>
-                                                    
-                                                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 text-slate-800 mt-2">
-                                                        <Icons.Clock size={12} />
-                                                        <span>{timeRange}</span>
-                                                    </div>
-                                                    
-                                                    {zonesList && (
-                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 text-slate-800 mt-1">
-                                                            <Icons.MapPin size={11} />
-                                                            <span className="truncate">{zonesList}</span>
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {event.description && (
-                                                        <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed italic border-t border-slate-50 pt-1 text-slate-800">
-                                                            {truncateText(event.description, 80)}
-                                                        </p>
-                                                    )}
-                                                </div>
+                                <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer bg-white text-slate-800">
+                                    <div className="flex items-start gap-3 text-slate-800">
+                                        <div className="w-1.5 self-stretch rounded-full flex-shrink-0 text-slate-800" style={{ backgroundColor: eventTypes[event.type] || '#9CA3AF' }}></div>
+                                        <div className="flex-1 min-w-0 text-slate-800">
+                                            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                                                <span className="inline-block px-1.5 py-0.5 text-[9px] font-black rounded text-white uppercase tracking-wider" style={{ backgroundColor: eventTypes[event.type] || '#6B7280' }}>
+                                                    {event.type}
+                                                </span>
                                             </div>
+                                            <p className="font-black text-slate-800 truncate group-hover:text-blue-600 transition-colors text-xs uppercase tracking-tight leading-tight text-slate-800">{event.title}</p>
+                                            
+                                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 text-slate-800 mt-2">
+                                                <Icons.Clock size={12} />
+                                                <span>{timeRange}</span>
+                                            </div>
+                                            
+                                            {zonesList && (
+                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 text-slate-800 mt-1">
+                                                    <Icons.MapPin size={11} />
+                                                    <span className="truncate">{zonesList}</span>
+                                                </div>
+                                            )}
+                                            
+                                            {event.description && (
+                                                <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed italic border-t border-slate-50 pt-1 text-slate-800">
+                                                    {truncateText(event.description, 80)}
+                                                </p>
+                                            )}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        ) : isClosed ? (
-                            <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400">
-                                <Icons.LockKey size={48} className="mb-4 text-slate-200" />
-                                <p className="text-sm font-bold uppercase tracking-widest text-slate-400 text-center">{status.reason || 'Closed'}</p>
-                            </div>
-                        ) : (
+                                    </div>
+                                </div>
+                            );
+                        }) : (
                             <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-30 text-slate-800">
                                 <Icons.CheckCircle size={48} className="text-slate-300" />
                                 <p className="text-xs font-black uppercase tracking-[0.2em] mt-4 text-slate-800">Clear Schedule</p>
@@ -811,19 +555,17 @@
         const EventModal = ({ event, onClose, eventTypes }) => {
             if (!event) return null;
             return (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        {/* Mobile Pull Handle */}
-                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
-                        <div className="p-6 text-slate-800 overflow-y-auto">
-                            <div className="flex justify-between items-start mb-6 text-slate-800"><div><span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-3" style={{ backgroundColor: (eventTypes[event.type] || '#6b7280') + '25', color: eventTypes[event.type] || '#6b7280' }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{event.title}</h3></div><button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button></div>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Clock size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Range</p><p className="font-black text-slate-800 text-sm">{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} — {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div></div>
-                                <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.MapPin size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assigned Zones</p><div className="flex flex-wrap gap-1 mt-1">{Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{z}</span>) : <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{event.zone}</span>}</div></div></div>
-                                {event.description && <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Info size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Schedule Notes</p><p className="text-slate-600 text-xs leading-relaxed font-medium">{event.description}</p></div></div>}
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in text-slate-800" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 text-slate-800">
+                            <div className="flex justify-between items-start mb-6 text-slate-800 text-slate-800"><div><span className="inline-block px-2.5 py-0.5 text-[10px] font-black rounded-full text-white uppercase tracking-[0.2em] mb-3 text-slate-800" style={{ backgroundColor: eventTypes[event.type] || '#6b7280' }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight text-slate-800">{event.title}</h3></div><button onClick={onClose} className="text-gray-400 hover:text-slate-600 transition-colors text-slate-800"><Icons.X size={24} /></button></div>
+                            <div className="space-y-4 text-slate-800">
+                                <div className="flex items-start gap-4 text-slate-800"><div className="bg-slate-50 p-2 rounded-lg text-slate-400 text-slate-800"><Icons.Clock size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-slate-800">Time Range</p><p className="font-black text-slate-800 text-sm text-slate-800">{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} — {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div></div>
+                                <div className="flex items-start gap-4 text-slate-800"><div className="bg-slate-50 p-2 rounded-lg text-slate-400 text-slate-800"><Icons.MapPin size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-slate-800">Assigned Zones</p><div className="flex flex-wrap gap-1 mt-1 text-slate-800">{Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter text-slate-800">{z}</span>) : <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter text-slate-800">{event.zone}</span>}</div></div></div>
+                                {event.description && <div className="flex items-start gap-4 text-slate-800"><div className="bg-slate-50 p-2 rounded-lg text-slate-400 text-slate-800"><Icons.Info size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-slate-800 text-slate-800">Schedule Notes</p><p className="text-slate-600 text-xs leading-relaxed font-medium text-slate-800">{event.description}</p></div></div>}
                             </div>
                         </div>
-                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-right"><button onClick={onClose} className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm">Dismiss</button></div>
+                        <div className="bg-gray-50 px-6 py-4 border-t border-slate-100 text-right text-slate-800"><button onClick={onClose} className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm text-slate-800">Dismiss</button></div>
                     </div>
                 </div>
             );
@@ -847,17 +589,13 @@
             const endTime = new Date(day); endTime.setHours(hour + 1, 0, 0, 0);
             const timeStr = `${startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
 
-            const displayEvents = useMemo(() => groupEvents(events), [events]);
-
             return (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        {/* Mobile Pull Handle */}
-                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
-                        <div className="p-6 overflow-y-auto">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800" onClick={e => e.stopPropagation()}>
+                        <div className="p-6">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-widest bg-cyan-100 text-cyan-700 mb-3">{zone.id}</span>
+                                    <span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-widest bg-blue-100 text-blue-700 mb-3">{zone.id}</span>
                                     <h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{timeStr}</h3>
                                 </div>
                                 <button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button>
@@ -873,10 +611,10 @@
                                 </div>
                             </div>
 
-                            {displayEvents.length > 0 ? (
+                            {events.length > 0 ? (
                                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Bookings During This Hour</p>
-                                    {displayEvents.map((event, idx) => (
+                                    {events.map((event, idx) => (
                                         <div key={idx} className="p-3 border border-slate-100 rounded-lg hover:border-slate-300 transition-colors bg-white shadow-sm">
                                             <div className="flex justify-between items-start mb-2">
                                                 <h4 className="font-bold text-slate-800 text-sm">{event.title}</h4>
@@ -907,6 +645,4 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-    </script>
-</body>
-</html>
+    
