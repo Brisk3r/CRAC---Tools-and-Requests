@@ -311,9 +311,16 @@
                                 if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
                                 else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
                             }} className="p-1 text-slate-400 hover:text-cyan-600 transition-colors"><Icons.ChevronLeft size={18} /></button>
-                            <span className="text-[13px] font-black uppercase tracking-tight min-w-[140px] text-center text-slate-900">
-                                {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
-                            </span>
+                            <div className="flex flex-col items-center justify-center min-w-[140px]">
+                                <span className="text-[13px] font-black uppercase tracking-tight text-slate-900 leading-tight">
+                                    {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
+                                </span>
+                                {window.YCP_SEASON_LOGIC && (
+                                    <span className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${window.YCP_SEASON_LOGIC.getSeason(selectedDay) === 'OFF_PEAK' ? 'text-blue-500' : 'text-amber-600'}`}>
+                                        {window.YCP_SEASON_LOGIC.getSeason(selectedDay) === 'OFF_PEAK' ? 'Off-Peak Season' : 'Winter Closure'}
+                                    </span>
+                                )}
+                            </div>
                             <button onClick={() => {
                                 if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
                                 else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }

@@ -1,7 +1,7 @@
 window.YCP_SEASON_LOGIC = {
-    // Current Global Status - Off Season
-    isTemporarilyClosed: true,
-    tempClosedMessage: "Temporarily Closed - opening in August *subject to change*",
+    // Re-opening date: 10 August 2026
+    reopenDate: new Date(2026, 7, 10), // 10 August 2026
+    tempClosedMessage: "Closed for Winter - Reopening 10 August",
 
     // Known closed holidays for YCP
     closedHolidays: [
@@ -14,8 +14,16 @@ window.YCP_SEASON_LOGIC = {
         return this.closedHolidays.some(h => h.month === date.getMonth() + 1 && h.date === date.getDate());
     },
 
+    getSeason(date) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        if (d < this.reopenDate) return 'WINTER_CLOSED';
+        return 'OFF_PEAK';
+    },
+
     getOperatingStatus(date, zoneStr = 'all') {
-        if (this.isTemporarilyClosed) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+        if (d < this.reopenDate) {
             return { open: false, reason: this.tempClosedMessage };
         }
 
