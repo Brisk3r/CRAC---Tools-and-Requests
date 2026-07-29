@@ -32,17 +32,14 @@ window.YCP_SEASON_LOGIC = {
         const day = date.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
 
         let openHour = 6;
-        let closeHour = 18; // 6pm
+        let closeHour = 13; // 1pm
 
-        if (day === 0) { // Sunday
+        if (day === 0 || day === 6) { // Weekends (Sat & Sun)
             openHour = 10;
-            closeHour = 16;
-        } else if (day === 6) { // Saturday
-            openHour = 8;
-            closeHour = 17;
+            closeHour = 14; // 2pm
         } else { // Monday - Friday
             openHour = 6;
-            closeHour = 18;
+            closeHour = 13; // 1pm
         }
 
         return { open: true, openHour, closeHour };
