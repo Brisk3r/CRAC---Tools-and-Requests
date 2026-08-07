@@ -194,8 +194,17 @@
 
             useEffect(() => {
                 if (!db) return;
-                const unsub = db.collection('calendar_settings').doc('main_config')
-                    .onSnapshot(doc => { if (doc.exists) setSettings(doc.data()); }, err => console.error(err));
+                const unsub = db.collection('calendar_settings').doc('ycp_config')
+                    .onSnapshot(doc => { 
+                        if (doc.exists) { 
+                            setSettings(doc.data()); 
+                        } else { 
+                            setSettings(YCP_DEFAULTS); 
+                        } 
+                    }, err => { 
+                        console.error(err); 
+                        setSettings(YCP_DEFAULTS); 
+                    });
                 return () => unsub();
             }, []);
 

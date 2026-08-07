@@ -259,10 +259,10 @@
                     }
                 };
 
-                const unsubSettings = db.collection(paths.settings).doc('main_config').onSnapshot(doc => {
+                const unsubSettings = db.collection(paths.settings).doc('ycp_config').onSnapshot(doc => {
                     // CRITICAL: Prefer DB data. Only if null do we consider defaults logic later in renders.
                     if (doc.exists) { setSettings(doc.data()); } 
-                    else { setSettings(null); }
+                    else { setSettings(YCP_DEFAULTS); }
                     settingsLoaded = true; checkLoading();
                 }, err => {
                     console.error("Settings Error:", err);
@@ -295,7 +295,7 @@
 
             const initializeDatabase = async () => {
                 if (!window.confirm("Initialize database with YCP default settings?")) return;
-                try { await db.collection(paths.settings).doc('main_config').set(YCP_DEFAULTS); } 
+                try { await db.collection(paths.settings).doc('ycp_config').set(YCP_DEFAULTS); } 
                 catch(err) { alert("Initialization failed: " + err.message); }
             };
 
@@ -339,7 +339,7 @@
             };
 
             const handleSaveSettings = async (newSettings) => {
-                try { await db.collection(paths.settings).doc('main_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
+                try { await db.collection(paths.settings).doc('ycp_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
             };
 
             // --- RECURRENCE EXPANSION (For Calendar View) ---
