@@ -71,10 +71,7 @@
         // These are ONLY used if the database returns null (first-time init)
         const YCP_DEFAULTS = { 
             zones: [ 
-                { id: '25m Pool', children: Array.from({length: 6}, (_, i) => ({id: `Lane ${i+1}`})) }, 
-                { id: 'Leisure Pool', children: [] }, 
-                { id: 'Splash Pad', children: [] }, 
-                { id: 'Community Room', children: [] } 
+                { id: '25m Pool', children: Array.from({length: 6}, (_, i) => ({id: `Lane ${i+1}`})) }
             ], 
             eventTypes: { 
                 'Learn to Swim': '#3B82F6', 
