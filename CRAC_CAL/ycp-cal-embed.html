@@ -230,7 +230,7 @@
 
             useEffect(() => {
                 if (!user || !db) return;
-                const unsub = db.collection('calendar_events').onSnapshot(snapshot => {
+                const unsub = db.collection('ycp_calendar_events').onSnapshot(snapshot => {
                     const fetched = snapshot.docs
                         .map(doc => {
                             const data = doc.data();
