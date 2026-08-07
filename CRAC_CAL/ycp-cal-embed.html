@@ -40,6 +40,29 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
+        // --- YCP DEFAULTS ---
+        const YCP_DEFAULTS = { 
+            zones: [ 
+                { id: '25m Pool', children: Array.from({length: 6}, (_, i) => ({id: `Lane ${i+1}`})) }, 
+                { id: 'Leisure Pool', children: [] }, 
+                { id: 'Splash Pad', children: [] }, 
+                { id: 'Community Room', children: [] } 
+            ], 
+            eventTypes: { 
+                'Learn to Swim': '#3B82F6', 
+                'Aqua Fitness': '#10B981', 
+                'Public Swim': '#F59E0B', 
+                'School Carnival': '#EF4444', 
+                'Lane Hire': '#8B5CF6' 
+            },
+            openingHours: [ 
+                {day: 'Monday', open: 6, close: 18}, {day: 'Tuesday', open: 6, close: 18}, 
+                {day: 'Wednesday', open: 6, close: 18}, {day: 'Thursday', open: 6, close: 18}, 
+                {day: 'Friday', open: 6, close: 18}, {day: 'Saturday', open: 8, close: 17}, 
+                {day: 'Sunday', open: 9, close: 16} 
+            ]
+        };
+
         // --- TRACKING UTILITY ---
         const SESSION_ID = Math.random().toString(36).substring(2, 15);
         const trackEvent = async (action, label = null, data = {}) => {
@@ -193,7 +216,7 @@
             }, []);
 
             useEffect(() => {
-                if (!db) return;
+                if (!user || !db) return;
                 const unsub = db.collection('calendar_settings').doc('ycp_config')
                     .onSnapshot(doc => { 
                         if (doc.exists) { 
@@ -206,7 +229,7 @@
                         setSettings(YCP_DEFAULTS); 
                     });
                 return () => unsub();
-            }, []);
+            }, [user]);
 
             useEffect(() => {
                 if (!user || !db) return;
