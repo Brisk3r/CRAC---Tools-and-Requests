@@ -143,24 +143,6 @@
                                 </div>
                                 <div><p class="uppercase tracking-tight">Timesheet Tool</p><p class="text-[9px] font-normal opacity-60">Penalty hour calc</p></div>
                             </a>
-                            <a href="${rootPath}LapTracker/index.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
-                                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
-                                    <i class="ph-duotone ph-swimmer text-lg"></i>
-                                </div>
-                                <div><p class="uppercase tracking-tight">Lap Challenge</p><p class="text-[9px] font-normal opacity-60">Map & submissions</p></div>
-                            </a>
-                            <a href="${rootPath}LapTracker/lap_tracker_admin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
-                                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
-                                    <i class="ph-duotone ph-shield-check text-lg"></i>
-                                </div>
-                                <div><p class="uppercase tracking-tight">Lap Admin</p><p class="text-[9px] font-normal opacity-60">Approvals & entry</p></div>
-                            </a>
-                            <a href="${rootPath}LapTracker/LED_Sign_Readout.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
-                                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 dark:bg-blue-900/40">
-                                    <i class="ph-duotone ph-monitor-play text-lg"></i>
-                                </div>
-                                <div><p class="uppercase tracking-tight">LED Readout</p><p class="text-[9px] font-normal opacity-60">Progress ticker</p></div>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -188,9 +170,15 @@
                             </a>
                             <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
+                                    <i class="ph-duotone ph-link-simple text-lg"></i>
+                                </div>
+                                <div><p class="uppercase tracking-tight">UTM Link Generator</p><p class="text-[9px] font-normal opacity-60">Tracked campaign links</p></div>
+                            </a>
+                            <a href="${rootPath}QRCodeGenerator.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
+                                <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
                                     <i class="ph-duotone ph-qr-code text-lg"></i>
                                 </div>
-                                <div><p class="uppercase tracking-tight">UTM & QR Builder</p><p class="text-[9px] font-normal opacity-60">Tracked marketing links</p></div>
+                                <div><p class="uppercase tracking-tight">QR Code Generator</p><p class="text-[9px] font-normal opacity-60">Custom branded QR codes</p></div>
                             </a>
                             <a href="${rootPath}ShortenerAdmin.html" class="flex items-center gap-3 p-2.5 text-xs font-bold text-slate-600 hover:bg-pink-50 hover:text-pink-600 rounded-xl transition-colors dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-500 focus:outline-none">
                                 <div class="w-9 h-9 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 dark:bg-pink-900/40">
@@ -379,15 +367,6 @@
                                 <a href="${rootPath}WeekendTimesheetCalculator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                                     <i class="ph-duotone ph-clock text-blue-500 text-xl"></i> Timesheet Tool
                                 </a>
-                                <a href="${rootPath}LapTracker/index.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                                    <i class="ph-duotone ph-swimmer text-blue-500 text-xl"></i> Lap Challenge
-                                </a>
-                                <a href="${rootPath}LapTracker/lap_tracker_admin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                                    <i class="ph-duotone ph-shield-check text-blue-500 text-xl"></i> Lap Admin
-                                </a>
-                                <a href="${rootPath}LapTracker/LED_Sign_Readout.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                                    <i class="ph-duotone ph-monitor-play text-blue-500 text-xl"></i> LED Readout
-                                </a>
                             </div>
                         </div>
                         <div>
@@ -400,7 +379,10 @@
                                     <i class="ph-duotone ph-warning-octagon text-pink-500 text-xl"></i> A4 Sign Generator
                                 </a>
                                 <a href="${rootPath}UTMLinkGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                                    <i class="ph-duotone ph-qr-code text-pink-500 text-xl"></i> UTM & QR Builder
+                                    <i class="ph-duotone ph-link-simple text-pink-500 text-xl"></i> UTM Link Generator
+                                </a>
+                                <a href="${rootPath}QRCodeGenerator.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                                    <i class="ph-duotone ph-qr-code text-pink-500 text-xl"></i> QR Code Generator
                                 </a>
                                 <a href="${rootPath}ShortenerAdmin.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                                     <i class="ph-duotone ph-link text-pink-500 text-xl"></i> Short Links
