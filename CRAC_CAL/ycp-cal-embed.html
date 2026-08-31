@@ -425,11 +425,16 @@
                                     <span className="text-[12px] font-black uppercase tracking-tight text-slate-900 leading-tight">
                                         {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
                                     </span>
-                                    {window.YCP_SEASON_LOGIC && (
-                                        <span className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${window.YCP_SEASON_LOGIC.getSeason(selectedDay) === 'OFF_PEAK' ? 'text-blue-500' : 'text-amber-600'}`}>
-                                            {window.YCP_SEASON_LOGIC.getSeason(selectedDay) === 'OFF_PEAK' ? 'Off-Peak Season' : 'Winter Closure'}
-                                        </span>
-                                    )}
+                                    {window.YCP_SEASON_LOGIC && (() => {
+                                        const s = window.YCP_SEASON_LOGIC.getSeason(selectedDay);
+                                        const isFull = s === 'FULL_SEASON';
+                                        const isOff = s === 'OFF_PEAK';
+                                        return (
+                                            <span className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${isFull ? 'text-emerald-600' : isOff ? 'text-blue-500' : 'text-amber-600'}`}>
+                                                {isFull ? 'Full Season' : isOff ? 'Off-Season' : 'Winter Closure'}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
 
                                 <button 
