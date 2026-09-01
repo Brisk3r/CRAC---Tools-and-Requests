@@ -1,19 +1,21 @@
 window.CRAC_SEASON_LOGIC = {
-    // Known closed holidays for CRAC
+    // Known closed holidays for CRAC (as per official Centre Hours)
     closedHolidays: [
-        { month: 12, date: 25 }, // Christmas
+        { month: 12, date: 25 }, // Christmas Day
         { month: 12, date: 26 }, // Boxing Day
-        { month: 4, date: 3 }, // Good Friday 2026 (Apr 3)
-        { month: 4, date: 5 }, // Easter Sunday 2026 (Apr 5)
-        { month: 4, date: 25 } // Anzac Day (Apr 25)
+        { month: 4, date: 3 },   // Good Friday 2026 (Apr 3)
+        { month: 4, date: 5 },   // Easter Sunday 2026 (Apr 5)
+        { month: 4, date: 25 },  // Anzac Day (Apr 25)
+        { month: 6, date: 8 }    // June Long Weekend Public Holiday (King's Birthday 2026)
     ],
-    // Known open holidays
+
+    // Known open holidays (operate on Sunday & Public Holiday hours)
     openHolidays: [
-        { month: 6, date: 8 }, // June Long Weekend (Mon Jun 8 2026)
-        { month: 10, date: 5 }, // Oct Long Weekend (Mon Oct 5 2026)
-        { month: 1, date: 26 } // Australia Day
+        { month: 1, date: 26 },  // Australia Day
+        { month: 10, date: 5 }   // October Long Weekend / Labour Day 2026
     ],
-    // NSW School Holidays (approx for 2026/2027 based on standard dates)
+
+    // NSW School Holidays (approx for 2026/2027 based on standard NSW Department of Education dates)
     nswSchoolHolidays: [
         { start: new Date('2026-04-13'), end: new Date('2026-04-24') },
         { start: new Date('2026-07-06'), end: new Date('2026-07-17') },
@@ -35,8 +37,10 @@ window.CRAC_SEASON_LOGIC = {
 
     getSeason(date) {
         const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const offPeak = new Date(date.getFullYear(), 5, 6); // Jun 6
-        const regular = new Date(date.getFullYear(), 8, 7); // Sep 7
+        // Off-Peak Season: Starts Friday, 5 June 2026
+        // Regular Season: Starts Monday, 7 September 2026
+        const offPeak = new Date(date.getFullYear(), 5, 5); // June 5
+        const regular = new Date(date.getFullYear(), 8, 7); // September 7
         
         if (d >= offPeak && d < regular) return 'OFF_PEAK';
         return 'REGULAR';
@@ -48,61 +52,79 @@ window.CRAC_SEASON_LOGIC = {
         const isPH = this.isOpenHoliday(date);
         const season = this.getSeason(date);
         const day = date.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
-        const isWeekendOrPH = (day === 0 || day === 6 || isPH);
         const isSundayOrPH = (day === 0 || isPH);
         const isSaturday = (day === 6 && !isPH);
 
-        let openHour = 5;
-        let closeHour = 19; // Default weekday
+        let openHour = 5.5; // Default weekday 5:30 am
+        let closeHour = 19;  // Default weekday 7:00 pm
 
         if (season === 'OFF_PEAK') {
-            if (isSaturday) { openHour = 7; closeHour = 18; }
-            else if (isSundayOrPH) { openHour = 8; closeHour = 16; }
-            else { openHour = 5; closeHour = 19; } 
+            // Off-Peak Season:
+            // Monday to Friday: 5:30 am - 7:00 pm
+            // Saturday: 7:00 am - 6:00 pm
+            // Sunday & Public Holidays: 8:00 am - 4:00 pm
+            if (isSaturday) { 
+                openHour = 7; 
+                closeHour = 18; 
+            } else if (isSundayOrPH) { 
+                openHour = 8; 
+                closeHour = 16; 
+            } else { 
+                openHour = 5.5; 
+                closeHour = 19; 
+            }
         } else {
-            if (isSaturday) { openHour = 7; closeHour = 19; } // Assume normal Saturday
-            else if (isSundayOrPH) { openHour = 8; closeHour = 18; }
-            else { openHour = 5; closeHour = 19; }
+            // Regular Season:
+            // Monday to Friday: 5:30 am - 7:00 pm
+            // Saturday: 7:00 am - 7:00 pm
+            // Sunday & Public Holidays: 8:00 am - 6:00 pm
+            if (isSaturday) { 
+                openHour = 7; 
+                closeHour = 19; 
+            } else if (isSundayOrPH) { 
+                openHour = 8; 
+                closeHour = 18; 
+            } else { 
+                openHour = 5.5; 
+                closeHour = 19; 
+            }
         }
 
-        // Zone overrides
+        // Zone-Specific Overrides
         const zoneLower = (zoneStr || '').toLowerCase();
         
+        // 50m Pool: Closed during Off-Peak Season (5 June to 6 September), Fully Open during Regular Season (from 7 September)
         if (zoneLower.includes('50m')) {
-            const startClosure = new Date(date.getFullYear(), 5, 6); // June 6
-            const endClosure = new Date(date.getFullYear(), 9, 30); // Oct 30
+            const startClosure = new Date(date.getFullYear(), 5, 5); // Friday, 5 June 2026
+            const endClosure = new Date(date.getFullYear(), 8, 6);   // Sunday, 6 September 2026
 
             if (date >= startClosure && date <= endClosure) {
-                const sept1 = new Date(date.getFullYear(), 8, 1);
-                if (date >= sept1 && date <= endClosure) {
-                    if (!this.isNSWHoliday(date)) {
-                        openHour = 5.5; // Will be floored/checked dynamically
-                        closeHour = 9;
-                    }
-                } else {
-                    return { open: false, reason: 'Winter Season Closure' }; // Closed completely between Jun 6 and Aug 31
-                }
+                return { open: false, reason: 'Winter Season Closure' };
             }
+            // Once Regular Season starts (Monday 7 September onwards), 50m pool operates on full facility hours
         }
 
+        // Waterslides:
+        // Off-Peak: Weekends only (9:00 am - 4:00 pm)
+        // Regular: Weekdays 3:00 pm - 6:00 pm, Weekends/School Holidays 9:00 am - 4:00 pm
         if (zoneLower.includes('slide')) {
-            const june6 = new Date(date.getFullYear(), 5, 6); // June 6
-            
-            if (date >= june6) {
-                // After June 6: NO SLIDES on Weekdays, ONLY weekends
-                if (!isWeekendOrPH) return { open: false, reason: 'Weekends Only' };
-                openHour = 9; closeHour = 16; // sessions within this time
+            const isWeekendOrHoliday = (day === 0 || day === 6 || isPH || this.isNSWHoliday(date));
+            if (season === 'OFF_PEAK') {
+                if (!isWeekendOrHoliday) return { open: false, reason: 'Weekends Only' };
+                openHour = 9; 
+                closeHour = 16;
             } else {
-                // Before June 6: Normal hours
-                if (isWeekendOrPH) {
-                    openHour = 9; closeHour = 16;
+                if (isWeekendOrHoliday) {
+                    openHour = 9; 
+                    closeHour = 16;
                 } else {
-                    openHour = 15; closeHour = 18;
+                    openHour = 15; 
+                    closeHour = 18;
                 }
             }
         }
 
-        return { open: true, openHour, closeHour };
+        return { open: true, openHour, closeHour, season };
     },
 
     getDisplayHoursLimits(date) {
