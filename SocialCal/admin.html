@@ -92,6 +92,10 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     New
                 </button>
+                <button id="bulkLoadAdminBtn" class="bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-700 border border-blue-200 px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Bulk Load
+                </button>
                 <button id="logoutBtn" class="text-slate-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest ml-2 transition-colors">Logout</button>
             </div>
         </div>
@@ -307,6 +311,43 @@
             </div>
         </div>
     </div>
+
+    <!-- Bulk Import Backdoor Modal for Admin -->
+    <div id="bulkAdminModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col p-6 border border-slate-100">
+            <div class="flex justify-between items-start mb-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="text-xl font-extrabold text-blue-900 flex items-center gap-2">
+                        <span class="p-1.5 bg-blue-100 text-blue-600 rounded-lg">⚡</span>
+                        Admin Bulk Campaign Importer
+                    </h3>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Paste raw Markdown briefs or JSON arrays to batch-create requests directly into Firestore.</p>
+                </div>
+                <button id="closeBulkAdminModalBtn" class="text-slate-400 hover:text-slate-700 transition p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-grow flex flex-col space-y-4 overflow-hidden">
+                <textarea id="bulkAdminInputText" rows="12" placeholder="Paste campaign schedule markdown or JSON here..." class="w-full flex-grow p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                
+                <div id="bulkAdminStatusBox" class="hidden p-3 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                    <span id="bulkAdminStatusText">Processing...</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                <button type="button" id="bulkAdminClearBtn" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Clear</button>
+                <div class="flex gap-2">
+                    <button type="button" id="bulkAdminCancelBtn" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+                    <button type="button" id="bulkAdminExecuteBtn" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2">
+                        <span>Load Entries to Database</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Firebase & Application Logic -->
     <script type="module">
@@ -912,10 +953,142 @@
             document.getElementById('requestsGrid').classList.add('hidden'); 
             document.getElementById('calendarContainer').classList.remove('hidden'); 
             document.getElementById('viewCalBtn').classList.add('bg-white', 'text-blue-700', 'shadow-sm');
-            document.getElementById('viewCalBtn').classList.remove('text-slate-500');
             document.getElementById('viewGridBtn').classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
             document.getElementById('viewGridBtn').classList.add('text-slate-500');
             calendar.updateSize(); 
+        };
+
+        // Admin Bulk Loader Handlers
+        const bulkAdminModal = document.getElementById('bulkAdminModal');
+        const bulkAdminInput = document.getElementById('bulkAdminInputText');
+        const bulkAdminStatusBox = document.getElementById('bulkAdminStatusBox');
+        const bulkAdminStatusText = document.getElementById('bulkAdminStatusText');
+        const bulkAdminExecuteBtn = document.getElementById('bulkAdminExecuteBtn');
+
+        document.getElementById('bulkLoadAdminBtn').onclick = () => {
+            bulkAdminModal.classList.remove('hidden');
+            bulkAdminInput.focus();
+        };
+        document.getElementById('closeBulkAdminModalBtn').onclick = () => bulkAdminModal.classList.add('hidden');
+        document.getElementById('bulkAdminCancelBtn').onclick = () => bulkAdminModal.classList.add('hidden');
+        document.getElementById('bulkAdminClearBtn').onclick = () => {
+            bulkAdminInput.value = '';
+            bulkAdminStatusBox.classList.add('hidden');
+        };
+
+        function parseAdminBulkText(text) {
+            try {
+                const parsedJson = JSON.parse(text);
+                if (Array.isArray(parsedJson)) return parsedJson;
+            } catch(e) {}
+
+            const results = [];
+            const chunks = text.split(/Entry\s+\d+:/i).slice(1);
+            const blocks = chunks.length > 0 ? chunks : text.split(/(?=STAFF\s+NAME:|DATE\s+NEEDED:)/i);
+
+            for (const raw of blocks) {
+                if (!raw.trim()) continue;
+                let staffName = 'Staff';
+                let dateStr = '';
+                let facility = 'Clarence Regional Aquatic Centre';
+                let category = 'Important Notice';
+                let channels = [];
+                let generateSign = false;
+                let title = '';
+                let keyMessage = '';
+
+                const dateMatch = raw.match(/DATE\s+NEEDED:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+                if (dateMatch) {
+                    const [d, m, y] = dateMatch[1].split('/');
+                    dateStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                }
+
+                const staffMatch = raw.match(/STAFF\s+NAME:\s*([^\n\r]+)/i);
+                if (staffMatch) staffName = staffMatch[1].trim();
+
+                const facMatch = raw.match(/FACILITY:\s*([^\n\r]+)/i);
+                if (facMatch) {
+                    facility = /yamba/i.test(facMatch[1]) ? 'Yamba Community Pool' : 'Clarence Regional Aquatic Centre';
+                }
+
+                const catMatch = raw.match(/PRIMARY\s+CATEGORY:\s*([^\n\r]+)/i);
+                if (catMatch) {
+                    const c = catMatch[1].trim();
+                    if (/fitness|aqua|health/i.test(c)) category = 'Health Fitness';
+                    else if (/squad/i.test(c)) category = 'Squad Training';
+                    else if (/intensive/i.test(c)) category = 'Swim School Intensive';
+                    else if (/swim school/i.test(c)) category = 'Swim School General';
+                    else if (/event|bbq/i.test(c)) category = 'Community Event';
+                    else category = 'Important Notice';
+                }
+
+                if (/\[x\]\s*SOCIAL/i.test(raw)) channels.push('Social');
+                if (/\[x\]\s*NEWS/i.test(raw)) channels.push('Newsletter');
+                if (/\[x\]\s*WEB/i.test(raw)) channels.push('Website');
+
+                if (/Need physical sign\?:\s*\[x\]/i.test(raw)) generateSign = true;
+
+                const topicMatch = raw.match(/SPECIFIC\s+TOPIC\s*\/\s*DETAIL:\s*([^\n\r]+)/i);
+                if (topicMatch) title = topicMatch[1].trim();
+
+                const rawMsgMatch = raw.match(/RAW\s+MESSAGE\s+DETAILS\s*\(FACTS ONLY\):\s*([\s\S]*)/i);
+                if (rawMsgMatch) keyMessage = rawMsgMatch[1].trim();
+
+                if (dateStr && title) {
+                    results.push({ staffName, date: dateStr, facility, category, channels, generateSign, title, keyMessage });
+                }
+            }
+            return results;
+        }
+
+        bulkAdminExecuteBtn.onclick = async () => {
+            const text = bulkAdminInput.value.trim();
+            if (!text) {
+                alert('Please paste campaign markdown or JSON data.');
+                return;
+            }
+
+            const parsed = parseAdminBulkText(text);
+            if (parsed.length === 0) {
+                alert('Could not parse any valid entries. Please check the format.');
+                return;
+            }
+
+            bulkAdminExecuteBtn.disabled = true;
+            bulkAdminStatusBox.classList.remove('hidden');
+            bulkAdminStatusText.innerText = `Preparing to upload ${parsed.length} entries...`;
+
+            let successCount = 0;
+            for (let i = 0; i < parsed.length; i++) {
+                const item = parsed[i];
+                bulkAdminStatusText.innerText = `Uploading [${i + 1}/${parsed.length}]: "${item.title}"...`;
+                try {
+                    await addDoc(collection(db, "requests"), {
+                        staffName: item.staffName || 'Staff',
+                        date: item.date,
+                        title: item.title,
+                        category: item.category || 'Important Notice',
+                        facility: item.facility || 'Clarence Regional Aquatic Centre',
+                        keyMessage: item.keyMessage || '',
+                        channels: item.channels || [],
+                        generateSign: !!item.generateSign,
+                        status: item.status || "Pending",
+                        assetUrl: item.assetUrl || null,
+                        timestamp: serverTimestamp()
+                    });
+                    successCount++;
+                } catch(err) {
+                    console.error('Error inserting bulk item:', item, err);
+                }
+            }
+
+            bulkAdminStatusText.innerText = `🎉 Successfully loaded ${successCount} of ${parsed.length} entries!`;
+            bulkAdminExecuteBtn.disabled = false;
+            setTimeout(() => {
+                bulkAdminModal.classList.add('hidden');
+                bulkAdminInput.value = '';
+                bulkAdminStatusBox.classList.add('hidden');
+            }, 2000);
         };
         </script>
         <script src="../nav.js" data-title="Comms Admin" data-icon="ph-megaphone-simple" data-help="Comms Admin Dashboard. Review, coordinate, and manage scheduled social posts, campaigns, and pending team requests. Supports export options and bulk status changes."></script>
