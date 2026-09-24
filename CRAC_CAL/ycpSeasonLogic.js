@@ -1,7 +1,7 @@
 window.YCP_SEASON_LOGIC = {
     // 2026 Season Key Dates
     reopenDate: new Date(2026, 7, 10),     // Monday, 10 August 2026 (Off-Season Re-opening)
-    fullSeasonDate: new Date(2026, 8, 26), // Saturday, 26 September 2026 (Full Season Starts)
+    fullSeasonDate: new Date(2026, 8, 28), // Monday, 28 September 2026 (Full Season Starts)
     tempClosedMessage: "Closed for Winter - Reopening 10 August",
 
     // Public Holiday Closures for YCP
@@ -39,7 +39,7 @@ window.YCP_SEASON_LOGIC = {
         }
         // Generic logic for subsequent years
         const reopen = new Date(date.getFullYear(), 7, 10);
-        const fullSeason = new Date(date.getFullYear(), 8, 26);
+        const fullSeason = new Date(date.getFullYear(), 8, 28);
         const winterClose = new Date(date.getFullYear(), 5, 1);
         if (d >= winterClose && d < reopen) return 'WINTER_CLOSED';
         if (d >= reopen && d < fullSeason) return 'OFF_PEAK';
@@ -77,7 +77,7 @@ window.YCP_SEASON_LOGIC = {
                 closeHour = 13; // 1:00 pm
             }
         } else {
-            // Full Season Hours (Starts Saturday, 26 September 2026):
+            // Full Season Hours (Starts Monday, 28 September 2026):
             // Monday to Friday: 6:00 am - 6:00 pm
             // Weekend & Public Holidays: 9:00 am - 4:00 pm
             if (isWeekendOrPH) {
