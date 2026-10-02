@@ -1250,22 +1250,59 @@
 
         document.getElementById('cleanFormatBtn').onclick = () => {
             let html = quill.root.innerHTML;
-            // 1. Remove emdashes / endashes and replace with colons or hyphens
+
+            // 1. Silent Emdash & Endash eradication
             html = html.replace(/[\u2014]/g, ': ')
                        .replace(/[\u2013]/g, ' - ')
                        .replace(/\s*—\s*/g, ': ')
                        .replace(/\s*–\s*/g, ' - ');
-            // 2. Cleanup empty paragraphs & filler
-            html = html.replace(/<p>(?:<br>|&nbsp;|\s)*<\/p>/gi, '')
+
+            // 2. Silent Australian English auto-corrections
+            const auMap = [
+                [/\bcenter\b/gi, 'centre'],
+                [/\bcenters\b/gi, 'centres'],
+                [/\bprograms\b/gi, 'programmes'],
+                [/\bprogram\b/gi, 'programme'],
+                [/\benroll\b/gi, 'enrol'],
+                [/\benrolls\b/gi, 'enrols'],
+                [/\benrolling\b/gi, 'enrolling'],
+                [/\benrollment\b/gi, 'enrolment'],
+                [/\benrollments\b/gi, 'enrolments'],
+                [/\bmeters\b/gi, 'metres'],
+                [/\bmeter\b/gi, 'metre'],
+                [/\bcolors\b/gi, 'colours'],
+                [/\bcolor\b/gi, 'colour'],
+                [/\borganize\b/gi, 'organise'],
+                [/\borganized\b/gi, 'organised'],
+                [/\borganizing\b/gi, 'organising'],
+                [/\bprioritize\b/gi, 'prioritise'],
+                [/\bprioritized\b/gi, 'prioritised'],
+                [/\bcustomize\b/gi, 'customise'],
+                [/\bcustomized\b/gi, 'customised'],
+                [/\bfavor\b/gi, 'favour'],
+                [/\bhonor\b/gi, 'honour']
+            ];
+            auMap.forEach(([regex, replacement]) => {
+                html = html.replace(regex, replacement);
+            });
+
+            // 3. Spacing & Punctuation Cleanliness
+            html = html.replace(/\s+([,.:;!?])/g, '$1')
+                       .replace(/&nbsp;/g, ' ')
+                       .replace(/  +/g, ' ');
+
+            // 4. Cleanup empty paragraphs & filler markup
+            html = html.replace(/<p>(?:\s|<br>)*<\/p>/gi, '')
                        .replace(/>\s+</g, '><')
                        .replace(/(?:<br\s*\/?>\s*){2,}/gi, '<br>')
                        .trim();
+
             quill.root.innerHTML = html;
             
-            // Subtle feedback
+            // Subtle, professional feedback on the button
             const btn = document.getElementById('cleanFormatBtn');
-            btn.classList.add('text-emerald-600');
-            setTimeout(() => btn.classList.remove('text-emerald-600'), 1000);
+            btn.classList.add('text-emerald-600', 'bg-emerald-50');
+            setTimeout(() => btn.classList.remove('text-emerald-600', 'bg-emerald-50'), 1000);
         };
 
         const menuBtn = document.getElementById('processMenuBtn');
