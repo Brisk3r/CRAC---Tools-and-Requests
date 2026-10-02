@@ -155,7 +155,7 @@
                     <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
                         <button class="filter-status-btn active px-2.5 py-1 rounded-lg font-bold bg-white text-slate-800 shadow-sm" data-status="All">All</button>
                         <button class="filter-status-btn px-2.5 py-1 rounded-lg font-bold text-slate-500 hover:text-slate-800" data-status="Pending">⏳ Pending</button>
-                        <button class="filter-status-btn px-2.5 py-1 rounded-lg font-bold text-slate-500 hover:text-slate-800" data-status="Draft Ready">⚡ Draft Ready</button>
+                        <button class="filter-status-btn px-2.5 py-1 rounded-lg font-bold text-slate-500 hover:text-slate-800" data-status="Draft Ready">Draft Ready</button>
                         <button class="filter-status-btn px-2.5 py-1 rounded-lg font-bold text-slate-500 hover:text-slate-800" data-status="Approved">✅ Approved</button>
                     </div>
 
@@ -348,25 +348,14 @@
                                 <span class="text-[9px] font-black uppercase hidden group-hover:inline">Clean</span>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                             </button>
-                            <button id="rerunAiBtn" class="text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group" title="Re-run AI Drafting">
+                            <button id="rerunAiBtn" class="text-slate-400 hover:text-blue-600 transition-all flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-50 group" title="Regenerate Draft">
                                 <span id="rerunStatus" class="text-[9px] font-black uppercase hidden group-hover:inline">Regenerate</span>
-                                <svg id="rerunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                <svg id="rerunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             </button>
                         </div>
                     </div>
                     
                     <div class="flex-grow flex flex-col min-h-[450px] space-y-3">
-                        <!-- Live Compliance Audit Strip -->
-                        <div id="complianceBar" class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <span class="text-[8px] font-black uppercase text-slate-400 tracking-wider">Editorial Audit:</span>
-                                <span id="auditEmdash" class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">✓ 0 Emdashes</span>
-                                <span id="auditAuSpell" class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">✓ AU English</span>
-                                <span id="auditCliche" class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">✓ No Clichés</span>
-                                <span id="auditFacilityName" class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-blue-100 text-blue-800 border border-blue-200">Full Name</span>
-                            </div>
-                            <span id="complianceSummary" class="text-[8px] font-bold text-emerald-600">All standards met</span>
-                        </div>
                         <div id="quillEditor" class="bg-white rounded-xl shadow-inner"></div>
                         
                         <!-- Signage Control Panel -->
@@ -647,70 +636,9 @@
             const counter = document.getElementById('charCounter');
             counter.innerText = `${count} chars`;
             counter.classList.toggle('text-amber-500', count > 280 && currentTab === 'Social');
-            runComplianceAudit();
         }
 
         quill.on('text-change', updateCharCounter);
-
-        function runComplianceAudit() {
-            const text = quill.getText();
-            // 1. Emdash check: \u2014 (emdash), \u2013 (endash)
-            const hasEmdash = /[\u2014\u2013]/.test(text) || text.includes('—') || text.includes('–');
-            const auditEmdash = document.getElementById('auditEmdash');
-            if (hasEmdash) {
-                auditEmdash.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-300";
-                auditEmdash.innerText = "⚠️ Emdash Found";
-            } else {
-                auditEmdash.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200";
-                auditEmdash.innerText = "✓ 0 Emdashes";
-            }
-
-            // 2. AU English spelling check
-            const usWords = ['center', 'programs', 'enroll', 'meter', 'color', 'favor', 'honor', 'organize', 'prioritize', 'customize'];
-            const foundUs = usWords.filter(w => new RegExp('\\b' + w + '\\b', 'i').test(text));
-            const auditAuSpell = document.getElementById('auditAuSpell');
-            if (foundUs.length > 0) {
-                auditAuSpell.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300";
-                auditAuSpell.innerText = `⚠️ AU Spelling: ${foundUs[0]}`;
-            } else {
-                auditAuSpell.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200";
-                auditAuSpell.innerText = "✓ AU English";
-            }
-
-            // 3. AI Cliché check
-            const cliches = ['dive in', 'dive into', 'whether you are', "whether you're", 'look no further', 'unlock your potential', 'beacon', 'tapestry', 'testament', 'delve', 'make a splash', 'community haven'];
-            const foundCliche = cliches.filter(c => new RegExp('\\b' + c + '\\b', 'i').test(text));
-            const auditCliche = document.getElementById('auditCliche');
-            if (foundCliche.length > 0) {
-                auditCliche.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-300";
-                auditCliche.innerText = `⚠️ Cliché: "${foundCliche[0]}"`;
-            } else {
-                auditCliche.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200";
-                auditCliche.innerText = "✓ No Clichés";
-            }
-
-            // 4. Facility Name check (No raw "CRAC" in public copy)
-            const auditFac = document.getElementById('auditFacilityName');
-            const facility = document.getElementById('facilitySelect').value;
-            const hasRawCrac = /\bCRAC\b/.test(text);
-            if (hasRawCrac && currentTab === 'Social') {
-                auditFac.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300";
-                auditFac.innerText = "⚠️ Full Name Required";
-            } else {
-                auditFac.className = "px-2 py-0.5 rounded text-[8px] font-extrabold uppercase bg-blue-100 text-blue-800 border border-blue-200";
-                auditFac.innerText = facility && facility.includes('Clarence') ? "CRAC (Full Name)" : "YAMBA (Full Name)";
-            }
-
-            // Summary text
-            const summary = document.getElementById('complianceSummary');
-            if (hasEmdash || foundUs.length > 0 || foundCliche.length > 0) {
-                summary.className = "text-[8px] font-extrabold text-amber-600";
-                summary.innerText = "Editorial adjustments recommended";
-            } else {
-                summary.className = "text-[8px] font-bold text-emerald-600";
-                summary.innerText = "All standards met";
-            }
-        }
 
         document.getElementById('copyHtmlBtn').onclick = () => {
             const html = quill.root.innerHTML;
@@ -755,7 +683,6 @@
                             Website: freshData.rewrittenWebsite || ''
                         };
                         quill.root.innerHTML = channelDrafts[currentTab] || '';
-                        runComplianceAudit();
                     }
                 }
 
@@ -792,7 +719,7 @@
                 return `<span class="px-2 py-0.5 text-[8px] font-black rounded-md border uppercase tracking-wider bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1">✓ Approved</span>`;
             }
             if (status === 'Draft Ready') {
-                return `<span class="px-2 py-0.5 text-[8px] font-black rounded-md border uppercase tracking-wider bg-indigo-100 text-indigo-800 border-indigo-300 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>⚡ Draft Ready</span>`;
+                return `<span class="px-2 py-0.5 text-[8px] font-black rounded-md border uppercase tracking-wider bg-indigo-100 text-indigo-800 border-indigo-300 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>Draft Ready</span>`;
             }
             return `<span class="px-2 py-0.5 text-[8px] font-black rounded-md border uppercase tracking-wider bg-amber-100 text-amber-800 border-amber-300 flex items-center gap-1">⏳ Pending</span>`;
         }
@@ -808,7 +735,7 @@
             document.getElementById('counterTotal').innerText = `${total} Total`;
             document.getElementById('counterCracPending').innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-600"></span> ${cracPending} CRAC Pending`;
             document.getElementById('counterYcpPending').innerHTML = `<span class="w-2 h-2 rounded-full bg-teal-600"></span> ${ycpPending} Yamba Pending`;
-            document.getElementById('counterDraftReady').innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span> ${draftReady} Draft Ready`;
+            document.getElementById('counterDraftReady').innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-600"></span> ${draftReady} Draft Ready`;
             document.getElementById('counterApproved').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${approved} Approved`;
 
             // Filter state notice
@@ -1049,7 +976,7 @@
                             <div class="flex items-center gap-3 shrink-0 self-end md:self-center">
                                 <span class="text-[9px] font-bold text-slate-400">By ${data.staffName || 'Staff'}</span>
                                 <button class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-100 transition-all flex items-center gap-1 shadow-sm">
-                                    <span>${isDraftReady ? '⚡ Review Draft' : 'Open'}</span>
+                                    <span>${isDraftReady ? 'Review Draft' : 'Open'}</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                 </button>
                             </div>
@@ -1261,12 +1188,11 @@
             const isDraftReady = !isNew && data.status === 'Draft Ready';
             statusInd.innerText = isNew ? 'New Entry' : data.status;
             statusInd.className = `px-2.5 py-0.5 text-[9px] font-black rounded-full uppercase tracking-wider ${
-                isApproved ? 'bg-emerald-500 text-white' : isDraftReady ? 'bg-indigo-600 text-white animate-pulse' : 'bg-slate-500 text-white'
+                isApproved ? 'bg-emerald-500 text-white' : isDraftReady ? 'bg-indigo-600 text-white' : 'bg-slate-500 text-white'
             }`;
             
             document.getElementById('deleteBtn').classList.toggle('hidden', isNew);
             document.getElementById('adminModal').classList.remove('hidden');
-            runComplianceAudit();
         }
 
         function updateSignLink(data) {
@@ -1335,7 +1261,6 @@
                        .replace(/(?:<br\s*\/?>\s*){2,}/gi, '<br>')
                        .trim();
             quill.root.innerHTML = html;
-            runComplianceAudit();
             
             // Subtle feedback
             const btn = document.getElementById('cleanFormatBtn');
