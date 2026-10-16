@@ -28,8 +28,11 @@
         .ql-toolbar.ql-snow { border: 1px solid #e2e8f0; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; background-color: #f8fafc; }
         .ql-container.ql-snow { border: 1px solid #e2e8f0; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; font-family: inherit; }
         .ql-editor { min-height: 350px; color: #1e293b; line-height: 1.5; font-size: 0.95rem; }
-        .ql-editor p, .ql-editor ul, .ql-editor ol { margin-bottom: 0.5rem; }
-        .ql-editor h2 { font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 1.25rem; }
+        .ql-editor p { margin-bottom: 0.35rem; }
+        .ql-editor p:empty, .ql-editor p > br:only-child { margin-bottom: 0; line-height: 1; height: 0; }
+        .ql-editor ul, .ql-editor ol { margin-top: 0.25rem; margin-bottom: 0.35rem; padding-left: 1.25rem; }
+        .ql-editor li { margin-bottom: 0.15rem; }
+        .ql-editor h2 { font-size: 1.35rem; font-weight: 800; color: #1e3a8a; margin-top: 0.75rem; margin-bottom: 0.35rem; }
         .ql-editor strong { font-weight: 700; color: #1e3a8a; }
 
         .fc { font-family: inherit; }
@@ -189,7 +192,21 @@
                 <div class="col-span-full text-center py-20 text-slate-400 animate-pulse font-bold tracking-widest uppercase text-xs">Syncing Database...</div>
             </div>
             <!-- Calendar View -->
-            <div id="calendarContainer" class="hidden"><div id="calendar"></div></div>
+            <div id="calendarContainer" class="hidden space-y-4">
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Calendar Gap Detector
+                        </span>
+                        <span class="text-xs text-amber-700 hidden sm:inline">— Amber days highlight open slots. Click any gap or use AI Suggest to keep your schedule active.</span>
+                    </div>
+                    <button id="aiFillNextGapBtn" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span>✨ AI Suggest Next Gap</span>
+                    </button>
+                </div>
+                <div id="calendar"></div>
+            </div>
         </div>
     </div>
 
@@ -245,9 +262,9 @@
                         <div class="bg-slate-50 p-3 rounded-xl border">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="block text-[9px] text-slate-400 uppercase font-black">Specific Topic</span>
-                                <button id="suggestBtn" class="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                    Suggest
+                                <button id="suggestBtn" class="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 transition-all border border-blue-200 shadow-xs" title="Suggest Campaign Idea using Gemini AI">
+                                    <svg id="suggestIcon" class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    <span id="suggestLabel">✨ AI Suggest</span>
                                 </button>
                             </div>
                             <input type="text" id="editTitle" class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none" placeholder="e.g. Pump repair on Main Pool">
@@ -466,26 +483,45 @@
         let isModalOpen = false;
         let isRegenerating = false;
 
-        // Normalize HTML for Quill 1.3.6 (which strips <br> inside <p> tags, smashing bullets and links together)
+        // Normalize HTML for Quill 1.3.6 (strips multiple empty paragraphs and collapses redundant breaks)
         function normalizeForQuill(rawHtml) {
             if (!rawHtml) return '';
             let html = String(rawHtml).trim();
             // 1. Fix broken ZWJ swimmer emojis
             html = html.replace(/🏊♀️/g, '🏊‍♀️').replace(/🏊♂️/g, '🏊‍♂️');
-            // 2. If plain text without block tags, wrap paragraphs in <p>
+            
+            // 2. Remove all whitespace & newlines between HTML tags (prevents </p>\n\n<p> from duplicating paragraphs)
+            html = html.replace(/>\s+</g, '><');
+            
+            // 3. If plain text without block tags, wrap each line in <p>
             if (!/<(?:p|h2|h3|ul|ol|li|div)\b/i.test(html)) {
-                html = '<p>' + html.replace(/\r?\n/g, '</p><p>') + '</p>';
+                return html.split(/\r?\n/)
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(line => `<p>${line}</p>`)
+                    .join('');
             }
-            // 3. Convert <br> tags and stray newlines into distinct <p> blocks so Quill never collapses lines
-            html = html.replace(/<br\s*\/?>/gi, '</p><p>')
-                       .replace(/\r?\n/g, '</p><p>');
-            // 4. Strip redundant bullet characters inside <li> elements (prevents double bullets)
+            
+            // 4. Replace <br> inside paragraphs with </p><p>
+            html = html.replace(/<br\s*\/?>/gi, '</p><p>');
+            
+            // 5. Strip any newlines that were inside tags
+            html = html.replace(/\r?\n/g, ' ');
+            
+            // 6. Strip redundant bullet characters inside <li> (prevents double bullets in <ul>)
             html = html.replace(/<li>\s*[•·\-*]\s*/gi, '<li>');
-            // 5. Split mid-paragraph bullets (•) or link emojis (🔗) that got concatenated onto the same line
+            
+            // 7. Split mid-paragraph bullets (•) or links (🔗) onto their own line
             html = html.replace(/([^>•\n])\s*(•\s+)/g, '$1</p><p>$2');
             html = html.replace(/([^>🔗\n])\s*(🔗\s*)/g, '$1</p><p>$2');
-            // 6. Clean up empty paragraphs
-            html = html.replace(/<p>(?:\s|&nbsp;)*<\/p>/gi, '');
+            
+            // 8. Clean up consecutive opening/closing tags and purge all empty paragraphs
+            html = html.replace(/(?:<\/p>)+/gi, '</p>')
+                       .replace(/(?:<p>)+/gi, '<p>')
+                       .replace(/<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '')
+                       .replace(/>\s+</g, '><')
+                       .trim();
+            
             return html;
         }
 
@@ -512,6 +548,9 @@
             eventClick: (info) => {
                 if (info.event.extendedProps.isGap) {
                     openModal(null, { date: info.event.startStr });
+                    setTimeout(() => {
+                        document.getElementById('suggestBtn')?.click();
+                    }, 250);
                 } else {
                     openModal(info.event.id, globalRequestsArray.find(r => r.id === info.event.id));
                 }
@@ -1474,33 +1513,123 @@
 
         document.getElementById('addNewBtn').onclick = () => openModal(null, { date: new Date().toISOString().split('T')[0] });
 
-        document.getElementById('suggestBtn').onclick = () => {
-            const suggestions = [
-                { title: "Staff Spotlight: Team Member", msg: "Feature a staff member today! Share their favorite part of working at the pool and a fun fact.", cat: "Staff Spotlight" },
-                { title: "Water Safety Tip of the Week", msg: "Share a quick tip about supervision or lifejacket safety for the community.", cat: "Community Event" },
-                { title: "Facility Maintenance Update", msg: "Give a 'behind the scenes' look at the plant room or pool cleaning to show the work being done.", cat: "Maintenance Closure" },
-                { title: "Swim School Progress Reminder", msg: "Encourage parents to check their child's progress in the portal this afternoon.", cat: "Swim School Intensive" },
-                { title: "Lap Lane Availability Update", msg: "Remind swimmers about peak lap lane times and the best hours for a quiet swim.", cat: "Lane Availability" }
-            ];
+        const GEMINI_DIRECT_KEY = "AIzaSyDUoPXWqewzW5tThX3dYgsGOvOCUH0Ckss";
 
-            // Heuristic: Pick a category that hasn't been used in the last 3 posts
-            const recentCats = globalRequestsArray.slice(0, 3).map(r => r.category);
-            const freshSuggestions = suggestions.filter(s => !recentCats.includes(s.cat));
-            const pick = freshSuggestions.length > 0 
-                ? freshSuggestions[Math.floor(Math.random() * freshSuggestions.length)]
-                : suggestions[Math.floor(Math.random() * suggestions.length)];
+        async function fetchGeminiCalendarSuggestion(facility, dateStr, recentCats = []) {
+            const dateObj = dateStr ? new Date(dateStr) : new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = days[dateObj.getDay()];
+            
+            const prompt = `You are the Lead Marketing Planner for Clarence Regional Aquatic Centre (CRAC, Grafton) and Yamba Community Pool (YCP, Yamba) in NSW, Australia.
+Generate ONE timely, engaging, factual social media campaign idea for:
+- Facility: ${facility}
+- Target Date: ${dateStr || 'Upcoming'} (${dayName})
+- Categories recently used this week: ${recentCats.join(', ') || 'None'}
 
-            document.getElementById('editTitle').value = pick.title;
-            document.getElementById('editKeyMessage').value = pick.msg;
-            document.getElementById('categorySelect').value = pick.cat;
+Rules:
+- Strictly Australian English (centre, programme, enrol, organise).
+- Zero corporate fluff clichés ("thrilled to announce", "haven", "state of the art").
+- Factual and actionable for local aquatic centre visitors (e.g. lap lane availability, squad passes, aqua aerobics, learn to swim, holiday water safety, cafe or plant maintenance).
+- Balance the schedule: pick a category that differs from recently used categories if possible.
+
+Return STRICTLY valid JSON with these keys:
+{
+  "title": "Short catchy title (under 8 words)",
+  "category": "One of: Swim School Intensive, Squad Training, Health Fitness, Lap Swimming, Community Event, Important Notice, Maintenance Closure",
+  "keyMessage": "2-3 clear, factual sentences detailing what the patron needs to know, times, and actions to take."
+}`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_DIRECT_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseMimeType: 'application/json',
+                            temperature: 0.7
+                        }
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        return JSON.parse(text);
+                    }
+                }
+            } catch(e) {
+                console.warn("Direct Gemini suggestion error:", e);
+            }
+            return null;
+        }
+
+        document.getElementById('suggestBtn').onclick = async () => {
+            const icon = document.getElementById('suggestIcon');
+            const label = document.getElementById('suggestLabel');
+            
+            if (icon) icon.classList.add('animate-spin');
+            if (label) label.innerText = "Thinking...";
+
+            const facility = document.getElementById('facilitySelect').value;
+            const targetDate = document.getElementById('editDate').value;
+            const recentCats = globalRequestsArray.slice(0, 5).map(r => r.category).filter(Boolean);
+
+            let suggestion = await fetchGeminiCalendarSuggestion(facility, targetDate, recentCats);
+
+            // Fallback to smart curated list if offline or API delay
+            if (!suggestion) {
+                const fallbackList = [
+                    { title: "Staff Spotlight: Team Member", msg: "Meet our dedicated aquatic team member this week! Hear their favourite safety tip and why they love coaching Clarence Valley swimmers.", cat: "Community Event" },
+                    { title: "Lap Lane Availability Update", msg: "Check our updated morning and afternoon lap lane schedules before heading in for your swim session.", cat: "Lane Availability" },
+                    { title: "Aqua Aerobics & Gentle Exercise", msg: "Low-impact aqua fitness classes running this week. Heated indoor pools, certified instructors, suitable for all fitness levels.", cat: "Health Fitness" },
+                    { title: "Swim School Technique Tip", msg: "Encourage water confidence this week! Log into the Client Portal to review your swimmer's skill milestones.", cat: "Swim School Intensive" },
+                    { title: "Holiday Squad Training Passes", msg: "10-visit Holiday Squad Passes available at reception. Keep up your fitness with no bookings required.", cat: "Squad Training" }
+                ];
+                const freshFallback = fallbackList.filter(s => !recentCats.includes(s.cat));
+                suggestion = freshFallback.length > 0 
+                    ? freshFallback[Math.floor(Math.random() * freshFallback.length)]
+                    : fallbackList[Math.floor(Math.random() * fallbackList.length)];
+            }
+
+            document.getElementById('editTitle').value = suggestion.title;
+            document.getElementById('editKeyMessage').value = suggestion.keyMessage || suggestion.msg;
+            if (suggestion.category || suggestion.cat) {
+                document.getElementById('categorySelect').value = suggestion.category || suggestion.cat;
+            }
+
             // Highlight the suggested fields
-            document.getElementById('editTitle').classList.add('bg-blue-50');
-            document.getElementById('editKeyMessage').classList.add('bg-blue-50');
+            const titleInput = document.getElementById('editTitle');
+            const msgInput = document.getElementById('editKeyMessage');
+            titleInput.classList.add('bg-blue-50', 'ring-2', 'ring-blue-300');
+            msgInput.classList.add('bg-blue-50', 'ring-2', 'ring-blue-300');
             setTimeout(() => {
-                document.getElementById('editTitle').classList.remove('bg-blue-50');
-                document.getElementById('editKeyMessage').classList.remove('bg-blue-50');
-            }, 1000);
+                titleInput.classList.remove('bg-blue-50', 'ring-2', 'ring-blue-300');
+                msgInput.classList.remove('bg-blue-50', 'ring-2', 'ring-blue-300');
+            }, 1200);
+
+            if (icon) icon.classList.remove('animate-spin');
+            if (label) label.innerText = "✨ AI Suggest";
         };
+
+        const aiFillNextGapBtn = document.getElementById('aiFillNextGapBtn');
+        if (aiFillNextGapBtn) {
+            aiFillNextGapBtn.onclick = () => {
+                const gapEvents = calendar.getEvents().filter(ev => ev.extendedProps.isGap);
+                if (gapEvents.length === 0) {
+                    alert("No open calendar gaps found in the current view! Your schedule is fully covered.");
+                    return;
+                }
+                const todayStr = new Date().toISOString().split('T')[0];
+                const upcomingGaps = gapEvents.filter(ev => ev.startStr >= todayStr).sort((a,b) => a.startStr.localeCompare(b.startStr));
+                const targetGap = upcomingGaps.length > 0 ? upcomingGaps[0] : gapEvents[0];
+                openModal(null, { date: targetGap.startStr });
+                setTimeout(() => {
+                    document.getElementById('suggestBtn')?.click();
+                }, 250);
+            };
+        }
 
         document.getElementById('processAutoBtn').onclick = async () => {
             const btn = document.getElementById('processAutoBtn');
