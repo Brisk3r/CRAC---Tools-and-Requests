@@ -109,7 +109,7 @@
                     <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     Bulk Load
                 </button>
-                <button id="engineSettingsBtn" title="Apps Script Engine Settings" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                <button id="engineSettingsBtn" title="Admin & Schedule Settings" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 </button>
                 <button id="logoutBtn" class="text-slate-400 hover:text-red-500 text-[10px] font-black uppercase tracking-widest ml-1 transition-colors">Logout</button>
@@ -192,19 +192,7 @@
                 <div class="col-span-full text-center py-20 text-slate-400 animate-pulse font-bold tracking-widest uppercase text-xs">Syncing Database...</div>
             </div>
             <!-- Calendar View -->
-            <div id="calendarContainer" class="hidden space-y-4">
-                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-black text-amber-800 uppercase tracking-wide flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Calendar Gap Detector
-                        </span>
-                        <span class="text-xs text-amber-700 hidden sm:inline">— Amber days highlight open slots. Click any gap or use AI Suggest to keep your schedule active.</span>
-                    </div>
-                    <button id="aiFillNextGapBtn" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span>✨ AI Suggest Next Gap</span>
-                    </button>
-                </div>
+            <div id="calendarContainer" class="hidden">
                 <div id="calendar"></div>
             </div>
         </div>
@@ -262,9 +250,9 @@
                         <div class="bg-slate-50 p-3 rounded-xl border">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="block text-[9px] text-slate-400 uppercase font-black">Specific Topic</span>
-                                <button id="suggestBtn" class="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 transition-all border border-blue-200 shadow-xs" title="Suggest Campaign Idea using Gemini AI">
+                                <button id="suggestBtn" class="text-[9px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 transition-all border border-blue-200 shadow-xs" title="Suggest Campaign Topic">
                                     <svg id="suggestIcon" class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                    <span id="suggestLabel">✨ AI Suggest</span>
+                                    <span id="suggestLabel">Suggest Topic</span>
                                 </button>
                             </div>
                             <input type="text" id="editTitle" class="w-full bg-transparent font-bold text-slate-800 text-sm outline-none" placeholder="e.g. Pump repair on Main Pool">
@@ -450,6 +438,118 @@
         </div>
     </div>
 
+    <!-- Admin & Engine Settings Modal -->
+    <div id="adminSettingsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col p-6 sm:p-8 border border-slate-100 overflow-hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-extrabold text-blue-900 leading-tight">Admin &amp; Schedule Settings</h3>
+                        <p class="text-xs text-slate-400 font-medium mt-0.5">Schedule coverage monitoring, automated drafting &amp; engine endpoints</p>
+                    </div>
+                </div>
+                <button id="closeAdminSettingsModalBtn" class="text-slate-400 hover:text-slate-700 transition p-1.5 rounded-xl hover:bg-slate-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Content Body (Scrollable) -->
+            <div class="flex-grow space-y-6 overflow-y-auto pr-1">
+                <!-- Section 1: Schedule Coverage & Gap Management -->
+                <div class="bg-gradient-to-br from-amber-50/70 via-orange-50/40 to-slate-50 p-5 rounded-2xl border border-amber-200/80 shadow-xs space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <h4 class="text-xs font-black text-amber-900 uppercase tracking-wider">Schedule Coverage Monitor</h4>
+                                <span id="settingsGapCountBadge" class="text-[10px] font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">Checking...</span>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Automatically identifies unscheduled dates across facilities and generates recommended campaign topics to maintain consistent community communication.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Scan & Suggest Action -->
+                    <div class="pt-2 border-t border-amber-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="text-xs text-slate-600">
+                            Draft a campaign for the next unscheduled date:
+                        </div>
+                        <button id="settingsScanNextGapBtn" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2 shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span>Draft Next Open Date</span>
+                        </button>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="pt-3 border-t border-amber-200/60 space-y-3">
+                        <label class="flex items-center justify-between cursor-pointer group">
+                            <div class="pr-4">
+                                <span class="text-xs font-extrabold text-slate-800 block group-hover:text-amber-900 transition-colors">Highlight Open Dates on Calendar</span>
+                                <span class="text-[11px] text-slate-500 block">Highlights unscheduled days with a soft amber indicator in FullCalendar</span>
+                            </div>
+                            <input type="checkbox" id="settingsToggleGapHighlights" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 transition cursor-pointer">
+                        </label>
+                        <label class="flex items-center justify-between cursor-pointer group">
+                            <div class="pr-4">
+                                <span class="text-xs font-extrabold text-slate-800 block group-hover:text-amber-900 transition-colors">Auto-populate Topic on Empty Date Click</span>
+                                <span class="text-[11px] text-slate-500 block">Clicking an empty date automatically suggests a relevant category and message draft</span>
+                            </div>
+                            <input type="checkbox" id="settingsToggleAutoSuggest" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 transition cursor-pointer">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Section 2: Marketing Engine Webhook -->
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            Marketing Engine Webhook
+                        </h4>
+                        <span id="settingsEngineStatus" class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">v6.3 Webhook Connected</span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        Google Apps Script automation endpoint for batch multi-channel drafting, live operating hours verification, and compliance checks.
+                    </p>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Webhook URL</label>
+                        <input type="url" id="settingsAppsScriptUrl" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://script.google.com/macros/s/.../exec">
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <button type="button" id="settingsResetEngineBtn" class="text-[10px] font-black uppercase text-blue-600 hover:text-blue-800 tracking-wider">Reset to Production Default</button>
+                        <button type="button" id="settingsTestEngineBtn" class="text-[10px] font-extrabold uppercase bg-white border border-slate-200 text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-slate-50 transition">Ping Webhook</button>
+                    </div>
+                </div>
+
+                <!-- Section 3: Standards & Guidelines Compliance -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 shrink-0 font-bold text-sm">
+                            ✓
+                        </div>
+                        <div>
+                            <div class="text-xs font-extrabold text-slate-800">Operational Style Guide</div>
+                            <div class="text-[11px] text-slate-500">Australian English (en-AU) • No corporate clichés • Factual facility links</div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-black text-blue-600 bg-blue-100/60 px-2.5 py-1 rounded-full border border-blue-200 uppercase">Enforced</span>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                <button type="button" id="closeAdminSettingsBtn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95">
+                    Save &amp; Close
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Firebase & Application Logic -->
     <script type="module">
@@ -546,13 +646,23 @@
             height: 'auto',
             headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
             eventClick: (info) => {
-                if (info.event.extendedProps.isGap) {
+                if (info.event.extendedProps && info.event.extendedProps.isGap) {
                     openModal(null, { date: info.event.startStr });
+                    if (localStorage.getItem('crac_auto_suggest_gap') !== 'false') {
+                        setTimeout(() => {
+                            document.getElementById('suggestBtn')?.click();
+                        }, 250);
+                    }
+                } else {
+                    openModal(info.event.id, globalRequestsArray.find(r => r.id === info.event.id));
+                }
+            },
+            dateClick: (info) => {
+                openModal(null, { date: info.dateStr });
+                if (localStorage.getItem('crac_auto_suggest_gap') !== 'false') {
                     setTimeout(() => {
                         document.getElementById('suggestBtn')?.click();
                     }, 250);
-                } else {
-                    openModal(info.event.id, globalRequestsArray.find(r => r.id === info.event.id));
                 }
             },
             datesSet: () => updateGapHighlights()
@@ -744,22 +854,108 @@
             return localStorage.getItem('crac_apps_script_url') || DEFAULT_APPS_SCRIPT_URL;
         }
 
-        // Engine Settings configuration
+        // Admin Settings Modal Logic
+        const adminSettingsModal = document.getElementById('adminSettingsModal');
         const engineSettingsBtn = document.getElementById('engineSettingsBtn');
-        if (engineSettingsBtn) {
-            engineSettingsBtn.addEventListener('click', () => {
-                const currentUrl = getAppsScriptUrl();
-                const newUrl = prompt("Configure deployed Google Apps Script Web App URL:\n(Enables direct on-demand drafting triggers from this dashboard)\n\nExample: https://script.google.com/macros/s/.../exec", currentUrl);
-                if (newUrl !== null) {
-                    if (newUrl.trim()) {
-                        localStorage.setItem('crac_apps_script_url', newUrl.trim());
-                        alert("Apps Script Web App URL saved successfully!");
-                    } else {
-                        localStorage.removeItem('crac_apps_script_url');
-                        alert("Reset to default production Apps Script Web App URL.");
-                    }
+        const closeAdminSettingsModalBtn = document.getElementById('closeAdminSettingsModalBtn');
+        const closeAdminSettingsBtn = document.getElementById('closeAdminSettingsBtn');
+        const settingsAppsScriptUrl = document.getElementById('settingsAppsScriptUrl');
+        const settingsResetEngineBtn = document.getElementById('settingsResetEngineBtn');
+        const settingsTestEngineBtn = document.getElementById('settingsTestEngineBtn');
+        const settingsToggleGapHighlights = document.getElementById('settingsToggleGapHighlights');
+        const settingsToggleAutoSuggest = document.getElementById('settingsToggleAutoSuggest');
+        const settingsScanNextGapBtn = document.getElementById('settingsScanNextGapBtn');
+        const settingsGapCountBadge = document.getElementById('settingsGapCountBadge');
+
+        function openAdminSettings() {
+            if (!adminSettingsModal) return;
+            if (settingsAppsScriptUrl) settingsAppsScriptUrl.value = getAppsScriptUrl();
+            if (settingsToggleGapHighlights) {
+                settingsToggleGapHighlights.checked = localStorage.getItem('crac_highlight_gaps') !== 'false';
+            }
+            if (settingsToggleAutoSuggest) {
+                settingsToggleAutoSuggest.checked = localStorage.getItem('crac_auto_suggest_gap') !== 'false';
+            }
+
+            // Calculate upcoming unscheduled open dates
+            const todayStr = new Date().toISOString().split('T')[0];
+            const upcomingGaps = calendar.getEvents().filter(ev => ev.extendedProps && ev.extendedProps.isGap && ev.startStr >= todayStr);
+            const count = upcomingGaps.length;
+            if (settingsGapCountBadge) {
+                settingsGapCountBadge.innerText = `${count} open ${count === 1 ? 'date' : 'dates'} ahead`;
+            }
+            adminSettingsModal.classList.remove('hidden');
+        }
+
+        function saveAndCloseAdminSettings() {
+            if (!adminSettingsModal) return;
+            if (settingsAppsScriptUrl) {
+                const urlVal = settingsAppsScriptUrl.value.trim();
+                if (urlVal) {
+                    localStorage.setItem('crac_apps_script_url', urlVal);
+                } else {
+                    localStorage.removeItem('crac_apps_script_url');
                 }
-            });
+            }
+            if (settingsToggleGapHighlights) {
+                localStorage.setItem('crac_highlight_gaps', settingsToggleGapHighlights.checked ? 'true' : 'false');
+            }
+            if (settingsToggleAutoSuggest) {
+                localStorage.setItem('crac_auto_suggest_gap', settingsToggleAutoSuggest.checked ? 'true' : 'false');
+            }
+            
+            // Re-render calendar gap highlights based on setting
+            updateGapHighlights();
+            adminSettingsModal.classList.add('hidden');
+        }
+
+        if (engineSettingsBtn) engineSettingsBtn.addEventListener('click', openAdminSettings);
+        if (closeAdminSettingsModalBtn) closeAdminSettingsModalBtn.addEventListener('click', () => adminSettingsModal.classList.add('hidden'));
+        if (closeAdminSettingsBtn) closeAdminSettingsBtn.addEventListener('click', saveAndCloseAdminSettings);
+
+        if (settingsResetEngineBtn) {
+            settingsResetEngineBtn.onclick = () => {
+                if (settingsAppsScriptUrl) settingsAppsScriptUrl.value = DEFAULT_APPS_SCRIPT_URL;
+                localStorage.removeItem('crac_apps_script_url');
+                const orig = settingsResetEngineBtn.innerText;
+                settingsResetEngineBtn.innerText = "Reset to Default ✓";
+                setTimeout(() => settingsResetEngineBtn.innerText = orig, 1500);
+            };
+        }
+
+        if (settingsTestEngineBtn) {
+            settingsTestEngineBtn.onclick = async () => {
+                const orig = settingsTestEngineBtn.innerText;
+                settingsTestEngineBtn.innerText = "Pinging...";
+                try {
+                    const testUrl = (settingsAppsScriptUrl ? settingsAppsScriptUrl.value.trim() : '') || DEFAULT_APPS_SCRIPT_URL;
+                    await fetch(testUrl, { mode: 'no-cors' });
+                    settingsTestEngineBtn.innerText = "Ping Sent ✓";
+                } catch(e) {
+                    settingsTestEngineBtn.innerText = "Offline";
+                }
+                setTimeout(() => settingsTestEngineBtn.innerText = orig, 2000);
+            };
+        }
+
+        if (settingsScanNextGapBtn) {
+            settingsScanNextGapBtn.onclick = () => {
+                const gapEvents = calendar.getEvents().filter(ev => ev.extendedProps && ev.extendedProps.isGap);
+                if (gapEvents.length === 0) {
+                    alert("No unscheduled dates detected in the active calendar view.");
+                    return;
+                }
+                const todayStr = new Date().toISOString().split('T')[0];
+                const upcomingGaps = gapEvents.filter(ev => ev.startStr >= todayStr).sort((a,b) => a.startStr.localeCompare(b.startStr));
+                const targetGap = upcomingGaps.length > 0 ? upcomingGaps[0] : gapEvents[0];
+                
+                adminSettingsModal.classList.add('hidden');
+                switchViewMode('calendar');
+                openModal(null, { date: targetGap.startStr });
+                setTimeout(() => {
+                    document.getElementById('suggestBtn')?.click();
+                }, 250);
+            };
         }
 
         onAuthStateChanged(auth, (user) => {
@@ -861,7 +1057,7 @@
                 return `<span class="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-1">🏊 ${c}</span>`;
             }
             if (/event|bbq|fun|spotlight/i.test(c)) {
-                return `<span class="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-1">✨ ${c}</span>`;
+                return `<span class="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-1">🎉 ${c}</span>`;
             }
             if (/lane|availability/i.test(c)) {
                 return `<span class="px-2 py-0.5 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded text-[8px] font-black uppercase tracking-wider flex items-center gap-1">🏊‍♂️ ${c}</span>`;
@@ -1158,8 +1354,11 @@
 
         function updateGapHighlights() {
             // Remove old gap events
-            calendar.getEvents().forEach(ev => { if (ev.extendedProps.isGap) ev.remove(); });
+            calendar.getEvents().forEach(ev => { if (ev.extendedProps && ev.extendedProps.isGap) ev.remove(); });
             
+            // Check preference setting (defaults to true)
+            if (localStorage.getItem('crac_highlight_gaps') === 'false') return;
+
             const view = calendar.view;
             if (!view) return;
             const start = view.activeStart;
@@ -1182,7 +1381,7 @@
                 const dStr = curr.toISOString().split('T')[0];
                 if (!datesWithEvents.has(dStr) && curr >= today) {
                     calendar.addEvent({
-                        title: currentFacilityFilter !== 'All' ? `GAP (${currentFacilityFilter})` : 'GAP',
+                        title: currentFacilityFilter !== 'All' ? `Open (${currentFacilityFilter})` : 'Open',
                         start: dStr,
                         display: 'background',
                         backgroundColor: '#fff7ed', // amber-50
@@ -1610,26 +1809,8 @@ Return STRICTLY valid JSON with these keys:
             }, 1200);
 
             if (icon) icon.classList.remove('animate-spin');
-            if (label) label.innerText = "✨ AI Suggest";
+            if (label) label.innerText = "Suggest Topic";
         };
-
-        const aiFillNextGapBtn = document.getElementById('aiFillNextGapBtn');
-        if (aiFillNextGapBtn) {
-            aiFillNextGapBtn.onclick = () => {
-                const gapEvents = calendar.getEvents().filter(ev => ev.extendedProps.isGap);
-                if (gapEvents.length === 0) {
-                    alert("No open calendar gaps found in the current view! Your schedule is fully covered.");
-                    return;
-                }
-                const todayStr = new Date().toISOString().split('T')[0];
-                const upcomingGaps = gapEvents.filter(ev => ev.startStr >= todayStr).sort((a,b) => a.startStr.localeCompare(b.startStr));
-                const targetGap = upcomingGaps.length > 0 ? upcomingGaps[0] : gapEvents[0];
-                openModal(null, { date: targetGap.startStr });
-                setTimeout(() => {
-                    document.getElementById('suggestBtn')?.click();
-                }, 250);
-            };
-        }
 
         document.getElementById('processAutoBtn').onclick = async () => {
             const btn = document.getElementById('processAutoBtn');
@@ -1639,7 +1820,7 @@ Return STRICTLY valid JSON with these keys:
             if (appsScriptUrl) {
                 try {
                     await fetch(appsScriptUrl, { mode: 'no-cors' });
-                    alert("Apps Script Content Engine batch run triggered.\nPending items will draft automatically using the CRAC-Core sheet and Gemini 3.8 Flash.");
+                    alert("Marketing Engine batch run triggered.\nPending items will be processed automatically according to CRAC Playbook standards.");
                 } catch(e) {
                     console.warn("Apps Script trigger error:", e);
                     alert("Pending requests queued in Firestore database for scheduled background run.");
