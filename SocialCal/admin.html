@@ -896,7 +896,13 @@
         // Apps Script Engine Web App Configuration (Production Version 17)
         const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaUInKx26I28O02dsBmjSDkV8V33LIZupE9VDB5SFemhTwhian8ScqUC85TrPYVx_O/exec';
         function getAppsScriptUrl() {
-            return localStorage.getItem('crac_apps_script_url') || DEFAULT_APPS_SCRIPT_URL;
+            const saved = localStorage.getItem('crac_apps_script_url');
+            if (saved && (saved.includes('127.0.0.1') || saved.includes('localhost') || !saved.startsWith('https://script.google.com'))) {
+                console.info("Purging obsolete local server URL from settings. Restoring production Apps Script URL.");
+                localStorage.removeItem('crac_apps_script_url');
+                return DEFAULT_APPS_SCRIPT_URL;
+            }
+            return saved || DEFAULT_APPS_SCRIPT_URL;
         }
 
         // Admin Settings Modal Logic
