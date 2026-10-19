@@ -526,7 +526,31 @@
                     </div>
                 </div>
 
-                <!-- Section 3: Standards & Guidelines Compliance -->
+                <!-- Section 3: Direct Engine Key (Stored in Local Browser Cache) -->
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                            Direct Engine Key (Client-Side)
+                        </h4>
+                        <span id="settingsKeyStatus" class="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">Stored Locally</span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        Enables real-time dynamic topic generation directly in your browser. Stored securely in your private browser storage (never committed to git or exposed to patrons).
+                    </p>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Google Cloud / Engine API Key</label>
+                        <input type="password" id="settingsEngineApiKey" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Paste your API key here (AIzaSy...)">
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] font-black uppercase text-blue-600 hover:text-blue-800 tracking-wider flex items-center gap-1">
+                            Get Key from Google Studio ↗
+                        </a>
+                        <button type="button" id="settingsTestKeyBtn" class="text-[10px] font-extrabold uppercase bg-white border border-slate-200 text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-slate-50 transition">Test Key</button>
+                    </div>
+                </div>
+
+                <!-- Section 4: Standards & Guidelines Compliance -->
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 shrink-0 font-bold text-sm">
@@ -862,6 +886,9 @@
         const settingsAppsScriptUrl = document.getElementById('settingsAppsScriptUrl');
         const settingsResetEngineBtn = document.getElementById('settingsResetEngineBtn');
         const settingsTestEngineBtn = document.getElementById('settingsTestEngineBtn');
+        const settingsEngineApiKey = document.getElementById('settingsEngineApiKey');
+        const settingsTestKeyBtn = document.getElementById('settingsTestKeyBtn');
+        const settingsKeyStatus = document.getElementById('settingsKeyStatus');
         const settingsToggleGapHighlights = document.getElementById('settingsToggleGapHighlights');
         const settingsToggleAutoSuggest = document.getElementById('settingsToggleAutoSuggest');
         const settingsScanNextGapBtn = document.getElementById('settingsScanNextGapBtn');
@@ -870,6 +897,19 @@
         function openAdminSettings() {
             if (!adminSettingsModal) return;
             if (settingsAppsScriptUrl) settingsAppsScriptUrl.value = getAppsScriptUrl();
+            
+            const savedKey = localStorage.getItem('crac_engine_api_key') || '';
+            if (settingsEngineApiKey) settingsEngineApiKey.value = savedKey;
+            if (settingsKeyStatus) {
+                if (savedKey) {
+                    settingsKeyStatus.innerText = "Key Configured";
+                    settingsKeyStatus.className = "text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full";
+                } else {
+                    settingsKeyStatus.innerText = "No Key Set (Using Local Pool)";
+                    settingsKeyStatus.className = "text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full";
+                }
+            }
+
             if (settingsToggleGapHighlights) {
                 settingsToggleGapHighlights.checked = localStorage.getItem('crac_highlight_gaps') !== 'false';
             }
@@ -895,6 +935,14 @@
                     localStorage.setItem('crac_apps_script_url', urlVal);
                 } else {
                     localStorage.removeItem('crac_apps_script_url');
+                }
+            }
+            if (settingsEngineApiKey) {
+                const kVal = settingsEngineApiKey.value.trim();
+                if (kVal) {
+                    localStorage.setItem('crac_engine_api_key', kVal);
+                } else {
+                    localStorage.removeItem('crac_engine_api_key');
                 }
             }
             if (settingsToggleGapHighlights) {
@@ -935,6 +983,48 @@
                     settingsTestEngineBtn.innerText = "Offline";
                 }
                 setTimeout(() => settingsTestEngineBtn.innerText = orig, 2000);
+            };
+        }
+
+        if (settingsTestKeyBtn) {
+            settingsTestKeyBtn.onclick = async () => {
+                const keyInput = document.getElementById('settingsEngineApiKey');
+                const keyVal = keyInput ? keyInput.value.trim() : '';
+                const orig = settingsTestKeyBtn.innerText;
+                const statusSpan = document.getElementById('settingsKeyStatus');
+                if (!keyVal) {
+                    alert("Please paste your Google Cloud / Studio API key first.");
+                    return;
+                }
+                settingsTestKeyBtn.innerText = "Testing...";
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${keyVal}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+                    });
+                    if (res.ok) {
+                        settingsTestKeyBtn.innerText = "Key Active ✓";
+                        settingsTestKeyBtn.className = "text-[10px] font-extrabold uppercase bg-emerald-50 border border-emerald-300 text-emerald-700 px-3 py-1.5 rounded-lg";
+                        if (statusSpan) {
+                            statusSpan.innerText = "Active ✓";
+                            statusSpan.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full";
+                        }
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        const errMsg = err?.error?.message || `HTTP ${res.status}`;
+                        settingsTestKeyBtn.innerText = `Error (${res.status})`;
+                        settingsTestKeyBtn.className = "text-[10px] font-extrabold uppercase bg-rose-50 border border-rose-300 text-rose-700 px-3 py-1.5 rounded-lg";
+                        alert(`API Key Test Failed (${res.status}):\n${errMsg}`);
+                    }
+                } catch(e) {
+                    settingsTestKeyBtn.innerText = "Network Error";
+                    alert("Connection failed: " + e.message);
+                }
+                setTimeout(() => {
+                    settingsTestKeyBtn.innerText = orig;
+                    settingsTestKeyBtn.className = "text-[10px] font-extrabold uppercase bg-white border border-slate-200 text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded-lg shadow-2xs hover:bg-slate-50 transition";
+                }, 3000);
             };
         }
 
@@ -1712,7 +1802,9 @@
 
         document.getElementById('addNewBtn').onclick = () => openModal(null, { date: new Date().toISOString().split('T')[0] });
 
-        const GEMINI_DIRECT_KEY = "AIzaSyDUoPXWqewzW5tThX3dYgsGOvOCUH0Ckss";
+        function getDirectEngineKey() {
+            return localStorage.getItem('crac_engine_api_key') || "";
+        }
 
         function getCalendarScheduleContext(targetDateStr, targetFacility) {
             if (!globalRequestsArray || globalRequestsArray.length === 0) {
@@ -1749,6 +1841,12 @@
         }
 
         async function fetchGeminiCalendarSuggestion(facility, dateStr, scheduleContext) {
+            const apiKey = getDirectEngineKey();
+            if (!apiKey) {
+                console.info("Direct Engine Key is not configured in Admin Settings. Utilizing calendar-aware local suggestions pool.");
+                return null;
+            }
+
             const dateObj = dateStr ? new Date(dateStr) : new Date();
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const dayName = days[dateObj.getDay()];
@@ -1775,7 +1873,7 @@ Return STRICTLY valid JSON with these keys:
 }`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_DIRECT_KEY}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1793,9 +1891,15 @@ Return STRICTLY valid JSON with these keys:
                     if (text) {
                         return JSON.parse(text);
                     }
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    console.warn(`Direct Engine API response [${res.status}]:`, errData?.error?.message || errData);
+                    if (res.status === 403) {
+                        console.warn("Direct Engine API key was rejected or reported as leaked. Update your key via Settings (Gear Icon) -> Direct Engine Key.");
+                    }
                 }
             } catch(e) {
-                console.warn("Direct Gemini suggestion error:", e);
+                console.warn("Direct Engine suggestion network error:", e);
             }
             return null;
         }
