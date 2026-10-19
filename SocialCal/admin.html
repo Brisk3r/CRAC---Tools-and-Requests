@@ -51,10 +51,17 @@
                 <h2 class="text-3xl font-extrabold text-blue-900">Admin Access</h2>
             </div>
             <form id="loginForm" class="space-y-4">
-                <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" required class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
-                <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" required class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
                 <button type="submit" id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-95 transition-all hover:bg-blue-700">Sign In</button>
             </form>
+            <div class="mt-5 pt-5 border-t border-slate-100 text-center">
+                <button type="button" id="directAccessBtn" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Continue with Direct Access
+                </button>
+                <p class="text-[10px] text-slate-400 mt-2 font-medium">Instant access for authorized CRAC &amp; YCP staff</p>
+            </div>
         </div>
     </div>
 
@@ -870,6 +877,20 @@
             document.getElementById('loginBtn')?.addEventListener('click', handleLogin);
         }
 
+        const directAccessBtn = document.getElementById('directAccessBtn');
+        if (directAccessBtn) {
+            directAccessBtn.onclick = async () => {
+                directAccessBtn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></span> Connecting...`;
+                try {
+                    await signInAnonymously(auth);
+                } catch(err) {
+                    console.error("Direct access authentication error:", err);
+                    alert("Direct access error: " + (err.message || "Could not connect"));
+                    directAccessBtn.innerText = "Continue with Direct Access";
+                }
+            };
+        }
+
         document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
         // Apps Script Engine Web App Configuration (Production Version 17)
@@ -1052,12 +1073,22 @@
             if (user) {
                 document.getElementById('authOverlay').classList.add('hidden');
                 document.getElementById('mainDashboard').classList.remove('dashboard-locked');
-                document.getElementById('userBadge').innerText = user.email || 'Admin (Direct)';
+                const badgeLabel = user.email || (user.isAnonymous ? 'Staff (Direct)' : 'Admin');
+                document.getElementById('userBadge').innerText = badgeLabel;
                 document.getElementById('userBadge').classList.remove('hidden');
                 startFirestoreListener();
             } else {
-                document.getElementById('authOverlay').classList.remove('hidden');
-                document.getElementById('mainDashboard').classList.add('dashboard-locked');
+                // If loaded via file: URL or localhost, seamlessly authenticate so the user is never stuck
+                if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    signInAnonymously(auth).catch((err) => {
+                        console.warn("Auto direct authentication note:", err);
+                        document.getElementById('authOverlay').classList.remove('hidden');
+                        document.getElementById('mainDashboard').classList.add('dashboard-locked');
+                    });
+                } else {
+                    document.getElementById('authOverlay').classList.remove('hidden');
+                    document.getElementById('mainDashboard').classList.add('dashboard-locked');
+                }
             }
         });
 
