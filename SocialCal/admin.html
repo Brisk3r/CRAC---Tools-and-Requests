@@ -1714,22 +1714,58 @@
 
         const GEMINI_DIRECT_KEY = "AIzaSyDUoPXWqewzW5tThX3dYgsGOvOCUH0Ckss";
 
-        async function fetchGeminiCalendarSuggestion(facility, dateStr, recentCats = []) {
+        function getCalendarScheduleContext(targetDateStr, targetFacility) {
+            if (!globalRequestsArray || globalRequestsArray.length === 0) {
+                return { recentScheduleText: "No existing campaigns found.", existingTitles: [], recentCats: [] };
+            }
+            
+            const targetTime = targetDateStr ? new Date(targetDateStr).getTime() : Date.now();
+
+            // Sort campaigns chronologically by proximity to the target date
+            const sortedByProximity = [...globalRequestsArray]
+                .filter(r => r.date && r.title)
+                .map(r => {
+                    const diffDays = Math.round(Math.abs(new Date(r.date).getTime() - targetTime) / (1000 * 60 * 60 * 24));
+                    return { ...r, diffDays };
+                })
+                .sort((a, b) => a.diffDays - b.diffDays);
+
+            // Extract the 8 closest scheduled campaigns to provide rich schedule context
+            const closest = sortedByProximity.slice(0, 8);
+            
+            const scheduleSummary = closest.map(r => {
+                const facShort = (r.facility && r.facility.includes('Yamba')) ? 'YCP' : 'CRAC';
+                return `• ${r.date} [${facShort}]: "${r.title}" (${r.category || 'General'})`;
+            }).join('\n');
+
+            const existingTitles = closest.map(r => (r.title || '').toLowerCase());
+            const recentCats = closest.map(r => r.category).filter(Boolean);
+
+            return {
+                recentScheduleText: scheduleSummary || "None scheduled nearby.",
+                existingTitles,
+                recentCats
+            };
+        }
+
+        async function fetchGeminiCalendarSuggestion(facility, dateStr, scheduleContext) {
             const dateObj = dateStr ? new Date(dateStr) : new Date();
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const dayName = days[dateObj.getDay()];
             
             const prompt = `You are the Lead Marketing Planner for Clarence Regional Aquatic Centre (CRAC, Grafton) and Yamba Community Pool (YCP, Yamba) in NSW, Australia.
-Generate ONE timely, engaging, factual social media campaign idea for:
+Generate ONE fresh, timely, engaging, factual social media campaign idea for:
 - Facility: ${facility}
 - Target Date: ${dateStr || 'Upcoming'} (${dayName})
-- Categories recently used this week: ${recentCats.join(', ') || 'None'}
+
+Current schedule around this date (DO NOT duplicate, clash with, or repeat any of these topics):
+${scheduleContext.recentScheduleText}
 
 Rules:
 - Strictly Australian English (centre, programme, enrol, organise).
-- Zero corporate fluff clichés ("thrilled to announce", "haven", "state of the art").
-- Factual and actionable for local aquatic centre visitors (e.g. lap lane availability, squad passes, aqua aerobics, learn to swim, holiday water safety, cafe or plant maintenance).
-- Balance the schedule: pick a category that differs from recently used categories if possible.
+- Zero corporate fluff clichés ("thrilled to announce", "haven", "state of the art", "dive in").
+- Factual and actionable for local aquatic centre visitors (e.g. lap lane availability, squad passes, aqua aerobics, learn to swim milestones, water safety, cafe or plant maintenance).
+- Schedule Diversity: Select a topic and category that fills a content gap and differs from what is already booked nearby.
 
 Return STRICTLY valid JSON with these keys:
 {
@@ -1773,20 +1809,25 @@ Return STRICTLY valid JSON with these keys:
 
             const facility = document.getElementById('facilitySelect').value;
             const targetDate = document.getElementById('editDate').value;
-            const recentCats = globalRequestsArray.slice(0, 5).map(r => r.category).filter(Boolean);
+            const scheduleContext = getCalendarScheduleContext(targetDate, facility);
 
-            let suggestion = await fetchGeminiCalendarSuggestion(facility, targetDate, recentCats);
+            let suggestion = await fetchGeminiCalendarSuggestion(facility, targetDate, scheduleContext);
 
             // Fallback to smart curated list if offline or API delay
             if (!suggestion) {
                 const fallbackList = [
                     { title: "Staff Spotlight: Team Member", msg: "Meet our dedicated aquatic team member this week! Hear their favourite safety tip and why they love coaching Clarence Valley swimmers.", cat: "Community Event" },
-                    { title: "Lap Lane Availability Update", msg: "Check our updated morning and afternoon lap lane schedules before heading in for your swim session.", cat: "Lane Availability" },
+                    { title: "Lap Lane Availability Update", msg: "Check our updated morning and afternoon lap lane schedules before heading in for your swim session.", cat: "Lap Swimming" },
                     { title: "Aqua Aerobics & Gentle Exercise", msg: "Low-impact aqua fitness classes running this week. Heated indoor pools, certified instructors, suitable for all fitness levels.", cat: "Health Fitness" },
                     { title: "Swim School Technique Tip", msg: "Encourage water confidence this week! Log into the Client Portal to review your swimmer's skill milestones.", cat: "Swim School Intensive" },
-                    { title: "Holiday Squad Training Passes", msg: "10-visit Holiday Squad Passes available at reception. Keep up your fitness with no bookings required.", cat: "Squad Training" }
+                    { title: "Holiday Squad Training Passes", msg: "10-visit Holiday Squad Passes available at reception. Keep up your fitness with no bookings required.", cat: "Squad Training" },
+                    { title: "School Holiday Pool Inflatable Hours", msg: "Bring the kids down for giant inflatable fun! Check our supervised session times and regular pool entry rates.", cat: "Community Event" },
+                    { title: "Plant Room & Water Quality Care", msg: "Our operations team performs hourly water quality checks across all pools to guarantee crystal-clear, safe swimming.", cat: "Important Notice" }
                 ];
-                const freshFallback = fallbackList.filter(s => !recentCats.includes(s.cat));
+                const freshFallback = fallbackList.filter(s => 
+                    !scheduleContext.existingTitles.some(t => t && (t.includes(s.title.toLowerCase()) || s.title.toLowerCase().includes(t))) &&
+                    !scheduleContext.recentCats.includes(s.cat)
+                );
                 suggestion = freshFallback.length > 0 
                     ? freshFallback[Math.floor(Math.random() * freshFallback.length)]
                     : fallbackList[Math.floor(Math.random() * fallbackList.length)];
