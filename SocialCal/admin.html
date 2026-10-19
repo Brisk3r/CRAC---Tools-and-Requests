@@ -1871,10 +1871,353 @@
             };
         }
 
+        // Curated Aquatic Topic Matrix for Clarence Regional Aquatic Centre & Yamba Community Pool
+        const AQUATIC_TOPIC_MATRIX = [
+            // --- LANE AVAILABILITY & LAP SWIMMING ---
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Lane Availability',
+                title: '50m Outdoor Lap Lane Schedule',
+                template: (day, fac) => `Planning your swim workout this ${day}? Check our 50m outdoor Olympic pool lane availability. Peak morning lanes open from 5:30am with marked slow, medium, and fast pacing lanes.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Lane Availability',
+                title: 'Indoor Heated 25m Lap Availability',
+                template: (day, fac) => `Enjoy year-round 29°C heated swimming in our indoor 25m pool this ${day}. Morning and lunchtime public lap lanes are open for fitness swimming, rehab, and gentle laps.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Lane Availability',
+                title: 'Midday Quiet Lap Swimming Hours',
+                template: (day, fac) => `Beat the afternoon rush! Dedicated lap lanes are open between 11:30am and 2:00pm this ${day} for a clear, uninterrupted training session.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Lane Availability',
+                title: 'Weekend Morning Lap Allocation',
+                template: (day, fac) => `Early morning lap swimming is available from 7:00am this ${day}. Check the lane allocation board at reception upon arrival for pace guides.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Lane Availability',
+                title: 'YCP Morning Lap Swimming Availability',
+                template: (day, fac) => `Start your ${day} morning with fresh coastal laps at Yamba Community Pool. The 25m outdoor pool opens at 6:00am with marked slow, medium, and sprint lanes.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Lane Availability',
+                title: 'Yamba Mid-Week Lap Lane Schedule',
+                template: (day, fac) => `Plenty of open lane space available through midday this ${day}. Enjoy pristine coastal conditions and warm water temperatures for your fitness sets.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Lane Availability',
+                title: 'Yamba Weekend Lap Swimming Times',
+                template: (day, fac) => `Weekend lap swimming is open from 7:00am this ${day}. Continuous lap lanes are maintained alongside our recreational family swimming area.`
+            },
+
+            // --- HEALTH & FITNESS / AQUA AEROBICS / HYDROTHERAPY ---
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Health Fitness',
+                title: 'Aqua Aerobics: Gentle Water Mobility',
+                template: (day, fac) => `Gentle on joints and excellent for circulation. Join our certified instructor in the warm indoor pool this ${day} morning. Suitable for all fitness levels.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Health Fitness',
+                title: 'Deep Water Aqua Cardio Workout',
+                template: (day, fac) => `Boost cardiovascular fitness and core strength with zero joint impact. Deep water buoyancy belts provided. Class kicks off this ${day} at CRAC.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Health Fitness',
+                title: 'Warm Water Therapy Pool Sessions',
+                template: (day, fac) => `Our dedicated 33°C hydrotherapy warm water pool is open this ${day} for gentle mobility, post-injury recovery, and assisted stretching. Ramp access available.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Health Fitness',
+                title: 'Hydrotherapy Pool Gentle Exercise Times',
+                template: (day, fac) => `Check our scheduled therapy pool public hours this ${day}. Heated to therapeutic temperatures with accessible hoists and graduated entry steps.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Health Fitness',
+                title: 'Yamba Outdoor Aqua Fitness Session',
+                template: (day, fac) => `Invigorating outdoor aqua aerobics running at Yamba Community Pool this ${day}. Enjoy low-impact exercise under the coastal sun with our motivating coach.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Health Fitness',
+                title: 'Ocean Swimmer Cross-Training Sets',
+                template: (day, fac) => `Conditioning sets tailored for coastal ocean swimmers and surf lifesavers. Build stamina and bilateral breathing in our 25m pool this ${day}.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Health Fitness',
+                title: 'Active Over 50s Morning Swim',
+                template: (day, fac) => `Stay active and connected this ${day} with our low-impact morning swim group at Yamba. Relaxed pacing with tea and coffee available afterwards.`
+            },
+
+            // --- SQUAD TRAINING ---
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Squad Training',
+                title: 'Junior Squad Training Schedule',
+                template: (day, fac) => `Junior development squad kicks off this ${day} afternoon in the 50m pool. Focus on streamlined turns, kick mechanics, and stroke cadence.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Squad Training',
+                title: 'Senior Performance Squad Endurance Set',
+                template: (day, fac) => `High-performance training block underway this ${day}. 50m long-course threshold intervals and turn mechanics. Swimmers on deck 10 minutes prior.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Squad Training',
+                title: 'Adult Masters & Fitness Squad',
+                template: (day, fac) => `Looking to sharpen your swim fitness or train for an upcoming triathlon? Coach-led adult squad sessions run this ${day} morning at CRAC.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Squad Training',
+                title: 'Holiday Squad 10-Visit Passes',
+                template: (day, fac) => `Keep your fitness momentum going! Grab a 10-visit Holiday Squad Pass from reception. Valid for all scheduled squad sessions with no booking required.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Squad Training',
+                title: 'Yamba Youth Squad Afternoon Training',
+                template: (day, fac) => `Yamba youth squad training runs this ${day} afternoon. Race technique, relay transitions, and endurance pacing under Coach guidance.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Squad Training',
+                title: 'Yamba Adult Masters Swim Sessions',
+                template: (day, fac) => `Early morning squad conditioning for local surf lifesavers, triathletes, and masters swimmers. Join us this ${day} morning at Yamba.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Squad Training',
+                title: 'Holiday Squad Passes at YCP',
+                template: (day, fac) => `Visiting Yamba for the holidays? Casual squad passes are available at reception for visiting swimmers and athletes to keep up their training.`
+            },
+
+            // --- SWIM SCHOOL GENERAL ---
+            {
+                facility: 'All',
+                category: 'Swim School General',
+                title: 'Swim School Milestone Check-In',
+                template: (day, fac) => `Keep track of your child's swimming milestones! Log into the Client Portal this ${day} to view completed skills, teacher notes, and level progressions.`
+            },
+            {
+                facility: 'All',
+                category: 'Swim School General',
+                title: 'Water Safety Week: Life-Saving Skills',
+                template: (day, fac) => `This week our learn to swim classes are focusing on essential water survival: safe entries, treading water, and calm back floating without goggles.`
+            },
+            {
+                facility: 'All',
+                category: 'Swim School General',
+                title: 'NSW Active Kids Voucher Redemption',
+                template: (day, fac) => `Did you know you can apply your NSW Active Kids vouchers directly towards swim school term fees? Submit your voucher number via the Client Portal or at reception.`
+            },
+            {
+                facility: 'All',
+                category: 'Swim School General',
+                title: 'Term Learn to Swim Enrolments Open',
+                template: (day, fac) => `Secure your child's swimming spot for the upcoming term. Classes available from infant water familiarisation through to stroke correction.`
+            },
+            {
+                facility: 'All',
+                category: 'Swim School General',
+                title: 'Toddler Water Confidence & Safety Tip',
+                template: (day, fac) => `Building relaxed water confidence starts early. Our infant and toddler classes emphasise breath control, gentle splashing, and independent kick movements.`
+            },
+
+            // --- SWIM SCHOOL INTENSIVE ---
+            {
+                facility: 'All',
+                category: 'Swim School Intensive',
+                title: 'Holiday Swim Intensive Booking Notice',
+                template: (day, fac) => `Fast-track swimming skills this school holidays! 5-day intensive programmes provide consecutive daily practice for rapid confidence and milestone progression.`
+            },
+            {
+                facility: 'All',
+                category: 'Swim School Intensive',
+                title: 'Holiday Intensive Early-Bird Enrolment',
+                template: (day, fac) => `Morning spots fill quickly for our holiday swimming intensives. Enrol via reception or our website to guarantee your child's preferred time slot.`
+            },
+            {
+                facility: 'All',
+                category: 'Swim School Intensive',
+                title: 'School Holiday Stroke Clinic Focus',
+                template: (day, fac) => `Specialised 45-minute technique clinics focusing on breaststroke timing, butterfly kicks, and competitive turn mechanics. Contact reception for schedule details.`
+            },
+
+            // --- COMMUNITY EVENT ---
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Community Event',
+                title: 'Weekend Splash Park & Waterslide Sessions',
+                template: (day, fac) => `Looking for weekend family fun? Our Speed Slide and Twister operate from 11:00am to 3:00pm this ${day}. Splash park and tipping bucket open all day.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Community Event',
+                title: 'Giant Pool Inflatable Afternoon',
+                template: (day, fac) => `Challenge yourself on our giant pool obstacle course this ${day}! Supervised sessions running in the 50m pool. Standard entry fees apply.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Community Event',
+                title: 'Community Poolside Family Fun Day',
+                template: (day, fac) => `Bring the family down for shaded picnic lawns, family fun races, and poolside activities this ${day} at Clarence Regional Aquatic Centre.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Community Event',
+                title: 'Yamba Weekend Family Fun Afternoon',
+                template: (day, fac) => `Relaxed coastal swimming for the whole family this ${day}. Shaded grass lawns, toddler splash pool, and kiosk refreshments at Yamba Community Pool.`
+            },
+            {
+                facility: 'Yamba Community Pool',
+                category: 'Community Event',
+                title: 'Yamba Community Amateur Swim Night',
+                template: (day, fac) => `Cheer on our local club swimmers this ${day} evening! Friendly handicap races, supportive community atmosphere, and poolside barbecue.`
+            },
+
+            // --- STAFF SPOTLIGHT / CAREERS ---
+            {
+                facility: 'All',
+                category: 'Staff Spotlight',
+                title: 'Team Spotlight: Poolside Lifeguard',
+                template: (day, fac) => `Meet our dedicated poolside lifeguards! Rain or shine, they ensure swimmer safety, conduct hourly water tests, and keep our facilities spotless.`
+            },
+            {
+                facility: 'All',
+                category: 'Staff Spotlight',
+                title: 'Staff Spotlight: Learn to Swim Teacher',
+                template: (day, fac) => `A big shout-out to our passionate swim instructors! Dedicated to building water safety and confidence for hundreds of Clarence Valley children every week.`
+            },
+            {
+                facility: 'All',
+                category: 'Staff Spotlight',
+                title: 'Aquatic Careers: Join Our Team',
+                template: (day, fac) => `Passionate about aquatics? We are recruiting casual lifeguards and swim teachers. Fully accredited training pathways supported. Enquire at reception today.`
+            },
+
+            // --- IMPORTANT NOTICE ---
+            {
+                facility: 'All',
+                category: 'Important Notice',
+                title: 'Water Safety: Keep Watch Supervision',
+                template: (day, fac) => `Royal Life Saving Keep Watch reminder: Children under 5 must remain within arm's reach of a supervising adult. Children under 10 require active supervision at all times.`
+            },
+            {
+                facility: 'All',
+                category: 'Important Notice',
+                title: 'Plant Room & Water Quality Audits',
+                template: (day, fac) => `Our operations crew performs precision digital water tests every hour across all pools to guarantee crystal-clear water, balanced pH, and pristine hygiene.`
+            },
+            {
+                facility: 'All',
+                category: 'Important Notice',
+                title: 'Sun Safety & Shaded Poolside Zones',
+                template: (day, fac) => `Remember to slip, slop, slap! Free sunscreen is provided at reception, with extensive shade sail coverage across all outdoor spectator lawns.`
+            },
+            {
+                facility: 'All',
+                category: 'Important Notice',
+                title: 'Pool Etiquette: Courteous Lane Sharing',
+                template: (day, fac) => `Keep swim sessions enjoyable for all: swim on the left, pause at the wall to let faster swimmers pass, and choose a lane matching your pace.`
+            },
+            {
+                facility: 'All',
+                category: 'Important Notice',
+                title: 'Wet Weather Operations Notice',
+                template: (day, fac) => `Our outdoor pools remain open during light rain. In the event of localized thunder or lightning, pool deck safety protocols will be observed.`
+            },
+
+            // --- MAINTENANCE CLOSURE ---
+            {
+                facility: 'All',
+                category: 'Maintenance Closure',
+                title: 'Scheduled Plant Room Filter Backwash',
+                template: (day, fac) => `Routine filtration backwash and sanitisation scheduled this ${day} evening. All pools will reopen on schedule for tomorrow's early morning session.`
+            },
+            {
+                facility: 'Clarence Regional Aquatic Centre',
+                category: 'Maintenance Closure',
+                title: 'Hydrotherapy Pool Scheduled Deep Clean',
+                template: (day, fac) => `Our warm water hydrotherapy pool will undergo routine deep cleaning this ${day} evening from 6:30pm. The 50m and 25m pools remain fully open.`
+            },
+            {
+                facility: 'All',
+                category: 'Maintenance Closure',
+                title: 'Scheduled Shade Sail & Grounds Service',
+                template: (day, fac) => `Council maintenance will be inspecting shade tensioning and lawn edging this ${day} morning. Pool lanes and facilities remain open as normal.`
+            }
+        ];
+
+        // Session-level anti-loop memory so repeated clicks never cycle the same items
+        const recentSuggestionTitles = [];
+
+        function getDynamicTopicSuggestion(facility, dateStr, scheduleContext) {
+            const dateObj = dateStr ? new Date(dateStr) : new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = days[dateObj.getDay()];
+
+            const isYamba = facility && facility.includes('Yamba');
+            const targetFacKey = isYamba ? 'Yamba Community Pool' : 'Clarence Regional Aquatic Centre';
+
+            // Filter pool by facility relevance
+            let pool = AQUATIC_TOPIC_MATRIX.filter(item => 
+                item.facility === 'All' || item.facility === targetFacKey
+            );
+
+            // Filter out exact titles already on the calendar in nearby dates
+            const existingTitlesLower = (scheduleContext.existingTitles || []).map(t => (t || '').toLowerCase());
+            let available = pool.filter(item => {
+                const itemTitleLower = item.title.toLowerCase();
+                return !existingTitlesLower.some(et => et && (et.includes(itemTitleLower) || itemTitleLower.includes(et)));
+            });
+
+            if (available.length === 0) available = pool;
+
+            // Filter out items already suggested in this browser session (up to 15 recent items)
+            let unviewed = available.filter(item => !recentSuggestionTitles.includes(item.title));
+            if (unviewed.length === 0) {
+                // If history is full, pop the oldest half to keep selection fresh
+                recentSuggestionTitles.splice(0, Math.floor(recentSuggestionTitles.length / 2));
+                unviewed = available.filter(item => !recentSuggestionTitles.includes(item.title));
+            }
+            if (unviewed.length === 0) unviewed = available;
+
+            // Prioritise categories that are NOT heavily represented on the immediate surrounding calendar
+            const recentCats = scheduleContext.recentCats || [];
+            let freshCategoryItems = unviewed.filter(item => !recentCats.slice(0, 3).includes(item.category));
+            if (freshCategoryItems.length === 0) freshCategoryItems = unviewed;
+
+            // Pick a random fresh candidate
+            const chosen = freshCategoryItems[Math.floor(Math.random() * freshCategoryItems.length)];
+
+            // Record in session history
+            recentSuggestionTitles.push(chosen.title);
+            if (recentSuggestionTitles.length > 25) recentSuggestionTitles.shift();
+
+            return {
+                title: chosen.title,
+                category: chosen.category,
+                keyMessage: chosen.template(dayName, targetFacKey)
+            };
+        }
+
         async function fetchGeminiCalendarSuggestion(facility, dateStr, scheduleContext) {
             const apiKey = getDirectEngineKey();
             if (!apiKey) {
-                console.info("Direct Engine Key is not configured in Admin Settings. Utilizing calendar-aware local suggestions pool.");
                 return null;
             }
 
@@ -1899,7 +2242,7 @@ Rules:
 Return STRICTLY valid JSON with these keys:
 {
   "title": "Short catchy title (under 8 words)",
-  "category": "One of: Swim School Intensive, Squad Training, Health Fitness, Lap Swimming, Community Event, Important Notice, Maintenance Closure",
+  "category": "One of: Lane Availability, Health Fitness, Squad Training, Swim School General, Swim School Intensive, Community Event, Staff Spotlight, Important Notice, Maintenance Closure",
   "keyMessage": "2-3 clear, factual sentences detailing what the patron needs to know, times, and actions to take."
 }`;
 
@@ -1922,12 +2265,6 @@ Return STRICTLY valid JSON with these keys:
                     if (text) {
                         return JSON.parse(text);
                     }
-                } else {
-                    const errData = await res.json().catch(() => ({}));
-                    console.warn(`Direct Engine API response [${res.status}]:`, errData?.error?.message || errData);
-                    if (res.status === 403) {
-                        console.warn("Direct Engine API key was rejected or reported as leaked. Update your key via Settings (Gear Icon) -> Direct Engine Key.");
-                    }
                 }
             } catch(e) {
                 console.warn("Direct Engine suggestion network error:", e);
@@ -1940,7 +2277,7 @@ Return STRICTLY valid JSON with these keys:
             const label = document.getElementById('suggestLabel');
             
             if (icon) icon.classList.add('animate-spin');
-            if (label) label.innerText = "Thinking...";
+            if (label) label.innerText = "Finding Topic...";
 
             const facility = document.getElementById('facilitySelect').value;
             const targetDate = document.getElementById('editDate').value;
@@ -1948,24 +2285,9 @@ Return STRICTLY valid JSON with these keys:
 
             let suggestion = await fetchGeminiCalendarSuggestion(facility, targetDate, scheduleContext);
 
-            // Fallback to smart curated list if offline or API delay
+            // If no direct key or API delay, utilize the rich contextual aquatic topic matrix
             if (!suggestion) {
-                const fallbackList = [
-                    { title: "Staff Spotlight: Team Member", msg: "Meet our dedicated aquatic team member this week! Hear their favourite safety tip and why they love coaching Clarence Valley swimmers.", cat: "Community Event" },
-                    { title: "Lap Lane Availability Update", msg: "Check our updated morning and afternoon lap lane schedules before heading in for your swim session.", cat: "Lap Swimming" },
-                    { title: "Aqua Aerobics & Gentle Exercise", msg: "Low-impact aqua fitness classes running this week. Heated indoor pools, certified instructors, suitable for all fitness levels.", cat: "Health Fitness" },
-                    { title: "Swim School Technique Tip", msg: "Encourage water confidence this week! Log into the Client Portal to review your swimmer's skill milestones.", cat: "Swim School Intensive" },
-                    { title: "Holiday Squad Training Passes", msg: "10-visit Holiday Squad Passes available at reception. Keep up your fitness with no bookings required.", cat: "Squad Training" },
-                    { title: "School Holiday Pool Inflatable Hours", msg: "Bring the kids down for giant inflatable fun! Check our supervised session times and regular pool entry rates.", cat: "Community Event" },
-                    { title: "Plant Room & Water Quality Care", msg: "Our operations team performs hourly water quality checks across all pools to guarantee crystal-clear, safe swimming.", cat: "Important Notice" }
-                ];
-                const freshFallback = fallbackList.filter(s => 
-                    !scheduleContext.existingTitles.some(t => t && (t.includes(s.title.toLowerCase()) || s.title.toLowerCase().includes(t))) &&
-                    !scheduleContext.recentCats.includes(s.cat)
-                );
-                suggestion = freshFallback.length > 0 
-                    ? freshFallback[Math.floor(Math.random() * freshFallback.length)]
-                    : fallbackList[Math.floor(Math.random() * fallbackList.length)];
+                suggestion = getDynamicTopicSuggestion(facility, targetDate, scheduleContext);
             }
 
             document.getElementById('editTitle').value = suggestion.title;
