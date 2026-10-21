@@ -1089,8 +1089,16 @@
                 const badgeLabel = user.email || (user.isAnonymous ? 'Staff (Direct)' : 'Admin');
                 document.getElementById('userBadge').innerText = badgeLabel;
                 document.getElementById('userBadge').classList.remove('hidden');
-                startFirestoreListener();
+                if (user.uid !== listenerUid || !unsubscribeFirestore) {
+                    listenerUid = user.uid;
+                    startFirestoreListener();
+                }
             } else {
+                listenerUid = null;
+                if (unsubscribeFirestore) {
+                    try { unsubscribeFirestore(); } catch(e) {}
+                    unsubscribeFirestore = null;
+                }
                 // If loaded via file: URL or localhost, seamlessly authenticate so the user is never stuck
                 if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                     signInAnonymously(auth).catch((err) => {
@@ -1108,6 +1116,7 @@
         // Resilient Firestore snapshot stream with backoff reconnection
         let unsubscribeFirestore = null;
         let isReconnecting = false;
+        let listenerUid = null;
 
         function startFirestoreListener() {
             if (unsubscribeFirestore) {
@@ -1149,6 +1158,9 @@
                     renderRequests();
                 }, (error) => {
                     console.warn("Firestore snapshot stream dropped or reset:", error);
+                    if (!auth.currentUser || (error && error.code === 'permission-denied')) {
+                        return; // Don't retry-loop when signed out or access is denied
+                    }
                     if (!isReconnecting) {
                         isReconnecting = true;
                         setTimeout(() => {
@@ -1166,7 +1178,7 @@
         // Auto-reconnect on network return and laptop wake-up from sleep
         window.addEventListener('online', () => {
             console.log("Network online detected. Re-synchronising Firestore connection...");
-            startFirestoreListener();
+            if (auth.currentUser) startFirestoreListener();
         });
 
         document.addEventListener('visibilitychange', () => {
