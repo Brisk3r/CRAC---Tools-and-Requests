@@ -868,7 +868,14 @@
                 await signInWithEmailAndPassword(auth, email, pass); 
             } catch (err) { 
                 console.error("Login authentication error:", err);
-                alert("Access Denied: " + (err.message || "Invalid credentials")); 
+                const friendly = {
+                    'auth/invalid-credential': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access'.",
+                    'auth/wrong-password': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access'.",
+                    'auth/user-not-found': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access'.",
+                    'auth/too-many-requests': "Too many attempts. Please wait a few minutes or use 'Continue with Direct Access'.",
+                    'auth/network-request-failed': "Network connection issue. Check your internet and try again."
+                };
+                alert(friendly[err.code] || ("Access Denied: " + (err.message || "Invalid credentials"))); 
             }
         }
         if (loginForm) {
