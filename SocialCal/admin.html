@@ -1767,6 +1767,7 @@
             const isYamba = (req.facility || '').toLowerCase().includes('yamba');
             const facName = isYamba ? 'Yamba Community Pool' : 'Clarence Regional Aquatic Centre';
             const facShort = isYamba ? 'Yamba Community Pool' : 'Clarence Regional Aquatic Centre in Grafton';
+            const tagFac = isYamba ? 'YambaCommunityPool #Yamba' : 'ClarenceRegionalAquaticCentre #Grafton';
             const webUrl = isYamba
                 ? 'https://www.clarence.nsw.gov.au/Sports-and-recreation/Aquatic-centres/Yamba-Community-Pool'
                 : 'https://www.clarence.nsw.gov.au/crac';
@@ -1779,86 +1780,210 @@
             const rawMsg = toAuSpelling((req.keyMessage || '').trim());
             const cat = req.category || 'Important Notice';
 
-            // Extract clean factual sentences / lines from keyMessage (removing internal staff meta notes like "get some pics of them if possible")
             const rawLines = rawMsg
                 .split(/\r?\n|(?<=[.!?])\s+/)
                 .map(l => l.replace(/^[\s•·\-*]+/, '').trim())
                 .filter(l => l.length > 2 && !/^(?:repost about|portal post|get some pics)/i.test(l));
 
-            const factPoints = rawLines.length > 0 ? rawLines : [rawMsg || `Check the latest schedule and session details at ${facName}.`];
+            const isSquad = /squad/i.test(cat) || /squad|etiquette|pacing/i.test(rawTitle + ' ' + rawMsg);
+            const isLts = /swim school|intensive/i.test(cat) || /portal|lts|swim school|assessment|starfish|sharks|preschool/i.test(rawTitle + ' ' + rawMsg);
+            const isAqua = /health|fitness|aqua/i.test(cat) || /aqua/i.test(rawTitle + ' ' + rawMsg);
+            const isClosure = /lane|closure|maintenance/i.test(cat) || /carnival|closed|lane|maintenance/i.test(rawTitle + ' ' + rawMsg);
 
-            // Category-specific lead-in and call-to-action links
-            let introLine = `<strong>${rawTitle} at ${facName}</strong>`;
-            let primaryLinkLabel = `${facName} Website`;
-            let primaryLinkUrl = webUrl;
-            let secondaryLinkLabel = 'Zone Availability Calendar';
-            let secondaryLinkUrl = zoneUrl;
+            let socialHtml = '';
+            let newsletterHtml = '';
+            let websiteHtml = '';
+            let signHeadline = rawTitle.toUpperCase();
+            let signBody = '';
 
-            if (/swim school|intensive/i.test(cat) || /portal|lts|swim school|assessment|level/i.test(rawTitle + ' ' + rawMsg)) {
-                introLine = `<strong>${rawTitle}: ${facName} Swim School</strong>`;
-                primaryLinkLabel = 'Check Progress & Bookings on the Client Portal';
-                primaryLinkUrl = portalUrl;
-                secondaryLinkLabel = `${facName} Information`;
-                secondaryLinkUrl = webUrl;
-            } else if (/squad/i.test(cat) || /squad|etiquette/i.test(rawTitle + ' ' + rawMsg)) {
-                introLine = `<strong>${rawTitle} at ${facName}</strong>`;
-                primaryLinkLabel = 'Book & Manage Squads via the Client Portal';
-                primaryLinkUrl = portalUrl;
-                secondaryLinkLabel = 'Live Lane & Zone Availability';
-                secondaryLinkUrl = zoneUrl;
-            } else if (/health|fitness|aqua/i.test(cat) || /aqua/i.test(rawTitle + ' ' + rawMsg)) {
-                introLine = `<strong>${rawTitle} at ${facName}</strong>`;
-                primaryLinkLabel = 'Class Bookings via the Client Portal';
-                primaryLinkUrl = portalUrl;
-                secondaryLinkLabel = 'Timetable & Pool Availability';
-                secondaryLinkUrl = zoneUrl;
-            } else if (/lane|closure|maintenance/i.test(cat) || /carnival|closed|lane/i.test(rawTitle + ' ' + rawMsg)) {
-                introLine = `<strong>Lane & Pool Availability Update: ${rawTitle}</strong>`;
-                primaryLinkLabel = 'Check Live Zone & Lane Availability';
-                primaryLinkUrl = zoneUrl;
-                secondaryLinkLabel = `${facName} Hours & Info`;
-                secondaryLinkUrl = webUrl;
+            if (isSquad) {
+                socialHtml = [
+                    `<p>🏊 <strong>Morning Laps & Squad Swimming at ${facName}!</strong> ⏱️</p>`,
+                    `<p>Whether you are tackling early-morning squad sets or finding your rhythm in the lap lanes, sharing the water courteously keeps every session smooth, safe, and energising for all speeds.</p>`,
+                    `<p>Here are our key lane etiquette guidelines to keep everyone swimming strong:</p>`,
+                    `<p>• <strong>Keep Left:</strong> Always swim to the left of the black line in a clockwise direction (or follow posted lane entry signage).</p>`,
+                    `<p>• <strong>5-Second Wall Gap:</strong> Leave a clear 5-second interval when pushing off behind another swimmer so everyone has clean water and room to stroke.</p>`,
+                    `<p>• <strong>Match Your Lane Speed:</strong> Choose a lane matching your pace (Slow, Medium, or Fast). If you need to pass, do so courteously on the right or communicate at the wall.</p>`,
+                    `<p>• <strong>Clear Wall Space:</strong> Turn in the centre and push off left. Please keep the right side and corners of the wall clear for resting and incoming swimmers.</p>`,
+                    `<p>Dedicated lap lanes remain open for casual lap swimmers, masters, and squad members throughout all morning sessions.</p>`,
+                    `<p>🔗 Check live lane & zone availability: ${zoneUrl}</p>`,
+                    `<p>🔗 Book squad passes & manage sessions on the Client Portal: ${portalUrl}</p>`,
+                    `<p>#${tagFac} #ClarenceValley #LapSwimming #SquadTraining #SwimFit #SwimmingNSW</p>`
+                ].join('');
+
+                newsletterHtml = [
+                    `<p><strong>Subject: Smooth Morning Laps & Squad Etiquette | ${facName}</strong></p>`,
+                    `<p>Hi @name,</p>`,
+                    `<p>With morning squads and lap sessions underway across our pools, here is a quick guide to lane etiquette so every swimmer enjoys clean water and a fantastic workout.</p>`,
+                    `<p>🏊 <strong>Lane Etiquette & Safety Reminders</strong></p>`,
+                    `<p>• <strong>Keep Left:</strong> Maintain circle swimming to the left of the black centre line at all times.</p>`,
+                    `<p>• <strong>5-Second Interval:</strong> Allow a 5-second gap when leaving the wall behind another swimmer.</p>`,
+                    `<p>• <strong>Pacing & Lane Selection:</strong> Select the lane that matches your stroke speed. Courteously move lanes if your pace changes.</p>`,
+                    `<p>• <strong>Wall Clearance:</strong> Rest in the corners of the lane, leaving the centre of the wall open for tumble turns and push-offs.</p>`,
+                    `<p>⏱️ <strong>Squad Timetables & Bookings</strong></p>`,
+                    `<p>To manage your squad passes, review training timetables, or check account details, visit our online Client Portal:</p>`,
+                    `<p>🔗 <a href="${portalUrl}">${portalUrl}</a></p>`,
+                    `<p>See you at the pool,</p>`,
+                    `<p>The Coaching & Deck Team<br>${facName}<br>${webUrl}</p>`
+                ].join('');
+
+                websiteHtml = [
+                    `<p><strong>Squad Pacing & Lane Etiquette Guidelines - ${facName}</strong></p>`,
+                    `<p>To ensure all swimmers enjoy safe and productive lap sessions, please observe our lane etiquette guidelines:</p>`,
+                    `<p>• Always swim to the left of the black line (clockwise direction unless signed otherwise).</p>`,
+                    `<p>• Allow a 5-second interval when pushing off behind another swimmer.</p>`,
+                    `<p>• Select the lane speed (Slow, Medium, Fast) that best matches your stroke pace.</p>`,
+                    `<p>• Keep wall corners clear when resting; do not obstruct tumble turns in the centre of the lane.</p>`,
+                    `<p>🔗 <a href="${zoneUrl}">Check Live Lane & Zone Availability</a> | <a href="${portalUrl}">Client Portal Bookings</a></p>`
+                ].join('');
+
+                signHeadline = "SQUAD & LAP LANE ETIQUETTE";
+                signBody = "Please keep left, allow a 5-second interval at the wall, and select the lane matching your pace. Dedicated lap lanes open daily.";
+            } else if (isLts) {
+                socialHtml = [
+                    `<p>🏊 <strong>Learn to Swim & Stroke Development at ${facName}!</strong> ☀️</p>`,
+                    `<p>Building water confidence, stroke technique, and deep-water safety is at the heart of our swim school programmes for swimmers of every age.</p>`,
+                    `<p>• <strong>14 Animal Curriculum:</strong> Swimmers progress methodically through our structured levels, from Starfish water familiarisation through to Sharks squad readiness.</p>`,
+                    `<p>• <strong>Returning Families:</strong> Log into the Client Portal to review instructor skill assessments and confirm your lesson schedules.</p>`,
+                    `<p>• <strong>New Swimmers:</strong> Contact our swim school desk to arrange a friendly 10-minute stroke evaluation.</p>`,
+                    `<p>• <strong>Active Kids Vouchers:</strong> NSW Active Kids vouchers can be redeemed towards all eligible term bookings.</p>`,
+                    `<p>Our 50-metre pool, heated programme pool, and splash facilities remain open for public leisure and lap swimming during lesson times.</p>`,
+                    `<p>🔗 Check skill milestones & bookings on the Client Portal: ${portalUrl}</p>`,
+                    `<p>🔗 Facility hours & pool details: ${webUrl}</p>`,
+                    `<p>#${tagFac} #ClarenceValley #LearnToSwim #WaterSafety #SwimSchoolNSW #ActiveKidsNSW</p>`
+                ].join('');
+
+                newsletterHtml = [
+                    `<p><strong>Subject: Fast-Track Swimming Confidence | ${facName} Swim School</strong></p>`,
+                    `<p>Hi @name,</p>`,
+                    `<p>Water confidence and stroke development build strong, capable swimmers. Here is the latest update for our Learn to Swim families at ${facName}:</p>`,
+                    `<p>🏊 <strong>Curriculum & Progression</strong></p>`,
+                    `<p>• Structured 14-level animal progression from Starfish infants to Sharks squad preparation.</p>`,
+                    `<p>• Consistent practice builds breath control, buoyant technique, and confident deep-water safety.</p>`,
+                    `<p>• NSW Active Kids vouchers accepted for all eligible learn to swim enrolments.</p>`,
+                    `<p>To check your swimmer's skill milestones or update account details, access our online Client Portal:</p>`,
+                    `<p>🔗 <a href="${portalUrl}">${portalUrl}</a></p>`,
+                    `<p>See you at the pool,</p>`,
+                    `<p>The Swim School Team<br>${facName}<br>${webUrl}</p>`
+                ].join('');
+
+                websiteHtml = [
+                    `<p><strong>Swim School Programmes & Enrolments - ${facName}</strong></p>`,
+                    `<p>Our accredited Learn to Swim programme caters to infants, preschoolers, school-aged swimmers, and squad prep:</p>`,
+                    `<p>• Lessons follow our structured 14 animal curriculum levels.</p>`,
+                    `<p>• Small class sizes ensure individual teacher attention and rapid skill progression.</p>`,
+                    `<p>• NSW Active Kids vouchers accepted.</p>`,
+                    `<p>🔗 <a href="${portalUrl}">Client Portal Enrolments</a> | <a href="${webUrl}">Facility & Programme Details</a></p>`
+                ].join('');
+
+                signHeadline = "SWIM SCHOOL ENROLMENTS";
+                signBody = "Check swimmer skill milestones and book classes via our online Client Portal or visit our reception desk.";
+            } else if (isAqua) {
+                socialHtml = [
+                    `<p>💦 <strong>Make a Splash and Power Up Your Routine at ${facName}!</strong> 💪</p>`,
+                    `<p>Aqua fitness delivers an invigorating, high-energy workout that builds core stability, cardiovascular fitness, and full-body strength with zero impact on joints in our heated pools.</p>`,
+                    `<p>• <strong>Instructor-Led Sessions:</strong> Great music and motivating routines suited to all fitness backgrounds.</p>`,
+                    `<p>• <strong>Heated Comfort:</strong> Warm water comfort year-round ensures a relaxing and rewarding exercise experience.</p>`,
+                    `<p>• <strong>Casual & Multi-Pass Options:</strong> Drop in casually or pick up a 10-visit concession pass at reception.</p>`,
+                    `<p>Dedicated lap lanes remain open for casual swimming throughout all class times.</p>`,
+                    `<p>🔗 View class timetable & live pool availability: ${zoneUrl}</p>`,
+                    `<p>🔗 Book fitness sessions via the Client Portal: ${portalUrl}</p>`,
+                    `<p>#${tagFac} #ClarenceValley #AquaFitness #WaterWorkout #HealthyLiving #ActiveCommunity</p>`
+                ].join('');
+
+                newsletterHtml = [
+                    `<p><strong>Subject: Power Up Your Fitness in the Water | ${facName}</strong></p>`,
+                    `<p>Hi @name,</p>`,
+                    `<p>Looking for an energising workout that is gentle on your joints? Our instructor-led aqua fitness sessions at ${facName} provide the ideal blend of aerobic conditioning, strength work, and community camaraderie.</p>`,
+                    `<p>💦 <strong>Class Highlights</strong></p>`,
+                    `<p>• Heated water comfort supporting low-impact resistance and full range of motion.</p>`,
+                    `<p>• Casual admission and multi-visit passes available at reception.</p>`,
+                    `<p>To check the weekly timetable or reserve your spot, log in to the Client Portal:</p>`,
+                    `<p>🔗 <a href="${portalUrl}">${portalUrl}</a></p>`,
+                    `<p>See you at the pool,</p>`,
+                    `<p>The Health & Fitness Team<br>${facName}<br>${webUrl}</p>`
+                ].join('');
+
+                websiteHtml = [
+                    `<p><strong>Aqua Fitness & Group Workouts - ${facName}</strong></p>`,
+                    `<p>Join our energising low-impact water fitness classes led by certified instructors in our heated pools.</p>`,
+                    `<p>• Suitable for all fitness levels and mobility stages.</p>`,
+                    `<p>• Casual entry, 10-visit passes, and direct debit memberships available.</p>`,
+                    `<p>🔗 <a href="${zoneUrl}">Check Weekly Timetable</a> | <a href="${portalUrl}">Client Portal Login</a></p>`
+                ].join('');
+
+                signHeadline = "AQUA FITNESS CLASSES";
+                signBody = "Invigorating low-impact group fitness in our heated pool. Casual entry and multi-visit passes available at reception.";
+            } else if (isClosure) {
+                const closurePoints = rawLines.map(l => `<p>• ${l.endsWith('.') ? l : l + '.'}</p>`).join('');
+                socialHtml = [
+                    `<p>🏊 <strong>Pool & Lane Availability Notice: ${rawTitle}</strong> 📢</p>`,
+                    `<p>Please note the following operational schedule adjustments at ${facName} to help you plan your swimming and training visits comfortably:</p>`,
+                    closurePoints,
+                    `<p>Our indoor heated pools and leisure spaces remain open for public lap swimming and family recreation during outdoor event periods.</p>`,
+                    `<p>🔗 Check real-time zone & lane counts: ${zoneUrl}</p>`,
+                    `<p>🔗 Facility opening hours and contact details: ${webUrl}</p>`,
+                    `<p>#${tagFac} #ClarenceValley #PoolUpdate #LapSwimming #CommunityNotice</p>`
+                ].join('');
+
+                newsletterHtml = [
+                    `<p><strong>Subject: Notice of Schedule Adjustment | ${rawTitle}</strong></p>`,
+                    `<p>Hi @name,</p>`,
+                    `<p>Please be advised of an upcoming schedule adjustment at ${facName}:</p>`,
+                    `<ul>${rawLines.map(l => `<li>${l}</li>`).join('')}</ul>`,
+                    `<p>Dedicated public lap swimming lanes remain available in our indoor heated pools throughout event times.</p>`,
+                    `<p>🔗 <a href="${zoneUrl}">View Live Zone Availability</a></p>`,
+                    `<p>See you at the pool,</p>`,
+                    `<p>The Operations Team<br>${facName}<br>${webUrl}</p>`
+                ].join('');
+
+                websiteHtml = [
+                    `<p><strong>Operational Notice: ${rawTitle} - ${facName}</strong></p>`,
+                    closurePoints,
+                    `<p>🔗 <a href="${zoneUrl}">Live Zone Availability Calendar</a></p>`
+                ].join('');
+
+                signHeadline = "TEMPORARY POOL NOTICE";
+                signBody = rawLines.slice(0, 2).join(' ');
+            } else {
+                const bulletList = rawLines.map(l => `<p>• ${l.endsWith('.') ? l : l + '.'}</p>`).join('');
+                socialHtml = [
+                    `<p>🏊 <strong>${rawTitle} at ${facName}</strong> ✨</p>`,
+                    `<p>Here is the latest news and session details from our team at ${facShort}:</p>`,
+                    bulletList,
+                    `<p>Dedicated lap lanes and recreational facilities remain open daily for community use.</p>`,
+                    `<p>🔗 Live lane & zone availability: ${zoneUrl}</p>`,
+                    `<p>🔗 Online bookings & Client Portal: ${portalUrl}</p>`,
+                    `<p>#${tagFac} #ClarenceValley #AquaticCentre #CommunitySport #HealthyLiving</p>`
+                ].join('');
+
+                newsletterHtml = [
+                    `<p><strong>Subject: ${rawTitle} | ${facName}</strong></p>`,
+                    `<p>Hi @name,</p>`,
+                    `<p>Here is what you need to know about upcoming activities and services at ${facName}:</p>`,
+                    `<ul>${rawLines.map(l => `<li>${l}</li>`).join('')}</ul>`,
+                    `<p>For bookings and account management, access the Client Portal:</p>`,
+                    `<p>🔗 <a href="${portalUrl}">${portalUrl}</a></p>`,
+                    `<p>See you at the pool,</p>`,
+                    `<p>The Centre Team<br>${facName}<br>${webUrl}</p>`
+                ].join('');
+
+                websiteHtml = [
+                    `<p><strong>${rawTitle} - ${facName}</strong></p>`,
+                    bulletList,
+                    `<p>🔗 <a href="${webUrl}">Facility Information</a> | <a href="${zoneUrl}">Zone Availability</a></p>`
+                ].join('');
+
+                signHeadline = rawTitle.toUpperCase().slice(0, 32);
+                signBody = rawLines.slice(0, 2).join(' ');
             }
-
-            const bulletHtml = factPoints.map(pt => {
-                const cleanPt = pt.endsWith('.') || pt.endsWith('!') || pt.endsWith('?') ? pt : pt + '.';
-                return `<p>• ${cleanPt}</p>`;
-            }).join('');
-
-            const socialHtml = [
-                `<p>${introLine}</p>`,
-                `<p>Here is what you need to know before your next visit to ${facShort}:</p>`,
-                bulletHtml,
-                `<p>🔗 ${primaryLinkLabel}: ${primaryLinkUrl}</p>`,
-                `<p>🔗 ${secondaryLinkLabel}: ${secondaryLinkUrl}</p>`
-            ].join('');
-
-            const listItemsHtml = factPoints.map(pt => {
-                const cleanPt = pt.endsWith('.') || pt.endsWith('!') || pt.endsWith('?') ? pt : pt + '.';
-                return `<li>${cleanPt}</li>`;
-            }).join('');
-
-            const newsletterHtml = [
-                `<p><strong>${rawTitle} (${facName})</strong></p>`,
-                `<p>Please review the latest operational details and session updates for ${facShort}:</p>`,
-                `<ul>${listItemsHtml}</ul>`,
-                `<p>For bookings, account payments, or skill milestone updates, log in via our online portal or speak with our reception team on arrival.</p>`,
-                `<p>🔗 <strong>${primaryLinkLabel}:</strong> <a href="${primaryLinkUrl}">${primaryLinkUrl}</a></p>`,
-                `<p>🔗 <strong>${secondaryLinkLabel}:</strong> <a href="${secondaryLinkUrl}">${secondaryLinkUrl}</a></p>`
-            ].join('');
-
-            const websiteHtml = [
-                `<p><strong>${rawTitle} - ${facName}</strong></p>`,
-                bulletHtml,
-                `<p>🔗 <a href="${primaryLinkUrl}">${primaryLinkLabel}</a> | <a href="${secondaryLinkUrl}">${secondaryLinkLabel}</a></p>`
-            ].join('');
 
             return {
                 social: socialHtml,
                 news: newsletterHtml,
                 web: websiteHtml,
-                signH: rawTitle.toUpperCase(),
-                signB: factPoints.slice(0, 2).join(' ')
+                signH: signHeadline,
+                signB: signBody
             };
         }
 
@@ -1867,6 +1992,8 @@
             if (!apiKey) return null;
 
             const isYamba = (req.facility || '').toLowerCase().includes('yamba');
+            const facName = isYamba ? 'Yamba Community Pool' : 'Clarence Regional Aquatic Centre';
+            const tagFac = isYamba ? 'YambaCommunityPool #Yamba' : 'ClarenceRegionalAquaticCentre #Grafton';
             const webUrl = isYamba
                 ? 'https://www.clarence.nsw.gov.au/Sports-and-recreation/Aquatic-centres/Yamba-Community-Pool'
                 : 'https://www.clarence.nsw.gov.au/crac';
@@ -1875,23 +2002,47 @@
                 : 'https://www.clarence.nsw.gov.au/crac#zone-availability';
             const portalUrl = 'https://clarenceaquatic.perfectgym.com.au/clientportal2/#/Login';
 
-            const prompt = `ROLE: Senior Communications & Marketing Lead for Clarence Regional Aquatic Centre (CRAC, Grafton) and Yamba Community Pool (YCP, Yamba).
-TASK: Generate Playbook-compliant multi-channel drafts for:
+            const prompt = `ROLE: Senior Communications & Marketing Lead for Clarence Regional Aquatic Centre (Grafton, NSW) and Yamba Community Pool (Yamba, NSW).
+TASK: Generate elite, engaging, Playbook-compliant multi-channel marketing copy for:
 - Facility: ${req.facility}
-- Category: ${req.category}
-- Date: ${req.date || 'Upcoming'}
-- Title / Goal: ${req.title}
-- Core Details: ${req.keyMessage}
+- Primary Category: ${req.category}
+- Target Date: ${req.date || 'Upcoming'}
+- Specific Topic / Goal: ${req.title}
+- Brief Details & Facts: ${req.keyMessage}
 
-PLAYBOOK RULES:
-1. Australian English only (centre, programme, enrol, organise, finalise, metres).
-2. Zero emdashes or endashes. Zero corporate fluff ("state-of-the-art", "community haven", "thrilled to announce").
-3. Preserve all specific times, dates, prices, names, and details from Core Details.
-4. Formatting (Quill 1.3.6 HTML): Wrap every paragraph, bullet point (<p>• ...</p>), and link (<p>🔗 Label: URL</p>) in its own <p>...</p> tag. Use <strong> for bold (no ** asterisks).
-5. Include verified facility URLs:
-   - Website: ${webUrl}
-   - Zone Availability: ${zoneUrl}
-   - Client Portal: ${portalUrl}
+EMPIRICAL PLAYBOOK RULES (derived from historical top-performing posts and CRAC Playbook):
+1. Voice & Persona: Active, friendly, knowledgeable local aquatic coach on pool deck. Warm, community-minded, encouraging, and clear. Zero administrative or municipal jargon.
+2. Australian English: Strictly use Australian spelling (centre, programme, enrol, enrolment, organise, 25-metre, 50-metre, metres, practise/practice).
+3. Absolute Ban on Emdashes: NEVER use emdashes (— or –). Use colons (:), commas, or parentheses instead.
+4. Absolute Ban on AI Clichés: Never use "thrilled to announce", "dive in", "dive on in", "community haven", "state of the art", "look no further", "testament", "beacon", "whether you are".
+5. Channel 1: Social Media (Facebook/Instagram):
+   - Hook: High-energy opening line with 1-2 relevant emojis (e.g. 🏊 Morning Laps & Squad Swimming at Yamba Community Pool! ⏱️).
+   - Body: 2-3 engaging, conversational sentences explaining why this matters to swimmers (e.g., sharing the lanes, smooth morning laps, keeping everyone in their rhythm).
+   - Actionable Details: Clear dot bullets (<p>• ...</p>) detailing practical deck advice (e.g., keep left of the black line, clockwise circulation, 5-second interval off the wall, matching lane pace, polite passing, clear tumble turn areas).
+   - Reassurance: Reassure casual lap swimmers that dedicated public lanes remain open throughout morning squad sessions.
+   - Links: Provide RAW full URLs on their own lines (no markdown links or anchor tags):
+     <p>🔗 Check live lane & zone availability: ${zoneUrl}</p>
+     <p>🔗 Book squad passes & manage sessions via the Client Portal: ${portalUrl}</p>
+   - Hashtags: Exactly 5 to 7 high-impact regional and topic tags at the bottom (e.g., #${tagFac} #ClarenceValley #LapSwimming #SquadTraining #SwimFit #SwimmingNSW).
+6. Channel 2: Newsletter / Email Broadcast (Perfect Gym):
+   - Subject: Structured and action-oriented with a single pipe separator: [Core Value / Opportunity] | [Season or Topic]
+   - Opening: Hi @name, followed by a warm coaching hook.
+   - Structured sections with emojis (🏊 Lane Etiquette & Guidelines, ⏱️ Squad Timetable & Bookings).
+   - Clear CTA to log into the Client Portal (${portalUrl}) or speak with reception.
+   - Mandatory sign-off:
+     See you at the pool,
+     The Coaching & Deck Team
+     ${facName}
+     ${webUrl}
+7. Channel 3: Website Alert:
+   - Punchy title and 3-4 bulleted operational points with links.
+8. Signage Parameters:
+   - signH: Punchy uppercase headline (under 6 words, e.g. "SQUAD & LAP LANE ETIQUETTE").
+   - signB: Clear 1-2 sentence notice for A4/A3 pool deck signs.
+9. Technical Formatting (Quill 1.3.6 HTML):
+   - Wrap EVERY paragraph in <p>...</p>.
+   - Wrap EVERY bullet point in <p>• ...</p>.
+   - Use <strong>...</strong> for bolding (never ** markdown asterisks).
 
 Return STRICTLY valid JSON:
 {
@@ -1899,7 +2050,7 @@ Return STRICTLY valid JSON:
   "news": "<p>...</p>",
   "web": "<p>...</p>",
   "signH": "SHORT HEADLINE",
-  "signB": "Concise 1-2 sentence notice summary."
+  "signB": "1-2 sentence notice summary."
 }`;
 
             try {
@@ -1908,13 +2059,18 @@ Return STRICTLY valid JSON:
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { responseMimeType: 'application/json', temperature: 0.3 }
+                        generationConfig: { responseMimeType: 'application/json', temperature: 0.7 }
                     })
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) return JSON.parse(text);
+                    let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        text = text.trim().replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+                        return JSON.parse(text);
+                    }
+                } else {
+                    console.warn("Direct Engine API response error:", res.status, await res.text().catch(() => ''));
                 }
             } catch (e) {
                 console.warn("Direct Engine drafter network error:", e);
@@ -2090,7 +2246,7 @@ Return STRICTLY valid JSON:
         document.getElementById('addNewBtn').onclick = () => openModal(null, { date: new Date().toISOString().split('T')[0] });
 
         function getDirectEngineKey() {
-            return localStorage.getItem('crac_engine_api_key') || "";
+            return (localStorage.getItem('crac_engine_api_key') || '').trim();
         }
 
         function getCalendarScheduleContext(targetDateStr, targetFacility) {
