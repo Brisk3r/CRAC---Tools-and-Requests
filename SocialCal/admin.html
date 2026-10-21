@@ -53,7 +53,8 @@
             <form id="loginForm" class="space-y-4">
                 <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
                 <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all outline-none">
-                <button type="submit" id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-95 transition-all hover:bg-blue-700">Sign In</button>
+                <div id="loginErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
+                <button type="submit" id="loginBtn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-95 transition-all hover:bg-blue-700 disabled:opacity-60">Sign In</button>
             </form>
             <div class="mt-5 pt-5 border-t border-slate-100 text-center">
                 <button type="button" id="directAccessBtn" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
@@ -858,24 +859,45 @@
         };
 
         // Auth & Form Handling
+        let manualSignOut = false;
         const loginForm = document.getElementById('loginForm');
+        const loginErrorMsg = document.getElementById('loginErrorMsg');
+        function showLoginError(msg) {
+            if (!loginErrorMsg) { alert(msg); return; }
+            loginErrorMsg.textContent = msg;
+            loginErrorMsg.classList.remove('hidden');
+        }
+        function clearLoginError() {
+            if (loginErrorMsg) {
+                loginErrorMsg.textContent = '';
+                loginErrorMsg.classList.add('hidden');
+            }
+        }
         async function handleLogin(e) {
             if (e) e.preventDefault();
+            clearLoginError();
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
             if (!email || !pass) return;
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Signing in...'; }
             try { 
+                manualSignOut = false;
                 await signInWithEmailAndPassword(auth, email, pass); 
             } catch (err) { 
                 console.error("Login authentication error:", err);
                 const friendly = {
-                    'auth/invalid-credential': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access'.",
-                    'auth/wrong-password': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access'.",
-                    'auth/user-not-found': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access'.",
+                    'auth/invalid-credential': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access' below.",
+                    'auth/wrong-password': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access' below.",
+                    'auth/user-not-found': "That email or password wasn't recognised. Check for typos, or use 'Continue with Direct Access' below.",
+                    'auth/invalid-email': "Please enter a valid email address.",
+                    'auth/user-disabled': "This account has been disabled.",
                     'auth/too-many-requests': "Too many attempts. Please wait a few minutes or use 'Continue with Direct Access'.",
                     'auth/network-request-failed': "Network connection issue. Check your internet and try again."
                 };
-                alert(friendly[err.code] || ("Access Denied: " + (err.message || "Invalid credentials"))); 
+                showLoginError(friendly[err.code] || ("Access Denied: " + (err.message || "Invalid credentials"))); 
+            } finally {
+                if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign In'; }
             }
         }
         if (loginForm) {
@@ -885,20 +907,29 @@
         }
 
         const directAccessBtn = document.getElementById('directAccessBtn');
+        const directAccessDefaultHtml = directAccessBtn ? directAccessBtn.innerHTML : 'Continue with Direct Access';
         if (directAccessBtn) {
             directAccessBtn.onclick = async () => {
+                clearLoginError();
+                directAccessBtn.disabled = true;
                 directAccessBtn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></span> Connecting...`;
                 try {
+                    manualSignOut = false;
                     await signInAnonymously(auth);
                 } catch(err) {
                     console.error("Direct access authentication error:", err);
-                    alert("Direct access error: " + (err.message || "Could not connect"));
-                    directAccessBtn.innerText = "Continue with Direct Access";
+                    showLoginError("Direct access error: " + (err.message || "Could not connect"));
+                } finally {
+                    directAccessBtn.disabled = false;
+                    directAccessBtn.innerHTML = directAccessDefaultHtml;
                 }
             };
         }
 
-        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            manualSignOut = true;
+            signOut(auth);
+        });
 
         // Apps Script Engine Web App Configuration (Production Version 17)
         const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaUInKx26I28O02dsBmjSDkV8V33LIZupE9VDB5SFemhTwhian8ScqUC85TrPYVx_O/exec';
@@ -1100,7 +1131,7 @@
                     unsubscribeFirestore = null;
                 }
                 // If loaded via file: URL or localhost, seamlessly authenticate so the user is never stuck
-                if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                if (!manualSignOut && (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
                     signInAnonymously(auth).catch((err) => {
                         console.warn("Auto direct authentication note:", err);
                         document.getElementById('authOverlay').classList.remove('hidden');
