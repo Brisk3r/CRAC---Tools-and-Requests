@@ -107,12 +107,12 @@
         };
 
         const prodFirebaseConfig = {
-            apiKey: "AIzaSyCO-12c2L9bV4vB1Zp7Jz_X6sK-8a8b21c",
+            apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
             authDomain: "osf---availability-roster.firebaseapp.com",
             projectId: "osf---availability-roster",
             storageBucket: "osf---availability-roster.firebasestorage.app",
-            messagingSenderId: "104352814152",
-            appId: "1:104352814152:web:abc1234567890"
+            messagingSenderId: "1069751236100",
+            appId: "1:1069751236100:web:f21d105f49e47f64e86751"
         };
 
         let fbApp = null;
@@ -473,6 +473,8 @@
 
             // Local & Dual Cloud State
             const [syncData, setSyncData] = useState(() => syncEngine.getConsolidatedSchedule('CRAC'));
+            const [primaryUser, setPrimaryUser] = useState(() => (auth && auth.currentUser) || null);
+            const [prodUser, setProdUser] = useState(() => (prodAuth && prodAuth.currentUser) || null);
             const [primaryEvents, setPrimaryEvents] = useState([]);
             const [secondaryEvents, setSecondaryEvents] = useState([]);
             const [localDirectives, setLocalDirectives] = useState([]);
@@ -491,36 +493,47 @@
                 setTimeout(() => setBroadcastNotice(null), 3500);
             }, []);
 
-            // Dual Firestore real-time listeners for crac_calendar_events_v2
+            // Ensure both Firebase instances are authenticated and track auth state
             useEffect(() => {
                 const unsubs = [];
-                if (auth && !auth.currentUser) {
-                    auth.signInAnonymously().catch(() => {});
+                if (auth) {
+                    unsubs.push(auth.onAuthStateChanged(u => {
+                        if (u) setPrimaryUser(u);
+                    }));
+                    if (!auth.currentUser) auth.signInAnonymously().catch(() => {});
                 }
-                if (prodAuth && !prodAuth.currentUser) {
-                    prodAuth.signInWithEmailAndPassword('yambapool@clarence.nsw.gov.au', 'YCP*26*').catch(() => {});
+                if (prodAuth) {
+                    unsubs.push(prodAuth.onAuthStateChanged(u => {
+                        if (u) setProdUser(u);
+                    }));
+                    if (!prodAuth.currentUser) {
+                        prodAuth.signInWithEmailAndPassword('yambapool@clarence.nsw.gov.au', 'YCP*26*').catch(() => {
+                            prodAuth.signInAnonymously().catch(() => {});
+                        });
+                    }
                 }
-
-                if (db) {
-                    unsubs.push(
-                        db.collection(CRAC_CONFIG.eventsCollection).onSnapshot(snapshot => {
-                            setPrimaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
-                            setDbStatus("Live Cloud Sync (Firestore)");
-                        }, err => console.warn("Primary CRAC Firestore notice:", err))
-                    );
-                }
-
-                if (prodDb) {
-                    unsubs.push(
-                        prodDb.collection(CRAC_CONFIG.eventsCollection).onSnapshot(snapshot => {
-                            setSecondaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
-                            setDbStatus("Live Cloud Sync (Firestore)");
-                        }, err => console.warn("Secondary CRAC Firestore notice:", err))
-                    );
-                }
-
                 return () => unsubs.forEach(u => u && u());
             }, []);
+
+            // Primary Firestore real-time listener (attaches strictly after primaryUser is authenticated)
+            useEffect(() => {
+                if (!db || !primaryUser) return;
+                const unsub = db.collection(CRAC_CONFIG.eventsCollection).onSnapshot(snapshot => {
+                    setPrimaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
+                    setDbStatus("Live Cloud Sync (Firestore)");
+                }, err => console.warn("Primary CRAC Firestore notice:", err));
+                return () => unsub();
+            }, [primaryUser]);
+
+            // Secondary Firestore real-time listener (attaches strictly after prodUser is authenticated)
+            useEffect(() => {
+                if (!prodDb || !prodUser) return;
+                const unsub = prodDb.collection(CRAC_CONFIG.eventsCollection).onSnapshot(snapshot => {
+                    setSecondaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
+                    setDbStatus("Live Cloud Sync (Firestore)");
+                }, err => console.warn("Secondary CRAC Firestore notice:", err));
+                return () => unsub();
+            }, [prodUser]);
 
             const firestoreEvents = useMemo(() => {
                 const map = new Map();

@@ -312,38 +312,54 @@
 
             // Synchronisation & Firestore
             const [syncData, setSyncData] = useState(() => syncEngine.getConsolidatedSchedule('YCP'));
+            const [primaryUser, setPrimaryUser] = useState(null);
+            const [prodUser, setProdUser] = useState(null);
             const [primaryEvents, setPrimaryEvents] = useState([]);
             const [prodEvents, setProdEvents] = useState([]);
             const [isSyncing, setIsSyncing] = useState(false);
             const [lastUpdatedTime, setLastUpdatedTime] = useState(() => new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
 
-            // 1. Firebase Anonymous Auth on both projects
+            // 1. Firebase Anonymous Auth on both projects (Wait for onAuthStateChanged before attaching Firestore listeners)
             useEffect(() => {
-                if (auth) auth.signInAnonymously().catch(() => {});
-                if (prodAuth) prodAuth.signInAnonymously().catch(() => {});
-            }, []);
-
-            // 2. Real-Time Firestore Listeners on BOTH synaipse-f45a9 AND osf---availability-roster
-            useEffect(() => {
-                const colName = 'ycp_calendar_events_v2';
                 const unsubs = [];
-
-                if (db) {
-                    unsubs.push(db.collection(colName).onSnapshot(snapshot => {
-                        setPrimaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
-                        setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
-                    }, err => console.warn("Primary Firestore notice:", err)));
+                if (auth) {
+                    unsubs.push(auth.onAuthStateChanged(u => {
+                        if (u) setPrimaryUser(u);
+                    }));
+                    auth.signInAnonymously().catch(err => console.warn("Primary auth notice:", err));
                 }
-
-                if (prodDb) {
-                    unsubs.push(prodDb.collection(colName).onSnapshot(snapshot => {
-                        setProdEvents(snapshot.docs.map(normaliseFirestoreDoc));
-                        setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
-                    }, err => console.warn("Prod Firestore notice:", err)));
+                if (prodAuth) {
+                    unsubs.push(prodAuth.onAuthStateChanged(u => {
+                        if (u) setProdUser(u);
+                    }));
+                    prodAuth.signInAnonymously().catch(() => {
+                        prodAuth.signInWithEmailAndPassword('yambapool@clarence.nsw.gov.au', 'YCP*26*').catch(() => {});
+                    });
                 }
-
                 return () => unsubs.forEach(u => u && u());
             }, []);
+
+            // 2a. Real-Time Firestore Listener on synaipse-f45a9 (attaches strictly after primaryUser is authenticated)
+            useEffect(() => {
+                if (!db || !primaryUser) return;
+                const colName = 'ycp_calendar_events_v2';
+                const unsub = db.collection(colName).onSnapshot(snapshot => {
+                    setPrimaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
+                    setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                }, err => console.warn("Primary Firestore notice:", err));
+                return () => unsub();
+            }, [primaryUser]);
+
+            // 2b. Real-Time Firestore Listener on osf---availability-roster (attaches strictly after prodUser is authenticated)
+            useEffect(() => {
+                if (!prodDb || !prodUser) return;
+                const colName = 'ycp_calendar_events_v2';
+                const unsub = prodDb.collection(colName).onSnapshot(snapshot => {
+                    setProdEvents(snapshot.docs.map(normaliseFirestoreDoc));
+                    setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                }, err => console.warn("Prod Firestore notice:", err));
+                return () => unsub();
+            }, [prodUser]);
 
             const firestoreEvents = useMemo(() => {
                 const map = new Map();
@@ -352,10 +368,21 @@
                 return Array.from(map.values());
             }, [primaryEvents, prodEvents]);
 
-            const refreshFeed = useCallback(() => {
+            const refreshFeed = useCallback(async () => {
                 setIsSyncing(true);
                 syncEngine.loadLocalOverrides();
                 setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
+                const colName = 'ycp_calendar_events_v2';
+                try {
+                    if (db && auth && auth.currentUser) {
+                        const snap = await db.collection(colName).get();
+                        setPrimaryEvents(snap.docs.map(normaliseFirestoreDoc));
+                    }
+                    if (prodDb && prodAuth && prodAuth.currentUser) {
+                        const snap2 = await prodDb.collection(colName).get();
+                        setProdEvents(snap2.docs.map(normaliseFirestoreDoc));
+                    }
+                } catch (e) {}
                 setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
                 setTimeout(() => setIsSyncing(false), 250);
             }, []);
