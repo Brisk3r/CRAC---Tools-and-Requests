@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCP Zone Availability (V2)</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com?version=3.4.4"></script>
+    
+    <!-- React and Firebase Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.24.5/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.0"></script>
+
+    <!-- Season Logic for YCP -->
+    <script src="./ycpSeasonLogic.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- YCP DEFAULTS ---
+        const YCP_DEFAULTS = { 
+            zones: [ 
+                { id: '25m Pool', children: Array.from({length: 6}, (_, i) => ({id: `Lane ${i+1}`})) }
+            ], 
+            eventTypes: { 
+                'Learn to Swim': '#3B82F6', 
+                'Squads': '#6366F1',
+                'Aqua Fitness': '#10B981', 
+                'Public Swim': '#F59E0B', 
+                'School Carnival': '#EF4444', 
+                'Lane Hire': '#8B5CF6',
+                'Community Group Booking': '#8B5CF6',
+                'CLOSURE': '#DC2626',
+                'Closure': '#DC2626'
+            },
+            openingHours: [ 
+                {day: 'Monday', open: 6, close: 18}, {day: 'Tuesday', open: 6, close: 18}, 
+                {day: 'Wednesday', open: 6, close: 18}, {day: 'Thursday', open: 6, close: 18}, 
+                {day: 'Friday', open: 6, close: 18}, {day: 'Saturday', open: 8, close: 17}, 
+                {day: 'Sunday', open: 9, close: 16} 
+            ]
+        };
+
+        // --- TRACKING UTILITY ---
+        const SESSION_ID = Math.random().toString(36).substring(2, 15);
+        const trackEvent = async (action, label = null, data = {}) => {
+            if (!db) return;
+            try {
+                await db.collection('calendar_logs').add({
+                    sessionId: SESSION_ID,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    action: action,
+                    label: label,
+                    data: data,
+                    referrer: document.referrer || "direct",
+                    userAgent: navigator.userAgent,
+                    url: window.location.href
+                });
+            } catch (e) {
+                // Silent bypass
+            }
+        };
+
+        // --- HELPER: TIMEZONE & EVENT GROUPING ---
+        const getGraftonDate = () => {
+            const now = new Date();
+            const graftonString = now.toLocaleString("en-US", {timeZone: "Australia/Sydney"});
+            return new Date(graftonString);
+        };
+
+        const isClosureEvent = (e) => {
+            if (!e) return false;
+            const t = String(e.type || e.category || '').toUpperCase();
+            return t === 'CLOSURE' || t.includes('CLOSURE') || Boolean(e.isDirective || e.isManualOverride);
+        };
+
+        const groupEvents = (rawEvents) => {
+            if (!Array.isArray(rawEvents)) return [];
+            const grouped = [];
+            rawEvents.forEach(e => {
+                const startTs = e.startDateTime?.getTime ? e.startDateTime.getTime() : new Date(e.startDateTime).getTime();
+                const endTs = e.endDateTime?.getTime ? e.endDateTime.getTime() : new Date(e.endDateTime).getTime();
+                const key = `${(e.title || '').trim().toLowerCase()}_${e.type || ''}_${startTs}_${endTs}`;
+                const existing = grouped.find(g => g._groupKey === key);
+                const eZones = Array.isArray(e.zone) ? e.zone : (e.zone ? [e.zone] : []);
+                if (existing) {
+                    eZones.forEach(z => {
+                        if (!existing.zone.includes(z)) existing.zone.push(z);
+                    });
+                } else {
+                    grouped.push({
+                        ...e,
+                        _groupKey: key,
+                        zone: [...eZones]
+                    });
+                }
+            });
+            return grouped.sort((a, b) => {
+                const aClosure = isClosureEvent(a) ? 0 : 1;
+                const bClosure = isClosureEvent(b) ? 0 : 1;
+                if (aClosure !== bClosure) return aClosure - bClosure;
+                return a.startDateTime - b.startDateTime;
+            });
+        };
+
+        // --- ICONS COMPONENT ---
+        const Icons = {
+            ChevronLeft: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            ),
+            ChevronRight: ({ size = 20, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            ),
+            Calendar: ({ size = 20 }) => <i className={`ph ph-calendar-blank`} style={{ fontSize: size }}></i>,
+            Clock: ({ size = 20 }) => <i className={`ph ph-clock`} style={{ fontSize: size }}></i>,
+            MapPin: ({ size = 20 }) => <i className={`ph ph-map-pin`} style={{ fontSize: size }}></i>,
+            Waves: ({ size = 20 }) => <i className={`ph ph-waves`} style={{ fontSize: size }}></i>,
+            CheckCircle: ({ size = 20 }) => <i className={`ph ph-check-circle`} style={{ fontSize: size }}></i>,
+            X: ({ size = 20 }) => <i className={`ph ph-x`} style={{ fontSize: size }}></i>,
+            AlertCircle: ({ size = 20, className="" }) => <i className={`ph ph-warning-circle ${className}`} style={{ fontSize: size }}></i>,
+            Lightning: ({ size = 20, className="" }) => <i className={`ph-fill ph-lightning ${className}`} style={{ fontSize: size }}></i>,
+            LockKey: ({ size = 20 }) => <i className={`ph ph-lock-key`} style={{ fontSize: size }}></i>,
+            Check: ({ size = 20 }) => <i className={`ph ph-check`} style={{ fontSize: size }}></i>,
+            Info: ({ size = 20, className="" }) => <i className={`ph ph-info ${className}`} style={{ fontSize: size }}></i>
+        };
+
+        // --- FIREBASE INITIALISATION (Primary V1/V2 Auth + Mirror Sync) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+            authDomain: "osf---availability-roster.firebaseapp.com",
+            projectId: "osf---availability-roster",
+            storageBucket: "osf---availability-roster.firebasestorage.app",
+            messagingSenderId: "1069751236100",
+            appId: "1:1069751236100:web:f21d105f49e47f64e86751",
+            measurementId: "G-3HM7X3ZPHY"
+        };
+
+        const mirrorFirebaseConfig = {
+            apiKey: "AIzaSyBxkpSPfF9znD4T_tH-juzO5hkf44hWUb4",
+            authDomain: "synaipse-f45a9.firebaseapp.com",
+            projectId: "synaipse-f45a9",
+            storageBucket: "synaipse-f45a9.firebasestorage.app",
+            messagingSenderId: "1054773853865",
+            appId: "1:1054773853865:web:cd1c8acc5feac8071cb3b8"
+        };
+
+        let db, auth, mirrorDb, mirrorAuth;
+        try {
+            const primaryApp = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+            db = primaryApp.firestore();
+            auth = primaryApp.auth();
+            const mirrorApp = firebase.apps.find(a => a.name === 'mirror') || firebase.initializeApp(mirrorFirebaseConfig, 'mirror');
+            mirrorDb = mirrorApp.firestore();
+            mirrorAuth = mirrorApp.auth();
+        } catch (e) {
+            console.error("Firebase Initialisation Error:", e);
+        }
+
+        const normalizeDoc = (doc) => {
+            const data = doc.data();
+            let sDate = data.startDateTime?.toDate ? data.startDateTime.toDate() : new Date(data.startDateTime);
+            let eDate = data.endDateTime?.toDate ? data.endDateTime.toDate() : new Date(data.endDateTime);
+            let zonesArr = Array.isArray(data.zone) ? data.zone : (data.zone ? [data.zone] : (Array.isArray(data.zones) ? data.zones : []));
+            if (zonesArr.includes('All Lanes') || zonesArr.includes('Entire Zone') || data.isEntirePool) {
+                zonesArr = ['25m Pool'];
+            }
+            const evType = isClosureEvent(data) ? 'CLOSURE' : (data.type || (data.category === 'Bookings' ? 'Lane Hire' : data.category) || 'Lane Hire');
+            return {
+                id: doc.id,
+                ...data,
+                type: evType,
+                zone: zonesArr.length > 0 ? zonesArr : ['25m Pool'],
+                startDateTime: sDate,
+                endDateTime: eDate,
+                recurrence: data.recurrence ? {
+                    ...data.recurrence,
+                    endDate: data.recurrence.endDate?.toDate ? data.recurrence.endDate.toDate() : new Date(data.recurrence.endDate)
+                } : null
+            };
+        };
+
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [primaryEvents, setPrimaryEvents] = useState([]);
+            const [mirrorEvents, setMirrorEvents] = useState([]);
+            const [settings, setSettings] = useState(null); 
+            const [isLoading, setIsLoading] = useState(true);
+            
+            const [currentMonth, setCurrentMonth] = useState(getGraftonDate());
+            const [selectedDay, setSelectedDay] = useState(getGraftonDate());
+            
+            const [selectedEvent, setSelectedEvent] = useState(null);
+            const [selectedHourBlock, setSelectedHourBlock] = useState(null);
+            const [zoneFilter, setZoneFilter] = useState('All Zones');
+            const [activityFilter, setActivityFilter] = useState('All');
+            const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
+            const [localZoneTab, setLocalZoneTab] = useState(null);
+            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+            useEffect(() => {
+                const handleResize = () => {
+                    const mobile = window.innerWidth < 768;
+                    setIsMobile(mobile);
+                    setViewMode(prev => {
+                        if (mobile && prev === 'week') return 'day';
+                        if (!mobile && prev === 'day') return 'week';
+                        return prev;
+                    });
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            const activeZoneId = useMemo(() => {
+                if (localZoneTab) return localZoneTab;
+                if (settings && zoneFilter !== 'All Zones') {
+                    const found = settings.zones.find(z => z.id === zoneFilter || z.children?.some(c => c.id === zoneFilter));
+                    if (found) return found.id;
+                }
+                return settings?.zones?.[0]?.id || '25m Pool';
+            }, [localZoneTab, zoneFilter, settings]);
+
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        if (auth) await auth.signInAnonymously();
+                        if (mirrorAuth) await mirrorAuth.signInAnonymously().catch(() => {});
+                        trackEvent('PAGE_LOAD_V2');
+                    } catch (err) {
+                        console.error("Auth Error:", err);
+                        setIsLoading(false);
+                    }
+                };
+                initAuth();
+                return auth ? auth.onAuthStateChanged(u => setUser(u)) : undefined;
+            }, []);
+
+            useEffect(() => {
+                if (!user || !db) return;
+                const unsub = db.collection('calendar_settings').doc('ycp_config')
+                    .onSnapshot(doc => { 
+                        if (doc.exists) { 
+                            const d = doc.data();
+                            setSettings({
+                                ...YCP_DEFAULTS,
+                                ...d,
+                                eventTypes: { ...YCP_DEFAULTS.eventTypes, ...(d.eventTypes || {}) }
+                            }); 
+                        } else { 
+                            setSettings(YCP_DEFAULTS); 
+                        } 
+                    }, () => { 
+                        setSettings(YCP_DEFAULTS); 
+                    });
+                return () => unsub();
+            }, [user]);
+
+            // Real-time listener on isolated V2 collection: ycp_calendar_events_v2
+            useEffect(() => {
+                if (!user || !db) return;
+                const unsub = db.collection('ycp_calendar_events_v2').onSnapshot(snapshot => {
+                    const fetched = snapshot.docs.map(normalizeDoc).filter(e => !isNaN(e.startDateTime) && !isNaN(e.endDateTime));
+                    setPrimaryEvents(fetched);
+                    setIsLoading(false);
+                }, err => { console.error(err); setIsLoading(false); });
+                return () => unsub();
+            }, [user]);
+
+            // Secondary real-time listener on synaipse-f45a9 ycp_calendar_events_v2 for instant cross-console directives
+            useEffect(() => {
+                if (!mirrorDb) return;
+                const unsub = mirrorDb.collection('ycp_calendar_events_v2').onSnapshot(snapshot => {
+                    const fetched = snapshot.docs.map(normalizeDoc).filter(e => !isNaN(e.startDateTime) && !isNaN(e.endDateTime));
+                    setMirrorEvents(fetched);
+                }, () => {});
+                return () => unsub();
+            }, []);
+
+            const events = useMemo(() => {
+                const map = new Map();
+                primaryEvents.forEach(e => map.set(e.id, e));
+                mirrorEvents.forEach(e => {
+                    if (!map.has(e.id) || isClosureEvent(e)) {
+                        map.set(e.id, e);
+                    }
+                });
+                return Array.from(map.values());
+            }, [primaryEvents, mirrorEvents]);
+
+            const expandedEvents = useMemo(() => {
+                const all = [];
+                events.forEach(event => {
+                    if (event.recurrence && Array.isArray(event.recurrence.days) && event.recurrence.days.length > 0 && event.recurrence.endDate) {
+                        let current = new Date(event.startDateTime); current.setHours(0,0,0,0);
+                        const end = new Date(event.recurrence.endDate);
+                        const startH = event.startDateTime.getHours(), startM = event.startDateTime.getMinutes();
+                        const endH = event.endDateTime.getHours(), endM = event.endDateTime.getMinutes();
+                        let dur = ((endH * 60 + endM) - (startH * 60 + startM)) * 60000;
+                        if (dur <= 0) dur += 24 * 60 * 60 * 1000;
+                        
+                        while(current <= end) {
+                            if (event.recurrence.days.includes(current.toLocaleDateString('en-US', { weekday: 'long' }))) {
+                                const s = new Date(current); s.setHours(startH, startM, 0, 0);
+                                all.push({ ...event, id: `${event.id}-${current.toISOString()}`, startDateTime: s, endDateTime: new Date(s.getTime() + dur) });
+                            }
+                            current.setDate(current.getDate() + 1);
+                        }
+                    } else all.push(event);
+                });
+                return all;
+            }, [events]);
+
+            const filteredEvents = useMemo(() => {
+                if (zoneFilter === 'All Zones') return expandedEvents;
+                const relevantIds = [zoneFilter];
+                const p = settings?.zones?.find(z => z.id === zoneFilter);
+                if (p?.children) p.children.forEach(c => relevantIds.push(c.id));
+                return expandedEvents.filter(e => {
+                    const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                    return eZones.some(z => relevantIds.includes(z) || z === '25m Pool');
+                });
+            }, [expandedEvents, zoneFilter, settings]);
+
+            const eventsByDate = useMemo(() => {
+                const acc = {};
+                filteredEvents.forEach(e => {
+                    const k = e.startDateTime.toDateString();
+                    if(!acc[k]) acc[k] = []; acc[k].push(e);
+                });
+                return acc;
+            }, [filteredEvents]);
+
+            const selectedDayEvents = useMemo(() => eventsByDate[selectedDay.toDateString()] || [], [eventsByDate, selectedDay]);
+
+            const activeDayClosures = useMemo(() => {
+                return selectedDayEvents.filter(isClosureEvent);
+            }, [selectedDayEvents]);
+
+            const filteredDayEvents = useMemo(() => {
+                if (activityFilter === 'All') return selectedDayEvents;
+                return selectedDayEvents.filter(e => e.type === activityFilter || isClosureEvent(e));
+            }, [selectedDayEvents, activityFilter]);
+
+            const daysInSelectedWeek = useMemo(() => {
+                const days = []; const start = new Date(selectedDay); const dayNum = start.getDay() === 0 ? 7 : start.getDay();
+                start.setDate(start.getDate() - dayNum + 1);
+                for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+                return days;
+            }, [selectedDay]);
+
+            const zoneForecast = useMemo(() => {
+                if (!settings?.zones) return [];
+                const dayEvents = expandedEvents.filter(e => e.startDateTime.toDateString() === selectedDay.toDateString());
+                const nowTs = getGraftonDate().getTime();
+                const isToday = selectedDay.toDateString() === getGraftonDate().toDateString();
+
+                return settings.zones.map(zone => {
+                    const totalCap = zone.children?.length || 1;
+                    const relevantEvents = dayEvents.filter(e => {
+                        const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                        return eZones.some(z => z === zone.id || zone.children?.some(c => c.id === z));
+                    });
+
+                    const countBookedUnitsAt = (ts) => {
+                        const active = relevantEvents.filter(e => e.startDateTime.getTime() <= ts && e.endDateTime.getTime() > ts);
+                        const units = new Set();
+                        active.forEach(e => {
+                            const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                            if (eZones.includes(zone.id) || isClosureEvent(e)) {
+                                zone.children?.forEach(c => units.add(c.id));
+                            } else {
+                                eZones.forEach(z => { if (zone.children?.some(c => c.id === z)) units.add(z); });
+                            }
+                        });
+                        return units.size;
+                    };
+
+                    let usedCount = 0;
+                    let isClosedNow = false;
+                    if (isToday) {
+                        usedCount = countBookedUnitsAt(nowTs);
+                        isClosedNow = relevantEvents.some(e => isClosureEvent(e) && e.startDateTime.getTime() <= nowTs && e.endDateTime.getTime() > nowTs);
+                    } else {
+                        const hasClosure = relevantEvents.some(isClosureEvent);
+                        if (hasClosure) {
+                            usedCount = totalCap;
+                            isClosedNow = true;
+                        }
+                    }
+
+                    const free = Math.max(0, totalCap - usedCount);
+                    let status = 'Good';
+                    if (free === 0 || isClosedNow) status = 'Full';
+                    else if (free <= Math.floor(totalCap * 0.5)) status = 'Limited';
+
+                    return { name: zone.id, free, total: totalCap, status, isToday, isClosedNow };
+                });
+            }, [expandedEvents, settings, selectedDay]);
+
+            if (isLoading || !settings) return (
+                <div className="flex items-center justify-center h-[400px] flex-col text-slate-400">
+                    <svg width="60" height="60" viewBox="0 0 120 120" className="mb-4">
+                        <defs>
+                            <path id="water" d="M-60,40 C-45,40 -45,20 -30,20 C-15,20 -15,40 0,40 C15,40 15,20 30,20 C45,20 45,40 60,40 C75,40 75,20 90,20 C105,20 105,40 120,40 V120 H-60 Z" />
+                            <clipPath id="circleClip">
+                                <circle cx="60" cy="60" r="50" />
+                            </clipPath>
+                        </defs>
+                        <circle cx="60" cy="60" r="50" fill="#e0f2fe" />
+                        <g clipPath="url(#circleClip)">
+                            <use href="#water" x="0" y="0" fill="#7dd3fc" opacity="0.6">
+                                <animate attributeName="x" from="0" to="-60" dur="3s" repeatCount="indefinite" />
+                            </use>
+                            <use href="#water" x="-60" y="5" fill="#38bdf8" opacity="0.8">
+                                <animate attributeName="x" from="-60" to="0" dur="2.5s" repeatCount="indefinite" />
+                            </use>
+                            <use href="#water" x="0" y="10" fill="#0ea5e9">
+                                <animate attributeName="x" from="0" to="-60" dur="1.8s" repeatCount="indefinite" />
+                            </use>
+                        </g>
+                    </svg>
+                    <p className="text-xs font-black uppercase tracking-widest animate-pulse mt-2 text-cyan-600">Syncing Facility Data...</p>
+                </div>
+            );
+
+            return (
+                <div className="p-3 max-w-7xl mx-auto text-slate-800">
+                    {window.YCP_SEASON_LOGIC?.isTemporarilyClosed && (
+                        <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl shadow-sm p-4 mb-3 flex items-center justify-center gap-3">
+                            <Icons.Info size={24} className="text-red-500" />
+                            <span className="font-black tracking-wide uppercase text-sm">{window.YCP_SEASON_LOGIC.tempClosedMessage}</span>
+                        </div>
+                    )}
+
+                    {/* LIVE OPERATIONAL CLOSURE / LIGHTNING BANNER */}
+                    {activeDayClosures.length > 0 && (
+                        <div className="bg-red-600 text-white rounded-xl shadow-md p-3.5 mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 fade-in">
+                            <div className="flex items-start sm:items-center gap-3">
+                                <div className="bg-white/20 p-2 rounded-lg shrink-0">
+                                    <Icons.Lightning size={22} className="text-white animate-pulse" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-[10px] font-black uppercase tracking-widest bg-white text-red-700 px-2 py-0.5 rounded-full">
+                                            Facility Closure Alert
+                                        </span>
+                                        <span className="text-xs font-bold text-red-100">
+                                            {activeDayClosures[0].startDateTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} to {activeDayClosures[0].endDateTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-sm font-black uppercase tracking-tight mt-0.5">{activeDayClosures[0].title}</h3>
+                                    {(activeDayClosures[0].description || activeDayClosures[0].reason) && (
+                                        <p className="text-xs text-red-100 mt-0.5 font-medium">{activeDayClosures[0].description || activeDayClosures[0].reason}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedEvent(activeDayClosures[0])}
+                                className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-[10px] font-black uppercase tracking-wider shrink-0 transition">
+                                View Details
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Integrated Hub Command Strip */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-3 flex flex-col md:flex-row items-center gap-3 text-slate-800">
+                        <div className="flex flex-col sm:flex-row items-center justify-between w-full md:w-auto gap-3">
+                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
+                                {isMobile ? (
+                                    <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>
+                                ) : (
+                                    <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
+                                <button 
+                                    onClick={() => {
+                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
+                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
+                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
+                                    }} 
+                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
+                                    title="Previous"
+                                >
+                                    <Icons.ChevronLeft size={16} />
+                                </button>
+                                
+                                <div className="flex flex-col items-center justify-center min-w-[120px] px-1">
+                                    <span className="text-[12px] font-black uppercase tracking-tight text-slate-900 leading-tight">
+                                        {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
+                                    </span>
+                                    {window.YCP_SEASON_LOGIC && (() => {
+                                        const s = window.YCP_SEASON_LOGIC.getSeason(selectedDay);
+                                        const isFull = s === 'FULL_SEASON';
+                                        const isOff = s === 'OFF_PEAK';
+                                        return (
+                                            <span className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${isFull ? 'text-emerald-600' : isOff ? 'text-blue-500' : 'text-amber-600'}`}>
+                                                {isFull ? 'Full Season' : isOff ? 'Off-Season' : 'Winter Closure'}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
+
+                                <button 
+                                    onClick={() => {
+                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
+                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
+                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
+                                    }} 
+                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
+                                    title="Next"
+                                >
+                                    <Icons.ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Zone Availability Badges with Visual Capacity Meters */}
+                        <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1">
+                            {zoneForecast.filter(z => z.name.toLowerCase().includes('pool')).map(z => {
+                                const isActive = activeZoneId === z.name && viewMode === 'week';
+                                const totalCap = z.total || 1;
+                                const freeCount = Math.max(0, z.free);
+                                const colors = { 
+                                    Good: 'bg-green-50 text-green-800 border-green-200', 
+                                    Limited: 'bg-amber-50 text-amber-800 border-amber-200', 
+                                    Full: 'bg-red-50 text-red-800 border-red-200' 
+                                };
+                                return (
+                                    <button 
+                                        key={z.name} 
+                                        onClick={() => { setLocalZoneTab(z.name); setViewMode('week'); }}
+                                        className={`px-3 py-1.5 rounded-xl border-2 flex flex-col items-start gap-1 flex-shrink-0 transition-all active:scale-95 ${isActive ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-4 ring-cyan-50' : colors[z.status] + ' hover:bg-white'}`}
+                                    >
+                                        <div className="flex items-center justify-between w-full gap-3">
+                                            <span className="text-[11px] font-black uppercase tracking-tight">{z.name}</span>
+                                            <span className={`text-[10px] font-bold ${isActive ? 'text-cyan-100' : 'text-slate-500'}`}>
+                                                {z.isClosedNow ? 'CLOSED' : `${freeCount}/${totalCap} Free`}
+                                            </span>
+                                        </div>
+                                        {/* Visual Capacity Meter */}
+                                        <div className="flex gap-0.5 w-full min-w-[70px]">
+                                            {Array.from({ length: Math.min(totalCap, 8) }).map((_, i) => (
+                                                <div 
+                                                    key={i} 
+                                                    className={`h-1 flex-1 rounded-full ${
+                                                        i < freeCount 
+                                                            ? (isActive ? 'bg-emerald-300' : 'bg-green-500') 
+                                                            : (isActive ? 'bg-cyan-300' : 'bg-slate-300')
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* 7-Day Horizontal Date Selector Carousel (Mobile/Touch Friendly) */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 mb-4 flex gap-1.5 overflow-x-auto custom-scrollbar no-print">
+                        {daysInSelectedWeek.map(day => {
+                            const isSelected = day.toDateString() === selectedDay.toDateString();
+                            const isToday = day.toDateString() === getGraftonDate().toDateString();
+                            return (
+                                <button
+                                    key={day.toISOString()}
+                                    onClick={() => setSelectedDay(day)}
+                                    className={`flex-1 min-w-[50px] py-2 px-1 rounded-lg flex flex-col items-center justify-center transition-all border ${
+                                        isSelected
+                                            ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-2 ring-cyan-200'
+                                            : isToday
+                                            ? 'bg-cyan-50 text-cyan-800 border-cyan-200 font-bold'
+                                            : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    <span className="text-[9px] font-black uppercase tracking-widest">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</span>
+                                    <span className="text-sm font-black leading-none mt-1">{day.getDate()}</span>
+                                    {isToday && <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-cyan-600'}`}></span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[calc(100vh-140px)] lg:h-[650px] text-slate-800">
+                        {isMobile ? (
+                            <div className="overflow-hidden h-full text-slate-800">
+                                {viewMode === 'month' ? (
+                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
+                                ) : viewMode === 'day' ? (
+                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                                        <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
+                                    </div>
+                                ) : (
+                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="lg:col-span-8 overflow-hidden h-full text-slate-800">
+                                    {viewMode === 'month' ? (
+                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
+                                    ) : (
+                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
+                                    )}
+                                </div>
+                                <div className="lg:col-span-4 h-full">
+                                    <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} eventTypes={settings.eventTypes} />}
+                    {selectedHourBlock && <HourBlockModal hourBlock={selectedHourBlock} onClose={() => setSelectedHourBlock(null)} eventTypes={settings.eventTypes} />}
+                </div>
+            );
+        };
+
+        // --- SUB-COMPONENTS ---
+
+        const WeekView = ({ selectedDay, eventsByDate, onDayClick, onHourBlockClick, settings, expandedEvents, activeZoneId }) => {
+            const daysInWeek = useMemo(() => {
+                const days = []; const start = new Date(selectedDay); const day = start.getDay() === 0 ? 7 : start.getDay();
+                start.setDate(start.getDate() - day + 1);
+                for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+                return days;
+            }, [selectedDay]);
+
+            const displayHours = useMemo(() => {
+                let min = 24, max = 0;
+                if (window.YCP_SEASON_LOGIC) {
+                    daysInWeek.forEach(day => {
+                        const limits = window.YCP_SEASON_LOGIC.getDisplayHoursLimits(day);
+                        if (limits.min < min) min = limits.min;
+                        if (limits.max > max) max = limits.max;
+                    });
+                    if (min === 24) { min = 6; max = 18; }
+                } else if (settings?.openingHours?.length > 0) {
+                    min = Math.min(...settings.openingHours.map(h => h.open));
+                    max = Math.max(...settings.openingHours.map(h => h.close));
+                } else {
+                    min = 6; max = 18;
+                }
+                const hrs = []; for(let i = min; i < max; i++) hrs.push(i); return hrs;
+            }, [settings, daysInWeek]);
+
+            const zone = settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
+
+            return (
+                <>
+                    <div className="bg-slate-900 text-white p-3 flex justify-between items-center shrink-0">
+                        <div className="flex items-center gap-3 text-white">
+                            <div className="bg-cyan-600 p-1.5 rounded-lg"><Icons.Waves size={16} /></div>
+                            <span className="text-xs font-black uppercase tracking-widest">{zone.id} Weekly Schedule</span>
+                        </div>
+                        <div className="flex gap-4 pr-2">
+                            <div className="flex items-center gap-1.5 text-white"><div className="w-2 h-2 rounded-full bg-green-500"></div><span className="text-[10px] font-black uppercase text-slate-400">Free</span></div>
+                            <div className="flex items-center gap-1.5 text-white"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-[10px] font-black uppercase text-slate-400">Part</span></div>
+                            <div className="flex items-center gap-1.5 text-white"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-[10px] font-black uppercase text-slate-400">Full / Closed</span></div>
+                        </div>
+                    </div>
+                    <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-grow bg-white text-slate-800">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[700px] lg:min-w-0 w-full text-slate-800">
+                            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 text-slate-800">
+                                <tr>
+                                    <th className="w-20 p-3 text-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-100">Time</th>
+                                    {daysInWeek.map(day => (
+                                        <th key={day.toISOString()} className={`p-3 text-center border-r border-slate-100 last:border-r-0 text-slate-800 ${day.toDateString() === new Date().toDateString() ? 'bg-cyan-50/50' : ''}`}>
+                                            <div className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</div>
+                                            <div className="text-[11px] font-black text-slate-900">{day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}</div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-800">
+                                {displayHours.map(hour => (
+                                    <tr key={hour} className="group text-slate-800">
+                                        <td className="p-2 text-center bg-slate-50/50 border-r border-slate-100 text-[10px] font-bold text-slate-400">{hour === 12 ? '12 PM' : hour > 12 ? `${hour-12} PM` : `${hour} AM`}</td>
+                                        {daysInWeek.map(day => {
+                                            const cellStart = new Date(day); cellStart.setHours(hour, 0, 0, 0);
+                                            const cellEnd = new Date(day); cellEnd.setHours(hour + 1, 0, 0, 0);
+                                            let open = true;
+                                            if (window.YCP_SEASON_LOGIC) {
+                                                const status = window.YCP_SEASON_LOGIC.getOperatingStatus(day);
+                                                if (!status.open || hour < Math.floor(status.openHour) || hour >= Math.ceil(status.closeHour)) {
+                                                    open = false;
+                                                }
+                                            } else {
+                                                const isSunday = day.getDay() === 0, isSaturday = day.getDay() === 6;
+                                                if (isSunday && (hour < 10 || hour >= 16)) open = false;
+                                                else if (isSaturday && (hour < 8 || hour >= 17)) open = false;
+                                                else if (hour < 6 || hour >= 18) open = false;
+                                            }
+ 
+                                            if (!open) return <td key={day.toISOString()} className="p-1 border-r border-slate-50 bg-slate-50/30"><div className="h-10 flex items-center justify-center text-[9px] font-black uppercase text-slate-300 tracking-widest">Closed</div></td>;
+ 
+                                            const cellEvents = expandedEvents.filter(e => (e.startDateTime < cellEnd && e.endDateTime > cellStart) && (Array.isArray(e.zone) ? e.zone : [e.zone]).some(z => z === zone.id || zone.children?.some(c => c.id === z)));
+                                            const hasClosure = cellEvents.some(isClosureEvent);
+
+                                            let bookedUnits = new Set();
+                                            cellEvents.forEach(e => {
+                                                const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                                                if (eZones.includes(zone.id) || isClosureEvent(e)) zone.children?.forEach(c => bookedUnits.add(c.id));
+                                                else eZones.forEach(z => { if(zone.children?.some(c => c.id === z)) bookedUnits.add(z); });
+                                            });
+                                            
+                                            const totalCap = zone.children?.length || 1;
+                                            
+                                            const intervals = cellEvents.map(e => ({
+                                                start: Math.max(e.startDateTime.getTime(), cellStart.getTime()),
+                                                end: Math.min(e.endDateTime.getTime(), cellEnd.getTime())
+                                            })).sort((a, b) => a.start - b.start);
+
+                                            const merged = [];
+                                            if (intervals.length > 0) {
+                                                let current = intervals[0];
+                                                for (let i = 1; i < intervals.length; i++) {
+                                                    const next = intervals[i];
+                                                    if (next.start <= current.end) {
+                                                        current.end = Math.max(current.end, next.end);
+                                                    } else {
+                                                        merged.push(current);
+                                                        current = next;
+                                                    }
+                                                }
+                                                merged.push(current);
+                                            }
+                                            const totalBookedMs = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
+
+                                            const isFull = hasClosure || (totalCap === 1 
+                                                ? totalBookedMs >= 3600000 
+                                                : bookedUnits.size >= totalCap);
+
+                                            let bg = "bg-green-500/10 text-green-700 border-green-200/50"; 
+                                            let textCol = "text-green-800";
+                                            let label = "Free";
+
+                                            if (hasClosure) {
+                                                bg = "bg-red-600 text-white border-red-700 shadow-sm";
+                                                textCol = "text-white";
+                                                label = "Closed";
+                                            } else if (isFull) { 
+                                                bg = "bg-red-500 text-white border-red-600 shadow-sm"; 
+                                                textCol = "text-white";
+                                                label = "Full"; 
+                                            } else if (bookedUnits.size > 0 || cellEvents.length > 0) { 
+                                                bg = "bg-amber-500/10 text-amber-800 border-amber-200/50"; 
+                                                textCol = "text-amber-900";
+                                                if (totalCap === 1) {
+                                                    label = "Limited";
+                                                } else {
+                                                    const freeCount = totalCap - bookedUnits.size;
+                                                    const isProgram = zone.id.toLowerCase().includes('program');
+                                                    if (freeCount === 1) {
+                                                        label = isProgram ? "1 Zone" : "1 Lane";
+                                                    } else {
+                                                        label = isProgram ? `${freeCount} Zones` : `${freeCount} Lanes`;
+                                                    }
+                                                }
+                                            }
+                                            
+                                            return (
+                                                <td key={day.toISOString()} onClick={() => onHourBlockClick({ day, hour, zone, events: cellEvents, totalCap })} className="p-1 border-r border-slate-50 cursor-pointer hover:bg-slate-50 transition-all">
+                                                    <div className={`h-10 rounded-lg border flex flex-col items-center justify-center transition-all ${bg}`}><span className={`text-[10px] font-black uppercase tracking-tighter ${textCol}`}>{label}</span></div>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            );
+        };
+
+        const CalendarPanel = ({ currentMonth, eventsByDate, onDayClick, selectedDay }) => {
+            const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const startDate = new Date(start); startDate.setDate(start.getDate() - start.getDay());
+            const endDate = new Date(end); endDate.setDate(end.getDate() + (6 - end.getDay()));
+            const days = []; let d = new Date(startDate);
+            while(d <= endDate) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
+            return (
+                <div className="grid grid-cols-7 border-collapse h-full text-slate-800">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (<div key={day} className="py-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 bg-slate-50/50">{day}</div>))}
+                    {days.map(day => {
+                        const isSelected = day.toDateString() === selectedDay.toDateString(), isCurrentMonth = day.getMonth() === currentMonth.getMonth(), isToday = day.toDateString() === new Date().toDateString();
+                        const dayEvents = eventsByDate[day.toDateString()] || [];
+                        return (
+                            <div key={day.toISOString()} onClick={() => onDayClick(day)} className={`min-h-[100px] bg-white hover:bg-blue-50/30 cursor-pointer p-2 flex flex-col justify-between border-r border-b border-slate-50 transition-colors ${!isCurrentMonth ? 'bg-slate-50/30' : ''} ${isSelected ? 'bg-blue-50 ring-2 ring-inset ring-cyan-500 z-10 relative shadow-sm' : ''}`}>
+                                <span className={`text-[13px] font-black w-8 h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-slate-800' : 'text-slate-300'}`}>{day.getDate()}</span>
+                                <div className="mt-1 flex flex-wrap gap-1">{dayEvents.slice(0, 4).map((ev, i) => <div key={i} className={`w-2 h-2 rounded-full font-bold ${isClosureEvent(ev) ? 'bg-red-600' : 'bg-cyan-400 opacity-60'}`}></div>)}{dayEvents.length > 4 && <span className="text-[10px] text-slate-400">+</span>}</div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
+        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId, activityFilter, onSelectActivityFilter, onSelectDay }) => {
+            const sorted = useMemo(() => groupEvents(events), [events]);
+            const touchStartX = useRef(null);
+            
+            const formatTime = (dt) => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            
+            const truncateText = (text, maxLength = 80) => {
+                if (!text) return "";
+                return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+            };
+
+            const status = window.YCP_SEASON_LOGIC?.getOperatingStatus(selectedDay, activeZoneId);
+            const isClosed = status && !status.open;
+
+            const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+            const handleTouchEnd = (e) => {
+                if (touchStartX.current === null) return;
+                const diffX = e.changedTouches[0].clientX - touchStartX.current;
+                if (Math.abs(diffX) > 50) {
+                    if (diffX < 0) {
+                        const d = new Date(selectedDay); d.setDate(d.getDate() + 1); onSelectDay(d);
+                    } else {
+                        const d = new Date(selectedDay); d.setDate(d.getDate() - 1); onSelectDay(d);
+                    }
+                }
+                touchStartX.current = null;
+            };
+
+            const activityOptions = ['All', 'Learn to Swim', 'Squads', 'Aqua Fitness', 'Public Swim', 'School Carnival', 'Lane Hire'];
+
+            return (
+                <div 
+                    onTouchStart={handleTouchStart} 
+                    onTouchEnd={handleTouchEnd}
+                    className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800"
+                >
+                    <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-slate-800">
+                        <div className="flex items-center gap-2 text-slate-800">
+                            <div className="bg-cyan-100 text-cyan-600 p-1.5 rounded-lg">
+                                <Icons.Calendar size={16} />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-900">Daily Agenda</span>
+                        </div>
+                        <span className="text-xs font-black bg-cyan-100 text-cyan-700 px-2.5 py-0.5 rounded-full">{sorted.length}</span>
+                    </div>
+
+                    {/* Quick Activity Filter Chips */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar p-2 bg-slate-50/50 border-b border-slate-100 no-print">
+                        {activityOptions.map(type => {
+                            const isActive = (activityFilter || 'All') === type;
+                            return (
+                                <button
+                                    key={type}
+                                    onClick={() => onSelectActivityFilter && onSelectActivityFilter(type)}
+                                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all ${
+                                        isActive
+                                            ? 'bg-cyan-600 text-white shadow-sm ring-2 ring-cyan-200'
+                                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    {type}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-white text-slate-800">
+                        {sorted.length > 0 ? (
+                            <div className="space-y-2.5">
+                                {sorted.map(event => {
+                                    const timeRange = `${formatTime(event.startDateTime)} - ${formatTime(event.endDateTime)}`;
+                                    const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
+                                    const isClos = isClosureEvent(event);
+                                    const typeColor = isClos ? '#DC2626' : (eventTypes[event.type] || '#6B7280');
+                                    
+                                    return (
+                                        <div key={event.id} onClick={() => onEventClick(event)} className={`group p-3 rounded-xl border transition-all cursor-pointer ${isClos ? 'bg-red-50/70 border-red-200 hover:border-red-400 shadow-sm' : 'bg-white border-slate-100 hover:border-cyan-200 hover:shadow-md'}`}>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-1.5 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: typeColor }}></div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                                                        <span className="inline-block px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-wider" style={{ backgroundColor: typeColor + '25', color: typeColor }}>
+                                                            {isClos ? 'CLOSURE ALERT' : event.type}
+                                                        </span>
+                                                    </div>
+                                                    <p className={`font-black truncate transition-colors text-xs uppercase tracking-tight leading-tight ${isClos ? 'text-red-900' : 'text-slate-800 group-hover:text-cyan-600'}`}>{event.title}</p>
+                                                    
+                                                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 mt-2">
+                                                        <Icons.Clock size={12} />
+                                                        <span>{timeRange}</span>
+                                                    </div>
+                                                    
+                                                    {zonesList && (
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 mt-1">
+                                                            <Icons.MapPin size={11} />
+                                                            <span className="truncate">{zonesList}</span>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {(event.description || event.reason) && (
+                                                        <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed italic border-t border-slate-100 pt-1">
+                                                            {truncateText(event.description || event.reason, 80)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : isClosed ? (
+                            <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400">
+                                <Icons.LockKey size={48} className="mb-4 text-slate-200" />
+                                <p className="text-sm font-bold uppercase tracking-widest text-slate-400 text-center">{status.reason || 'Closed'}</p>
+                            </div>
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-30 text-slate-800">
+                                <Icons.CheckCircle size={48} className="text-slate-300" />
+                                <p className="text-xs font-black uppercase tracking-[0.2em] mt-4 text-slate-800">Clear Schedule</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const EventModal = ({ event, onClose, eventTypes }) => {
+            if (!event) return null;
+            const typeColor = isClosureEvent(event) ? '#DC2626' : (eventTypes[event.type] || '#6b7280');
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
+                        <div className="p-6 text-slate-800 overflow-y-auto">
+                            <div className="flex justify-between items-start mb-6"><div><span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-3" style={{ backgroundColor: typeColor + '25', color: typeColor }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{event.title}</h3></div><button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button></div>
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Clock size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Range</p><p className="font-black text-slate-800 text-sm">{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} to {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div></div>
+                                <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.MapPin size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assigned Zones</p><div className="flex flex-wrap gap-1 mt-1">{Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{z}</span>) : <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{event.zone}</span>}</div></div></div>
+                                {(event.description || event.reason) && <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Info size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Schedule Notes</p><p className="text-slate-600 text-xs leading-relaxed font-medium">{event.description || event.reason}</p></div></div>}
+                            </div>
+                        </div>
+                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-right"><button onClick={onClose} className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm">Dismiss</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const HourBlockModal = ({ hourBlock, onClose, eventTypes }) => {
+            if (!hourBlock) return null;
+            const { day, hour, zone, events, totalCap } = hourBlock;
+            
+            const hasClosure = events.some(isClosureEvent);
+            let bookedUnits = new Set();
+            events.forEach(e => {
+                const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
+                if (eZones.includes(zone.id) || isClosureEvent(e)) zone.children?.forEach(c => bookedUnits.add(c.id));
+                else eZones.forEach(z => { if(zone.children?.some(c => c.id === z)) bookedUnits.add(z); });
+            });
+            
+            const freeCount = hasClosure ? 0 : Math.max(0, totalCap - bookedUnits.size);
+            const isProgram = zone.id.toLowerCase().includes('program');
+            
+            const startTime = new Date(day); startTime.setHours(hour, 0, 0, 0);
+            const endTime = new Date(day); endTime.setHours(hour + 1, 0, 0, 0);
+            const timeStr = `${startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+
+            const displayEvents = useMemo(() => groupEvents(events), [events]);
+
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
+                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
+                        <div className="p-6 overflow-y-auto">
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-widest bg-cyan-100 text-cyan-700 mb-3">{zone.id}</span>
+                                    <h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{timeStr}</h3>
+                                </div>
+                                <button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button>
+                            </div>
+                            
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4 flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Availability</p>
+                                    <p className="font-black text-slate-800 text-lg">{hasClosure ? 'Pool Closed (0 Free)' : `${freeCount} of ${totalCap} ${isProgram ? 'Zones' : 'Lanes'} Free`}</p>
+                                </div>
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${freeCount === 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                    {freeCount === 0 ? <Icons.LockKey size={24} /> : <Icons.Check size={24} />}
+                                </div>
+                            </div>
+
+                            {displayEvents.length > 0 ? (
+                                <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Bookings &amp; Notices During This Hour</p>
+                                    {displayEvents.map((event, idx) => {
+                                        const typeColor = isClosureEvent(event) ? '#DC2626' : (eventTypes[event.type] || '#6b7280');
+                                        return (
+                                            <div key={idx} className="p-3 border border-slate-100 rounded-lg hover:border-slate-300 transition-colors bg-white shadow-sm">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h4 className="font-bold text-slate-800 text-sm">{event.title}</h4>
+                                                    <span className="px-2 py-0.5 text-[9px] font-black rounded-full uppercase tracking-widest border" style={{ backgroundColor: typeColor + '15', color: typeColor, borderColor: typeColor + '30' }}>
+                                                        {event.type}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mb-2">
+                                                    <Icons.Clock size={14} />
+                                                    <span>{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                    {Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">{z}</span>) : <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">{event.zone}</span>}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-center py-6 bg-slate-50 rounded-lg border border-slate-100">
+                                    <p className="text-sm font-medium text-slate-500">No bookings for this specific hour.</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-right">
+                            <button onClick={onClose} className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm">Dismiss</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
