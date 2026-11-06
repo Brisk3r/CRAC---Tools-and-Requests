@@ -3,953 +3,871 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YCP Zone Availability</title>
-    
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com?version=3.4.4"></script>
-    
-    <!-- React and Firebase Libraries -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone@7.24.5/babel.min.js"></script>
+    <title>Yamba Community Pool • Live Pool &amp; Lane Availability</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React 18 & Babel CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase Compat SDKs (v9.23.0) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web@2.1.0"></script>
 
-    <!-- Season Logic for YCP -->
-    <script src="./ycpSeasonLogic.js"></script>
+    <!-- Seasonal Operating Rules & PGM Zone Sync API -->
+    <script src="seasonLogic.js"></script>
+    <script src="ycpSeasonLogic.js"></script>
+    <script src="zone-sync-api.js"></script>
 
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
-        .wave-path { animation: waveMove 3s infinite linear; }
-        @keyframes waveMove { 0% { transform: translateX(0); } 100% { transform: translateX(-12px); } }
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 7px;
+            width: 7px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .hazard-stripes-bold {
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(239, 68, 68, 0.14),
+                rgba(239, 68, 68, 0.14) 14px,
+                rgba(255, 255, 255, 0.96) 14px,
+                rgba(255, 255, 255, 0.96) 28px
+            );
+        }
+        .modal-enter {
+            animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen text-slate-800">
+<body class="p-2 sm:p-4 md:p-6">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
 
-        // --- YCP DEFAULTS ---
-        const YCP_DEFAULTS = { 
-            zones: [ 
-                { id: '25m Pool', children: Array.from({length: 6}, (_, i) => ({id: `Lane ${i+1}`})) }
-            ], 
-            eventTypes: { 
-                'Learn to Swim': '#3B82F6', 
-                'Aqua Fitness': '#10B981', 
-                'Public Swim': '#F59E0B', 
-                'School Carnival': '#EF4444', 
-                'Lane Hire': '#8B5CF6' 
-            },
-            openingHours: [ 
-                {day: 'Monday', open: 6, close: 18}, {day: 'Tuesday', open: 6, close: 18}, 
-                {day: 'Wednesday', open: 6, close: 18}, {day: 'Thursday', open: 6, close: 18}, 
-                {day: 'Friday', open: 6, close: 18}, {day: 'Saturday', open: 8, close: 17}, 
-                {day: 'Sunday', open: 9, close: 16} 
-            ]
-        };
-
-        // --- TRACKING UTILITY ---
-        const SESSION_ID = Math.random().toString(36).substring(2, 15);
-        const trackEvent = async (action, label = null, data = {}) => {
-            if (!db) return;
-            try {
-                await db.collection('calendar_logs').add({
-                    sessionId: SESSION_ID,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    action: action,
-                    label: label,
-                    data: data,
-                    referrer: document.referrer || "direct",
-                    userAgent: navigator.userAgent,
-                    url: window.location.href
-                });
-            } catch (e) {
-                console.warn("Tracking failed:", e);
-            }
-        };
-
-        // --- HELPER: TIMEZONE & EVENT GROUPING ---
-        const getGraftonDate = () => {
-            const now = new Date();
-            const graftonString = now.toLocaleString("en-US", {timeZone: "Australia/Sydney"});
-            return new Date(graftonString);
-        };
-
-        const groupEvents = (rawEvents) => {
-            if (!Array.isArray(rawEvents)) return [];
-            const grouped = [];
-            rawEvents.forEach(e => {
-                const startTs = e.startDateTime?.getTime ? e.startDateTime.getTime() : new Date(e.startDateTime).getTime();
-                const endTs = e.endDateTime?.getTime ? e.endDateTime.getTime() : new Date(e.endDateTime).getTime();
-                const key = `${(e.title || '').trim().toLowerCase()}_${e.type || ''}_${startTs}_${endTs}`;
-                const existing = grouped.find(g => g._groupKey === key);
-                const eZones = Array.isArray(e.zone) ? e.zone : (e.zone ? [e.zone] : []);
-                if (existing) {
-                    eZones.forEach(z => {
-                        if (!existing.zone.includes(z)) existing.zone.push(z);
-                    });
-                } else {
-                    grouped.push({
-                        ...e,
-                        _groupKey: key,
-                        zone: [...eZones]
-                    });
-                }
-            });
-            return grouped;
-        };
-
-        // --- ICONS COMPONENT ---
-        const Icons = {
-            ChevronLeft: ({ size = 20, className = "" }) => (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    <path d="M15 18l-6-6 6-6"/>
-                </svg>
-            ),
-            ChevronRight: ({ size = 20, className = "" }) => (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    <path d="M9 18l6-6-6-6"/>
-                </svg>
-            ),
-            Calendar: ({ size = 20 }) => <i className={`ph ph-calendar-blank`} style={{ fontSize: size }}></i>,
-            Clock: ({ size = 20 }) => <i className={`ph ph-clock`} style={{ fontSize: size }}></i>,
-            MapPin: ({ size = 20 }) => <i className={`ph ph-map-pin`} style={{ fontSize: size }}></i>,
-            Waves: ({ size = 20 }) => <i className={`ph ph-waves`} style={{ fontSize: size }}></i>,
-            CheckCircle: ({ size = 20 }) => <i className={`ph ph-check-circle`} style={{ fontSize: size }}></i>,
-            X: ({ size = 20 }) => <i className={`ph ph-x`} style={{ fontSize: size }}></i>,
-            AlertCircle: ({ size = 20, className="" }) => <i className={`ph ph-warning-circle ${className}`} style={{ fontSize: size }}></i>,
-            LockKey: ({ size = 20 }) => <i className={`ph ph-lock-key`} style={{ fontSize: size }}></i>,
-            Check: ({ size = 20 }) => <i className={`ph ph-check`} style={{ fontSize: size }}></i>,
-            Info: ({ size = 20, className="" }) => <i className={`ph ph-info ${className}`} style={{ fontSize: size }}></i>
-        };
-
-        // --- FIREBASE INITIALIZATION ---
+        // Dual Firebase Configuration (synaipse-f45a9 + osf---availability-roster)
         const firebaseConfig = {
-          apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
-          authDomain: "osf---availability-roster.firebaseapp.com",
-          projectId: "osf---availability-roster",
-          storageBucket: "osf---availability-roster.firebasestorage.app",
-          messagingSenderId: "1069751236100",
-          appId: "1:1069751236100:web:f21d105f49e47f64e86751",
-          measurementId: "G-3HM7X3ZPHY"
+            apiKey: "AIzaSyBxkpSPfF9znD4T_tH-juzO5hkf44hWUb4",
+            authDomain: "synaipse-f45a9.firebaseapp.com",
+            projectId: "synaipse-f45a9",
+            storageBucket: "synaipse-f45a9.firebasestorage.app",
+            messagingSenderId: "1054773853865",
+            appId: "1:1054773853865:web:cd1c8acc5feac8071cb3b8"
         };
 
-        let db, auth;
+        const prodFirebaseConfig = {
+            apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
+            authDomain: "osf---availability-roster.firebaseapp.com",
+            projectId: "osf---availability-roster",
+            storageBucket: "osf---availability-roster.firebasestorage.app",
+            messagingSenderId: "1069751236100",
+            appId: "1:1069751236100:web:f21d105f49e47f64e86751"
+        };
+
+        let fbApp = null, db = null, auth = null;
+        let prodApp = null, prodDb = null, prodAuth = null;
+
         try {
-            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            auth = firebase.auth();
-        } catch (e) {
-            console.error("Firebase Initialization Error:", e);
+            if (!firebase.apps.length) {
+                fbApp = firebase.initializeApp(firebaseConfig);
+            } else {
+                fbApp = firebase.app();
+            }
+            db = fbApp.firestore();
+            auth = fbApp.auth();
+
+            prodApp = firebase.apps.find(a => a.name === 'osfProd') || firebase.initializeApp(prodFirebaseConfig, 'osfProd');
+            prodDb = prodApp.firestore();
+            prodAuth = prodApp.auth();
+        } catch (err) {
+            console.warn("Firebase initialisation notice:", err.message);
         }
 
-        // --- MAIN APP COMPONENT ---
-        const App = () => {
-            const [user, setUser] = useState(null);
-            const [events, setEvents] = useState([]);
-            const [settings, setSettings] = useState(null); 
-            const [isLoading, setIsLoading] = useState(true);
-            const [error, setError] = useState(null);
-            
-            const [currentMonth, setCurrentMonth] = useState(getGraftonDate());
-            const [selectedDay, setSelectedDay] = useState(getGraftonDate());
-            
-            const [selectedEvent, setSelectedEvent] = useState(null);
-            const [selectedHourBlock, setSelectedHourBlock] = useState(null);
-            const [zoneFilter, setZoneFilter] = useState('All Zones');
-            const [activityFilter, setActivityFilter] = useState('All');
-            const [viewMode, setViewMode] = useState(window.innerWidth < 1024 ? 'day' : 'week'); 
-            const [localZoneTab, setLocalZoneTab] = useState(null);
-            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+        const Icons = {
+            Waves: ({ size = 20, className = "" }) => <i className={`ph-bold ph-waves ${className}`} style={{ fontSize: size }}></i>,
+            Swimmer: ({ size = 20, className = "" }) => <i className={`ph-bold ph-person-simple-swim ${className}`} style={{ fontSize: size }}></i>,
+            Clock: ({ size = 20, className = "" }) => <i className={`ph-bold ph-clock ${className}`} style={{ fontSize: size }}></i>,
+            Warning: ({ size = 20, className = "" }) => <i className={`ph-fill ph-warning ${className}`} style={{ fontSize: size }}></i>,
+            CheckCircle: ({ size = 20, className = "" }) => <i className={`ph-fill ph-check-circle ${className}`} style={{ fontSize: size }}></i>,
+            ChevronLeft: ({ size = 20, className = "" }) => <i className={`ph-bold ph-caret-left ${className}`} style={{ fontSize: size }}></i>,
+            ChevronRight: ({ size = 20, className = "" }) => <i className={`ph-bold ph-caret-right ${className}`} style={{ fontSize: size }}></i>,
+            MapPin: ({ size = 20, className = "" }) => <i className={`ph-fill ph-map-pin ${className}`} style={{ fontSize: size }}></i>,
+            X: ({ size = 20, className = "" }) => <i className={`ph-bold ph-x ${className}`} style={{ fontSize: size }}></i>,
+            Info: ({ size = 20, className = "" }) => <i className={`ph-fill ph-info ${className}`} style={{ fontSize: size }}></i>,
+            ArrowClockwise: ({ size = 20, className = "" }) => <i className={`ph-bold ph-arrow-clockwise ${className}`} style={{ fontSize: size }}></i>,
+            Lightning: ({ size = 20, className = "" }) => <i className={`ph-fill ph-lightning ${className}`} style={{ fontSize: size }}></i>
+        };
 
-            useEffect(() => {
-                const handleResize = () => {
-                    const mobile = window.innerWidth < 768;
-                    setIsMobile(mobile);
-                    setViewMode(prev => {
-                        if (mobile && prev === 'week') return 'day';
-                        if (!mobile && prev === 'day') return 'week';
-                        return prev;
-                    });
-                };
-                window.addEventListener('resize', handleResize);
-                return () => window.removeEventListener('resize', handleResize);
-            }, []);
+        // Initialise sync engine strictly for YCP with dedicated storage key
+        const syncEngine = ZoneSyncAPI.createSyncEngine({
+            storageKey: 'ycp_manual_closures_v1',
+            venue: 'YCP'
+        });
 
-            const activeZoneId = useMemo(() => {
-                if (localZoneTab) return localZoneTab;
-                if (settings && zoneFilter !== 'All Zones') {
-                    const found = settings.zones.find(z => z.id === zoneFilter || z.children?.some(c => c.id === zoneFilter));
-                    if (found) return found.id;
-                }
-                return settings?.zones?.[0]?.id || '25m Pool';
-            }, [localZoneTab, zoneFilter, settings]);
+        const YCP_FACILITY = ZoneSyncAPI.FACILITY_SPECIFICATIONS.YCP;
+        const YCP_POOL = YCP_FACILITY.pools[0]; // 25m Community Pool (6 lanes)
 
-            useEffect(() => {
-                const initAuth = async () => {
-                    try {
-                        await auth.signInAnonymously();
-                        trackEvent('PAGE_LOAD');
-                    } catch (err) {
-                        console.error("Auth Error:", err);
-                        setError("Connection lost.");
-                        setIsLoading(false);
-                    }
-                };
-                initAuth();
-                return auth.onAuthStateChanged(u => setUser(u));
-            }, []);
+        const CATEGORY_STYLES = {
+            'Learn to Swim': { bg: 'bg-blue-50/95', hoverBg: 'hover:bg-blue-100', text: 'text-blue-950', subText: 'text-blue-700', border: 'border-blue-200', accentBar: 'bg-blue-600', dot: 'bg-blue-600', badge: 'bg-blue-100 text-blue-800 border-blue-200' },
+            'Squads': { bg: 'bg-indigo-50/95', hoverBg: 'hover:bg-indigo-100', text: 'text-indigo-950', subText: 'text-indigo-700', border: 'border-indigo-200', accentBar: 'bg-indigo-600', dot: 'bg-indigo-600', badge: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+            'Aqua Fitness': { bg: 'bg-teal-50/95', hoverBg: 'hover:bg-teal-100', text: 'text-teal-950', subText: 'text-teal-700', border: 'border-teal-200', accentBar: 'bg-teal-600', dot: 'bg-teal-600', badge: 'bg-teal-100 text-teal-800 border-teal-200' },
+            'Bookings': { bg: 'bg-purple-50/95', hoverBg: 'hover:bg-purple-100', text: 'text-purple-950', subText: 'text-purple-700', border: 'border-purple-200', accentBar: 'bg-purple-600', dot: 'bg-purple-600', badge: 'bg-purple-100 text-purple-800 border-purple-200' },
+            'School Carnival': { bg: 'bg-amber-50/95', hoverBg: 'hover:bg-amber-100', text: 'text-amber-950', subText: 'text-amber-700', border: 'border-amber-200', accentBar: 'bg-amber-600', dot: 'bg-amber-600', badge: 'bg-amber-100 text-amber-800 border-amber-200' },
+            'Public Lap Swim': { bg: 'bg-emerald-50/80', hoverBg: 'hover:bg-emerald-100/80', text: 'text-emerald-950', subText: 'text-emerald-700', border: 'border-emerald-200/80', accentBar: 'bg-emerald-500', dot: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+            'Maintenance Closure': { bg: 'bg-rose-50/95', hoverBg: 'hover:bg-rose-100', text: 'text-rose-950', subText: 'text-rose-700', border: 'border-rose-300', accentBar: 'bg-rose-600', dot: 'bg-rose-600', badge: 'bg-rose-100 text-rose-800 border-rose-300' },
+            'Default': { bg: 'bg-slate-50', hoverBg: 'hover:bg-slate-100', text: 'text-slate-900', subText: 'text-slate-600', border: 'border-slate-200', accentBar: 'bg-slate-500', dot: 'bg-slate-500', badge: 'bg-slate-100 text-slate-800 border-slate-200' }
+        };
 
-            useEffect(() => {
-                if (!user || !db) return;
-                const unsub = db.collection('calendar_settings').doc('ycp_config')
-                    .onSnapshot(doc => { 
-                        if (doc.exists) { 
-                            setSettings(doc.data()); 
-                        } else { 
-                            setSettings(YCP_DEFAULTS); 
-                        } 
-                    }, err => { 
-                        console.error(err); 
-                        setSettings(YCP_DEFAULTS); 
-                    });
-                return () => unsub();
-            }, [user]);
+        const localDateKey = (value) => {
+            const d = new Date(value);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
 
-            useEffect(() => {
-                if (!user || !db) return;
-                const unsub = db.collection('ycp_calendar_events').onSnapshot(snapshot => {
-                    const fetched = snapshot.docs
-                        .map(doc => {
-                            const data = doc.data();
-                            return {
-                                id: doc.id,
-                                ...data,
-                                startDateTime: data.startDateTime?.toDate ? data.startDateTime.toDate() : new Date(data.startDateTime),
-                                endDateTime: data.endDateTime?.toDate ? data.endDateTime.toDate() : new Date(data.endDateTime),
-                                recurrence: data.recurrence ? {
-                                    ...data.recurrence,
-                                    endDate: data.recurrence.endDate?.toDate ? data.recurrence.endDate.toDate() : new Date(data.recurrence.endDate)
-                                } : null
-                            };
-                        })
-                        .filter(event => {
-                            if (event.venue) {
-                                return String(event.venue).toUpperCase() === 'YCP';
-                            }
-                            const ycpZoneNames = ['25m Pool', 'Lane 1', 'Lane 2', 'Lane 3', 'Lane 4', 'Lane 5', 'Lane 6'];
-                            const eZones = Array.isArray(event.zone) ? event.zone : (event.zone ? [event.zone] : []);
-                            return eZones.some(z => ycpZoneNames.includes(z));
-                        });
-                    setEvents(fetched);
-                    setIsLoading(false);
-                }, err => { console.error(err); setIsLoading(false); });
-                return () => unsub();
-            }, [user]);
+        const formatOperatingTime = (decimalHour) => {
+            if (typeof decimalHour !== 'number' || isNaN(decimalHour)) return '';
+            const h = Math.floor(decimalHour);
+            const m = Math.round((decimalHour - h) * 60);
+            const period = h >= 12 ? 'pm' : 'am';
+            const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+            const displayM = m > 0 ? `:${m.toString().padStart(2, '0')}` : ':00';
+            return `${displayH}${displayM} ${period}`;
+        };
 
-            const expandedEvents = useMemo(() => {
-                const all = [];
-                events.forEach(event => {
-                    if (event.recurrence && Array.isArray(event.recurrence.days) && event.recurrence.days.length > 0 && event.recurrence.endDate) {
-                        let current = new Date(event.startDateTime); current.setHours(0,0,0,0);
-                        const end = new Date(event.recurrence.endDate);
-                        const startH = event.startDateTime.getHours(), startM = event.startDateTime.getMinutes();
-                        const endH = event.endDateTime.getHours(), endM = event.endDateTime.getMinutes();
-                        let dur = ((endH * 60 + endM) - (startH * 60 + startM)) * 60000;
-                        if (dur <= 0) dur += 24 * 60 * 60 * 1000; // Handle overnight events
-                        
-                        while(current <= end) {
-                            if (event.recurrence.days.includes(current.toLocaleDateString('en-US', { weekday: 'long' }))) {
-                                const s = new Date(current); s.setHours(startH, startM, 0, 0);
-                                all.push({ ...event, id: `${event.id}-${current.toISOString()}`, startDateTime: s, endDateTime: new Date(s.getTime() + dur) });
-                            }
-                            current.setDate(current.getDate() + 1);
-                        }
-                    } else all.push(event);
-                });
-                return all;
-            }, [events]);
+        const parseTimeToDecimal = (timeStr, fallbackDate) => {
+            if (typeof timeStr === 'string' && timeStr.includes(':')) {
+                const parts = timeStr.trim().split(':');
+                const h = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                if (!isNaN(h) && !isNaN(m)) return h + m / 60;
+            }
+            if (fallbackDate) {
+                const d = new Date(fallbackDate);
+                return d.getHours() + d.getMinutes() / 60;
+            }
+            return 0;
+        };
 
-            const allZonesFlat = useMemo(() => {
-                const z = ['All Zones'];
-                if (settings?.zones) {
-                    settings.zones.forEach(zone => {
-                        z.push(zone.id);
-                        if(zone.children) zone.children.forEach(c => z.push(c.id));
-                    });
-                }
-                return z;
-            }, [settings]);
+        const normaliseFirestoreDoc = (doc) => {
+            const d = doc.data();
+            let sDate = d.startDateTime;
+            if (sDate && sDate.toDate) sDate = sDate.toDate();
+            else if (sDate) sDate = new Date(sDate);
+            else sDate = new Date();
 
-            const filteredEvents = useMemo(() => {
-                if (zoneFilter === 'All Zones') return expandedEvents;
-                const relevantIds = [zoneFilter];
-                const p = settings.zones.find(z => z.id === zoneFilter);
-                if (p?.children) p.children.forEach(c => relevantIds.push(c.id));
-                return expandedEvents.filter(e => {
-                    const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
-                    return eZones.some(z => relevantIds.includes(z));
-                });
-            }, [expandedEvents, zoneFilter, settings]);
+            let eDate = d.endDateTime;
+            if (eDate && eDate.toDate) eDate = eDate.toDate();
+            else if (eDate) eDate = new Date(eDate);
+            else eDate = new Date(sDate.getTime() + 60 * 60 * 1000);
 
-            const eventsByDate = useMemo(() => {
-                const acc = {};
-                filteredEvents.forEach(e => {
-                    const k = e.startDateTime.toDateString();
-                    if(!acc[k]) acc[k] = []; acc[k].push(e);
-                });
-                return acc;
-            }, [filteredEvents]);
+            const rawZones = Array.isArray(d.zones) ? d.zones : (Array.isArray(d.zone) ? d.zone : (d.zone ? [d.zone] : []));
+            const shortZones = rawZones.map(z => {
+                const str = String(z);
+                if (str.includes(' - ')) return str.split(' - ').pop().trim();
+                return str.trim();
+            });
 
-            const selectedDayEvents = useMemo(() => eventsByDate[selectedDay.toDateString()] || [], [eventsByDate, selectedDay]);
-
-            const filteredDayEvents = useMemo(() => {
-                if (activityFilter === 'All') return selectedDayEvents;
-                return selectedDayEvents.filter(e => e.type === activityFilter);
-            }, [selectedDayEvents, activityFilter]);
-
-            const daysInSelectedWeek = useMemo(() => {
-                const days = []; const start = new Date(selectedDay); const dayNum = start.getDay() === 0 ? 7 : start.getDay();
-                start.setDate(start.getDate() - dayNum + 1);
-                for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
-                return days;
-            }, [selectedDay]);
-
-            const zoneForecast = useMemo(() => {
-                if (!settings?.zones) return [];
-                const dayEvents = expandedEvents.filter(e => e.startDateTime.toDateString() === selectedDay.toDateString());
-                const nowTs = new Date().getTime();
-                const isToday = selectedDay.toDateString() === getGraftonDate().toDateString();
-
-                return settings.zones.map(zone => {
-                    const totalCap = zone.children?.length || 1;
-                    const relevantEvents = dayEvents.filter(e => {
-                        const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
-                        return eZones.some(z => z === zone.id || zone.children?.some(c => c.id === z));
-                    });
-
-                    let maxUsed = 0, currentUsed = 0;
-                    if (isToday) {
-                        currentUsed = relevantEvents.filter(e => e.startDateTime.getTime() <= nowTs && e.endDateTime.getTime() > nowTs).length;
-                    }
-                    const timePoints = new Set();
-                    relevantEvents.forEach(e => { timePoints.add(e.startDateTime.getTime()); timePoints.add(e.endDateTime.getTime()); });
-                    const sorted = Array.from(timePoints).sort((a,b) => a-b);
-                    for (let i = 0; i < sorted.length - 1; i++) {
-                        const mid = (sorted[i] + sorted[i+1]) / 2;
-                        const count = relevantEvents.filter(e => e.startDateTime.getTime() <= mid && e.endDateTime.getTime() > mid).length;
-                        if (count > maxUsed) maxUsed = count;
-                    }
-
-                    const free = totalCap - (isToday ? currentUsed : maxUsed);
-                    let status = 'Good';
-                    if (free === 0) status = 'Full';
-                    else if (free < totalCap * 0.5) status = 'Limited';
-
-                    return { name: zone.id, free, total: totalCap, status, isToday };
-                });
-            }, [expandedEvents, settings, selectedDay]);
-
-            if (isLoading || !settings) return (
-                <div className="flex items-center justify-center h-[400px] flex-col text-slate-400">
-                    <svg width="60" height="60" viewBox="0 0 120 120" className="mb-4">
-                        <defs>
-                            <path id="water" d="M-60,40 C-45,40 -45,20 -30,20 C-15,20 -15,40 0,40 C15,40 15,20 30,20 C45,20 45,40 60,40 C75,40 75,20 90,20 C105,20 105,40 120,40 V120 H-60 Z" />
-                            <clipPath id="circleClip">
-                                <circle cx="60" cy="60" r="50" />
-                            </clipPath>
-                        </defs>
-                        <circle cx="60" cy="60" r="50" fill="#e0f2fe" />
-                        <g clipPath="url(#circleClip)">
-                            <use href="#water" x="0" y="0" fill="#7dd3fc" opacity="0.6">
-                                <animate attributeName="x" from="0" to="-60" dur="3s" repeatCount="indefinite" />
-                            </use>
-                            <use href="#water" x="-60" y="5" fill="#38bdf8" opacity="0.8">
-                                <animate attributeName="x" from="-60" to="0" dur="2.5s" repeatCount="indefinite" />
-                            </use>
-                            <use href="#water" x="0" y="10" fill="#0ea5e9">
-                                <animate attributeName="x" from="0" to="-60" dur="1.8s" repeatCount="indefinite" />
-                            </use>
-                        </g>
-                    </svg>
-                    <p className="text-xs font-black uppercase tracking-widest animate-pulse mt-2 text-cyan-600">Syncing Facility Data...</p>
-                </div>
+            const isAll = Boolean(
+                d.isEntirePool ||
+                d.lane === 'All Lanes' ||
+                d.zone === 'All Lanes' ||
+                shortZones.includes('All Lanes') ||
+                shortZones.includes('Entire Zone') ||
+                shortZones.includes('25m Pool')
             );
 
+            const isManual = Boolean(d.isManualOverride || d.isDirective || d.type === 'CLOSURE' || d.category === 'Maintenance Closure');
+
+            return {
+                id: doc.id,
+                ...d,
+                startDateTime: sDate,
+                endDateTime: eDate,
+                pool: d.pool || '25m Pool',
+                lane: isAll ? 'All Lanes' : (d.lane || shortZones.join(', ')),
+                zone: isAll ? 'All Lanes' : (Array.isArray(d.zone) ? d.zone.join(', ') : (d.zone || shortZones.join(', '))),
+                zones: isAll ? [...YCP_POOL.lanes] : (shortZones.length ? shortZones : ['All Lanes']),
+                isEntirePool: isAll,
+                isManualOverride: isManual,
+                isDirective: isManual,
+                reason: d.reason || d.description || d.publicNote || ''
+            };
+        };
+
+        // Clean interval slicer so manual directives override bookings without overlapping bars
+        const buildCleanLaneSegments = (laneEvents, openHour, closeHour, lane, defaultOpenTitle = 'Public Lap Swim', defaultOpenCategory = 'Public Lap Swim') => {
+            const rawIntervals = laneEvents.map(evt => {
+                const s = Math.max(openHour, Math.min(closeHour, parseTimeToDecimal(evt.startTime, evt.startDateTime)));
+                const en = Math.max(openHour, Math.min(closeHour, parseTimeToDecimal(evt.endTime, evt.endDateTime)));
+                const isManual = Boolean(evt.isManualOverride || evt.isDirective || evt.type === 'CLOSURE' || evt.category === 'Maintenance Closure');
+                return {
+                    start: s,
+                    end: en,
+                    priority: isManual ? 2 : 1,
+                    evt
+                };
+            }).filter(iv => iv.end > iv.start + 0.01);
+
+            const points = new Set([openHour, closeHour]);
+            rawIntervals.forEach(iv => {
+                points.add(iv.start);
+                points.add(iv.end);
+            });
+            const sortedPts = Array.from(points).sort((a, b) => a - b);
+
+            const atomicSlices = [];
+            for (let i = 0; i < sortedPts.length - 1; i++) {
+                const a = sortedPts[i];
+                const b = sortedPts[i + 1];
+                if (b - a < 0.01) continue;
+                const mid = (a + b) / 2;
+
+                const covering = rawIntervals.filter(iv => iv.start <= mid && iv.end >= mid);
+                if (covering.length === 0) {
+                    atomicSlices.push({
+                        type: 'open',
+                        start: a,
+                        end: b,
+                        category: defaultOpenCategory,
+                        title: defaultOpenTitle,
+                        lane,
+                        keyId: 'OPEN'
+                    });
+                } else {
+                    covering.sort((x, y) => y.priority - x.priority);
+                    const winner = covering[0].evt;
+                    atomicSlices.push({
+                        type: 'event',
+                        start: a,
+                        end: b,
+                        event: winner,
+                        lane,
+                        keyId: winner.id || winner.title
+                    });
+                }
+            }
+
+            // Merge adjacent slices with the same keyId
+            const merged = [];
+            atomicSlices.forEach(slice => {
+                const prev = merged[merged.length - 1];
+                if (prev && prev.keyId === slice.keyId && Math.abs(prev.end - slice.start) < 0.01) {
+                    prev.end = slice.end;
+                } else {
+                    merged.push({ ...slice });
+                }
+            });
+            return merged;
+        };
+
+        const getLaneSubtitle = (lane) => {
+            if (lane === 'Lane 1') return '25m Outdoor Heated • Edge / Shallow';
+            if (lane === 'Lane 6') return '25m Outdoor Heated • Ramp / Edge';
+            return '25m Outdoor Heated • Lap Swim';
+        };
+
+        // --- PUBLIC EMBED COMPONENT ---
+        const YCPEmbedApp = () => {
+            const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
+            const hideHeader = urlParams.get('hideHeader') === 'true';
+
+            const [selectedDate, setSelectedDate] = useState(new Date());
+            const [selectedEventModal, setSelectedEventModal] = useState(null);
+
+            // Synchronisation & Firestore
+            const [syncData, setSyncData] = useState(() => syncEngine.getConsolidatedSchedule('YCP'));
+            const [primaryUser, setPrimaryUser] = useState(null);
+            const [prodUser, setProdUser] = useState(null);
+            const [primaryEvents, setPrimaryEvents] = useState([]);
+            const [prodEvents, setProdEvents] = useState([]);
+            const [isSyncing, setIsSyncing] = useState(false);
+            const [lastUpdatedTime, setLastUpdatedTime] = useState(() => new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+
+            // 1. Firebase Anonymous Auth on both projects (Wait for onAuthStateChanged before attaching Firestore listeners)
+            useEffect(() => {
+                const unsubs = [];
+                if (auth) {
+                    unsubs.push(auth.onAuthStateChanged(u => {
+                        if (u) setPrimaryUser(u);
+                    }));
+                    auth.signInAnonymously().catch(err => console.warn("Primary auth notice:", err));
+                }
+                if (prodAuth) {
+                    unsubs.push(prodAuth.onAuthStateChanged(u => {
+                        if (u) setProdUser(u);
+                    }));
+                    prodAuth.signInAnonymously().catch(() => {
+                        prodAuth.signInWithEmailAndPassword('yambapool@clarence.nsw.gov.au', 'YCP*26*').catch(() => {});
+                    });
+                }
+                return () => unsubs.forEach(u => u && u());
+            }, []);
+
+            // 2a. Real-Time Firestore Listener on synaipse-f45a9 (attaches strictly after primaryUser is authenticated)
+            useEffect(() => {
+                if (!db || !primaryUser) return;
+                const colName = 'ycp_calendar_events_v2';
+                const unsub = db.collection(colName).onSnapshot(snapshot => {
+                    setPrimaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
+                    setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                }, err => console.warn("Primary Firestore notice:", err));
+                return () => unsub();
+            }, [primaryUser]);
+
+            // 2b. Real-Time Firestore Listener on osf---availability-roster (attaches strictly after prodUser is authenticated)
+            useEffect(() => {
+                if (!prodDb || !prodUser) return;
+                const colName = 'ycp_calendar_events_v2';
+                const unsub = prodDb.collection(colName).onSnapshot(snapshot => {
+                    setProdEvents(snapshot.docs.map(normaliseFirestoreDoc));
+                    setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                }, err => console.warn("Prod Firestore notice:", err));
+                return () => unsub();
+            }, [prodUser]);
+
+            const firestoreEvents = useMemo(() => {
+                const map = new Map();
+                prodEvents.forEach(e => map.set(e.id, e));
+                primaryEvents.forEach(e => map.set(e.id, e));
+                return Array.from(map.values());
+            }, [primaryEvents, prodEvents]);
+
+            const refreshFeed = useCallback(async () => {
+                setIsSyncing(true);
+                syncEngine.loadLocalOverrides();
+                setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
+                const colName = 'ycp_calendar_events_v2';
+                try {
+                    if (db && auth && auth.currentUser) {
+                        const snap = await db.collection(colName).get();
+                        setPrimaryEvents(snap.docs.map(normaliseFirestoreDoc));
+                    }
+                    if (prodDb && prodAuth && prodAuth.currentUser) {
+                        const snap2 = await prodDb.collection(colName).get();
+                        setProdEvents(snap2.docs.map(normaliseFirestoreDoc));
+                    }
+                } catch (e) {}
+                setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                setTimeout(() => setIsSyncing(false), 250);
+            }, []);
+
+            // Real-Time Cross-Tab Listener for YCP
+            useEffect(() => {
+                let channel;
+                try {
+                    channel = new BroadcastChannel('ycp_zone_sync_channel');
+                    channel.onmessage = () => {
+                        syncEngine.loadLocalOverrides();
+                        setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
+                        setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                    };
+                } catch (e) {}
+
+                const handleStorage = (e) => {
+                    if (e.key === 'ycp_manual_closures_v1') {
+                        syncEngine.loadLocalOverrides();
+                        setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
+                        setLastUpdatedTime(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
+                    }
+                };
+                window.addEventListener('storage', handleStorage);
+                return () => {
+                    if (channel) channel.close();
+                    window.removeEventListener('storage', handleStorage);
+                };
+            }, []);
+
+            const targetDateStr = localDateKey(selectedDate);
+
+            // Filter and combine live Firestore events + local emergency directives (zero fake seed data)
+            const daysEvents = useMemo(() => {
+                const liveEvents = firestoreEvents.filter(e => {
+                    if (!e || !e.startDateTime) return false;
+                    const eDate = localDateKey(e.startDateTime);
+                    const matchDate = eDate === targetDateStr;
+                    const matchVenue = !e.venue || e.venue === 'YCP';
+                    return matchDate && matchVenue;
+                });
+
+                const localDirectives = (syncData.events || []).filter(e => {
+                    if (!e || (!e.isManualOverride && !e.isDirective)) return false;
+                    const eDate = localDateKey(e.startDateTime);
+                    return eDate === targetDateStr;
+                });
+
+                const map = new Map();
+                liveEvents.forEach(e => map.set(e.id, e));
+                localDirectives.forEach(ld => {
+                    if (!map.has(ld.id)) map.set(ld.id, ld);
+                });
+                return Array.from(map.values());
+            }, [syncData, firestoreEvents, targetDateStr]);
+
+            const activeClosures = useMemo(() => {
+                return daysEvents.filter(e => e.isManualOverride || e.isDirective || e.type === 'CLOSURE');
+            }, [daysEvents]);
+
+            // Full Day Pool Closure Check
+            const fullDayPoolClosure = useMemo(() => {
+                return daysEvents.find(e => {
+                    if (!e.isManualOverride && !e.isDirective && e.type !== 'CLOSURE') return false;
+                    if (!e.isEntirePool) return false;
+                    const s = new Date(e.startDateTime);
+                    const en = new Date(e.endDateTime);
+                    const durationHours = (en - s) / (1000 * 60 * 60);
+                    return durationHours >= 6;
+                });
+            }, [daysEvents]);
+
+            // Operating Hours & Season Logic
+            const seasonRules = window.YCP_SEASON_LOGIC || (window.getSeasonLogic && window.getSeasonLogic('YCP'));
+            const operatingStatus = useMemo(() => {
+                if (seasonRules) {
+                    return seasonRules.getOperatingStatus(selectedDate, '25m Pool');
+                }
+                return { open: true, openHour: 6, closeHour: 18 };
+            }, [seasonRules, selectedDate]);
+
+            const formattedHoursString = useMemo(() => {
+                if (!operatingStatus.open) return operatingStatus.reason || 'Closed';
+                const openStr = formatOperatingTime(operatingStatus.openHour);
+                const closeStr = formatOperatingTime(operatingStatus.closeHour);
+                return `${openStr} to ${closeStr}`;
+            }, [operatingStatus]);
+
+            const openHour = operatingStatus.openHour || 6;
+            const closeHour = operatingStatus.closeHour || 18;
+            const totalDayHours = Math.max(1, closeHour - openHour);
+
+            // Header Time Ticks
+            const timeTicks = useMemo(() => {
+                const ticks = [];
+                ticks.push({ hour: openHour, label: formatOperatingTime(openHour), isMajor: true });
+
+                const firstInt = Math.ceil(openHour);
+                for (let h = firstInt; h < closeHour; h++) {
+                    if (h - openHour >= 0.4) {
+                        ticks.push({ hour: h, label: formatOperatingTime(h), isMajor: true });
+                    }
+                }
+                ticks.push({ hour: closeHour, label: formatOperatingTime(closeHour), isMajor: true });
+                return ticks;
+            }, [openHour, closeHour]);
+
+            const filterLaneEvents = useCallback((lane) => {
+                return daysEvents.filter(e => {
+                    if (!e) return false;
+                    if (e.isEntirePool || e.lane === 'All Lanes' || e.zone === 'All Lanes') return true;
+                    if (e.lane === lane || e.zone === lane) return true;
+                    if (Array.isArray(e.zones) && (e.zones.includes('Entire Zone') || e.zones.includes('All Lanes') || e.zones.includes(lane))) return true;
+                    return false;
+                });
+            }, [daysEvents]);
+
+            // KPI Metrics
+            const kpiMetrics = useMemo(() => {
+                if (fullDayPoolClosure || !operatingStatus.open) {
+                    return {
+                        totalCapacity: YCP_POOL.lanes.length * totalDayHours,
+                        bookedHours: YCP_POOL.lanes.length * totalDayHours,
+                        openHours: 0,
+                        percentOpen: 0
+                    };
+                }
+
+                let totalOpenLaneHours = 0;
+                YCP_POOL.lanes.forEach(lane => {
+                    const segs = buildCleanLaneSegments(filterLaneEvents(lane), openHour, closeHour, lane);
+                    segs.forEach(seg => {
+                        if (seg.type === 'open') {
+                            totalOpenLaneHours += Math.max(0, seg.end - seg.start);
+                        }
+                    });
+                });
+
+                const totalCapacity = YCP_POOL.lanes.length * totalDayHours;
+                const openHours = Math.max(0, Math.min(totalCapacity, totalOpenLaneHours));
+                const bookedHours = Math.max(0, totalCapacity - openHours);
+                const percentOpen = totalCapacity > 0 ? Math.round((openHours / totalCapacity) * 100) : 0;
+
+                return { totalCapacity, bookedHours, openHours, percentOpen };
+            }, [filterLaneEvents, fullDayPoolClosure, operatingStatus, openHour, closeHour, totalDayHours]);
+
             return (
-                <div className="p-3 max-w-7xl mx-auto text-slate-800">
-                    {window.YCP_SEASON_LOGIC?.isTemporarilyClosed && (
-                        <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl shadow-sm p-4 mb-4 flex items-center justify-center gap-3">
-                            <Icons.Info size={24} weight="fill" className="text-red-500" />
-                            <span className="font-black tracking-wide uppercase text-sm">{window.YCP_SEASON_LOGIC.tempClosedMessage}</span>
+                <div className="max-w-[1500px] w-full mx-auto space-y-4">
+                    {!hideHeader && (
+                        <header className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                                    <Icons.Waves size={26} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                            Yamba Community Pool
+                                        </h1>
+                                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200">
+                                            Live Availability
+                                        </span>
+                                    </div>
+                                    <p className="text-xs font-semibold text-slate-500 mt-0.5 flex items-center gap-1.5">
+                                        <Icons.MapPin size={13} className="text-blue-600" />
+                                        <span>Yamba, NSW</span>
+                                        <span>•</span>
+                                        <span>25m Community Pool (6 Lanes)</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </header>
+                    )}
+
+                    {/* Safety Alert Banner */}
+                    {activeClosures.length > 0 && (
+                        <div className="bg-rose-50 border-2 border-rose-500 rounded-2xl p-4 flex items-start gap-3.5 shadow-md">
+                            <div className="p-2 bg-rose-600 text-white rounded-xl shadow-xs mt-0.5">
+                                <Icons.Lightning size={20} className="animate-pulse" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide">
+                                        Yamba Safety &amp; Operational Notice
+                                    </h3>
+                                    <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-full uppercase">
+                                        {activeClosures.length} Active Directive{activeClosures.length > 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                                <div className="mt-1.5 space-y-1">
+                                    {activeClosures.map(c => (
+                                        <p key={c.id} className="text-xs font-semibold text-rose-900">
+                                            <strong>{c.title}</strong> ({c.startTime || new Date(c.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {c.endTime || new Date(c.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}): {c.reason || 'Pool closure in effect.'} (Target: {c.isEntirePool ? 'All 6 Lanes' : (c.zones?.join(', ') || 'All Lanes')})
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
-                    {/* Integrated Hub Command Strip - Balanced for Readability */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-3 flex flex-col md:flex-row items-center gap-3 text-slate-800">
-                        <div className="flex flex-col sm:flex-row items-center justify-between w-full md:w-auto gap-3">
-                            <div className="flex bg-slate-100 p-1 rounded-lg">
-                                <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'month' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Month</button>
-                                {isMobile ? (
-                                    <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'day' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Day</button>
-                                ) : (
-                                    <button onClick={() => setViewMode('week')} className={`px-3 py-1 rounded-md text-xs font-black uppercase tracking-tight transition-all ${viewMode === 'week' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Week</button>
-                                )}
+
+                    {/* Main Timeline Card */}
+                    <main className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+                        {/* Top Bar with Date Navigation */}
+                        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                                    25m Heated Community Pool
+                                </span>
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                    6 Lanes
+                                </span>
                             </div>
 
-                            <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 shadow-sm">
-                                <button 
+                            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto border border-slate-200">
+                                <button
                                     onClick={() => {
-                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()-1); setCurrentMonth(d); }
-                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()-1); setSelectedDay(d); }
-                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()-7); setSelectedDay(d); }
-                                    }} 
-                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
-                                    title="Previous"
-                                >
+                                        const prev = new Date(selectedDate);
+                                        prev.setDate(prev.getDate() - 1);
+                                        setSelectedDate(prev);
+                                    }}
+                                    className="p-2 hover:bg-white text-slate-600 rounded-lg transition"
+                                    title="Previous Day">
                                     <Icons.ChevronLeft size={16} />
                                 </button>
-                                
-                                <div className="flex flex-col items-center justify-center min-w-[120px] px-1">
-                                    <span className="text-[12px] font-black uppercase tracking-tight text-slate-900 leading-tight">
-                                        {viewMode === 'month' ? currentMonth.toLocaleString('default', { month: 'short', year: 'numeric' }) : `${selectedDay.getDate()} ${selectedDay.toLocaleString('default', { month: 'short' })}`}
-                                    </span>
-                                    {window.YCP_SEASON_LOGIC && (() => {
-                                        const s = window.YCP_SEASON_LOGIC.getSeason(selectedDay);
-                                        const isFull = s === 'FULL_SEASON';
-                                        const isOff = s === 'OFF_PEAK';
-                                        return (
-                                            <span className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${isFull ? 'text-emerald-600' : isOff ? 'text-blue-500' : 'text-amber-600'}`}>
-                                                {isFull ? 'Full Season' : isOff ? 'Off-Season' : 'Winter Closure'}
-                                            </span>
-                                        );
-                                    })()}
-                                </div>
-
-                                <button 
+                                <button
+                                    onClick={() => setSelectedDate(new Date())}
+                                    className="px-3 py-1.5 text-xs font-black hover:bg-white text-slate-800 rounded-lg transition">
+                                    Today
+                                </button>
+                                <button
                                     onClick={() => {
-                                        if(viewMode === 'month') { const d = new Date(currentMonth); d.setMonth(d.getMonth()+1); setCurrentMonth(d); }
-                                        else if(viewMode === 'day') { const d = new Date(selectedDay); d.setDate(d.getDate()+1); setSelectedDay(d); }
-                                        else { const d = new Date(selectedDay); d.setDate(d.getDate()+7); setSelectedDay(d); }
-                                    }} 
-                                    className="p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-cyan-50 hover:text-cyan-600 hover:border-cyan-300 transition-all active:scale-95 flex items-center justify-center shadow-xs"
-                                    title="Next"
-                                >
+                                        const next = new Date(selectedDate);
+                                        next.setDate(next.getDate() + 1);
+                                        setSelectedDate(next);
+                                    }}
+                                    className="p-2 hover:bg-white text-slate-600 rounded-lg transition"
+                                    title="Next Day">
                                     <Icons.ChevronRight size={16} />
                                 </button>
+                                <span className="text-xs font-black text-slate-800 px-3">
+                                    {selectedDate.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Zone Availability Badges with Visual Capacity Meters */}
-                        <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1">
-                            {zoneForecast.filter(z => z.name.toLowerCase().includes('pool')).map(z => {
-                                const isActive = activeZoneId === z.name && viewMode === 'week';
-                                const totalCap = z.total || 1;
-                                const freeCount = Math.max(0, z.free);
-                                const colors = { 
-                                    Good: 'bg-green-50 text-green-800 border-green-200', 
-                                    Limited: 'bg-amber-50 text-amber-800 border-amber-200', 
-                                    Full: 'bg-red-50 text-red-800 border-red-200' 
-                                };
-                                return (
-                                    <button 
-                                        key={z.name} 
-                                        onClick={() => { setLocalZoneTab(z.name); setViewMode('week'); }}
-                                        className={`px-3 py-1.5 rounded-xl border-2 flex flex-col items-start gap-1 flex-shrink-0 transition-all active:scale-95 ${isActive ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-4 ring-cyan-50' : colors[z.status] + ' hover:bg-white'}`}
-                                    >
-                                        <div className="flex items-center justify-between w-full gap-3">
-                                            <span className="text-[11px] font-black uppercase tracking-tight">{z.name}</span>
-                                            <span className={`text-[10px] font-bold ${isActive ? 'text-cyan-100' : 'text-slate-500'}`}>{freeCount}/{totalCap} Free</span>
-                                        </div>
-                                        {/* Visual Capacity Meter */}
-                                        <div className="flex gap-0.5 w-full min-w-[70px]">
-                                            {Array.from({ length: Math.min(totalCap, 8) }).map((_, i) => (
-                                                <div 
-                                                    key={i} 
-                                                    className={`h-1 flex-1 rounded-full ${
-                                                        i < freeCount 
-                                                            ? (isActive ? 'bg-emerald-300' : 'bg-green-500') 
-                                                            : (isActive ? 'bg-cyan-300' : 'bg-slate-300')
-                                                    }`}
-                                                />
-                                            ))}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* 7-Day Horizontal Date Selector Carousel (Mobile/Touch Friendly) */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2 mb-4 flex gap-1.5 overflow-x-auto custom-scrollbar no-print">
-                        {daysInSelectedWeek.map(day => {
-                            const isSelected = day.toDateString() === selectedDay.toDateString();
-                            const isToday = day.toDateString() === getGraftonDate().toDateString();
-                            return (
-                                <button
-                                    key={day.toISOString()}
-                                    onClick={() => setSelectedDay(day)}
-                                    className={`flex-1 min-w-[50px] py-2 px-1 rounded-lg flex flex-col items-center justify-center transition-all border ${
-                                        isSelected
-                                            ? 'bg-cyan-600 text-white border-cyan-600 shadow-md ring-2 ring-cyan-200'
-                                            : isToday
-                                            ? 'bg-cyan-50 text-cyan-800 border-cyan-200 font-bold'
-                                            : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
-                                    }`}
-                                >
-                                    <span className="text-[9px] font-black uppercase tracking-widest">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</span>
-                                    <span className="text-sm font-black leading-none mt-1">{day.getDate()}</span>
-                                    {isToday && <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-cyan-600'}`}></span>}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4 h-[calc(100vh-140px)] lg:h-[650px] text-slate-800">
-                        {isMobile ? (
-                            <div className="overflow-hidden h-full text-slate-800">
-                                {viewMode === 'month' ? (
-                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
-                                ) : viewMode === 'day' ? (
-                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                                        <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
-                                    </div>
-                                ) : (
-                                    <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
-                                )}
-                            </div>
-                        ) : (
-                            <>
-                                <div className="lg:col-span-8 overflow-hidden h-full text-slate-800">
-                                    {viewMode === 'month' ? (
-                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto"><CalendarPanel currentMonth={currentMonth} eventsByDate={eventsByDate} selectedDay={selectedDay} onDayClick={setSelectedDay} /></div>
-                                    ) : (
-                                        <div className="h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><WeekView selectedDay={selectedDay} eventsByDate={eventsByDate} onDayClick={setSelectedDay} onHourBlockClick={setSelectedHourBlock} settings={settings} expandedEvents={expandedEvents} activeZoneId={activeZoneId} /></div>
-                                    )}
-                                </div>
-                                <div className="lg:col-span-4 h-full">
-                                    <DailyAgendaPanel selectedDay={selectedDay} events={filteredDayEvents} onEventClick={setSelectedEvent} eventTypes={settings.eventTypes} activeZoneId={activeZoneId} activityFilter={activityFilter} onSelectActivityFilter={setActivityFilter} onSelectDay={setSelectedDay} />
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {selectedEvent && <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} eventTypes={settings.eventTypes} />}
-                    {selectedHourBlock && <HourBlockModal hourBlock={selectedHourBlock} onClose={() => setSelectedHourBlock(null)} eventTypes={settings.eventTypes} />}
-                </div>
-            );
-        };
-
-        // --- SUB-COMPONENTS ---
-
-        const WeekView = ({ selectedDay, eventsByDate, onDayClick, onHourBlockClick, settings, expandedEvents, activeZoneId }) => {
-            const daysInWeek = useMemo(() => {
-                const days = []; const start = new Date(selectedDay); const day = start.getDay() === 0 ? 7 : start.getDay();
-                start.setDate(start.getDate() - day + 1);
-                for (let i = 0; i < 7; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
-                return days;
-            }, [selectedDay]);
-
-            const displayHours = useMemo(() => {
-                let min = 24, max = 0;
-                if (window.YCP_SEASON_LOGIC) {
-                    daysInWeek.forEach(day => {
-                        const limits = window.YCP_SEASON_LOGIC.getDisplayHoursLimits(day);
-                        if (limits.min < min) min = limits.min;
-                        if (limits.max > max) max = limits.max;
-                    });
-                    if (min === 24) { min = 6; max = 18; }
-                } else if (settings?.openingHours?.length > 0) {
-                    min = Math.min(...settings.openingHours.map(h => h.open));
-                    max = Math.max(...settings.openingHours.map(h => h.close));
-                } else {
-                    min = 6; max = 18;
-                }
-                const hrs = []; for(let i = min; i < max; i++) hrs.push(i); return hrs;
-            }, [settings, daysInWeek]);
-
-            const zone = settings.zones.find(z => z.id === activeZoneId) || settings.zones[0];
-            const unitName = zone.id.toLowerCase().includes('program') ? 'Zones' : 'Lanes';
-
-            return (
-                <>
-                    <div className="bg-slate-900 text-white p-3 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-3 text-slate-800 text-white">
-                            <div className="bg-cyan-600 p-1.5 rounded-lg"><Icons.Waves size={16} /></div>
-                            <span className="text-xs font-black uppercase tracking-widest">{zone.id} Weekly Schedule</span>
-                        </div>
-                        <div className="flex gap-4 pr-2">
-                            <div className="flex items-center gap-1.5 text-slate-800 text-white"><div className="w-2 h-2 rounded-full bg-green-500 text-white"></div><span className="text-[10px] font-black uppercase text-slate-400">Free</span></div>
-                            <div className="flex items-center gap-1.5 text-slate-800 text-white"><div className="w-2 h-2 rounded-full bg-amber-500 text-white"></div><span className="text-[10px] font-black uppercase text-slate-400">Part</span></div>
-                            <div className="flex items-center gap-1.5 text-slate-800 text-white"><div className="w-2 h-2 rounded-full bg-red-500 text-white"></div><span className="text-[10px] font-black uppercase text-slate-400">Full</span></div>
-                        </div>
-                    </div>
-                    <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-grow bg-white text-slate-800">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[700px] lg:min-w-0 w-full text-slate-800">
-                            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 text-slate-800">
-                                <tr>
-                                    <th className="w-20 p-3 text-center text-[10px] font-black uppercase text-slate-400 border-r border-slate-100">Time</th>
-                                    {daysInWeek.map(day => (
-                                        <th key={day.toISOString()} className={`p-3 text-center border-r border-slate-100 last:border-r-0 text-slate-800 ${day.toDateString() === new Date().toDateString() ? 'bg-cyan-50/50' : ''}`}>
-                                            <div className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</div>
-                                            <div className="text-[11px] font-black text-slate-900">{day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}</div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-slate-800">
-                                {displayHours.map(hour => (
-                                    <tr key={hour} className="group text-slate-800">
-                                        <td className="p-2 text-center bg-slate-50/50 border-r border-slate-100 text-[10px] font-bold text-slate-400 text-slate-800">{hour === 12 ? '12 PM' : hour > 12 ? `${hour-12} PM` : `${hour} AM`}</td>
-                                        {daysInWeek.map(day => {
-                                            const cellStart = new Date(day); cellStart.setHours(hour, 0, 0, 0);
-                                            const cellEnd = new Date(day); cellEnd.setHours(hour + 1, 0, 0, 0);
-                                            let open = true;
-                                            if (window.YCP_SEASON_LOGIC) {
-                                                const status = window.YCP_SEASON_LOGIC.getOperatingStatus(day);
-                                                if (!status.open || hour < Math.floor(status.openHour) || hour >= Math.ceil(status.closeHour)) {
-                                                    open = false;
-                                                }
-                                            } else {
-                                                const isSunday = day.getDay() === 0, isSaturday = day.getDay() === 6;
-                                                if (isSunday && (hour < 10 || hour >= 16)) open = false;
-                                                else if (isSaturday && (hour < 8 || hour >= 17)) open = false;
-                                                else if (hour < 6 || hour >= 18) open = false;
-                                            }
- 
-                                            if (!open) return <td key={day.toISOString()} className="p-1 border-r border-slate-50 bg-slate-50/30 text-slate-800"><div className="h-10 flex items-center justify-center text-[9px] font-black uppercase text-slate-300 tracking-widest text-slate-800 text-slate-300">Closed</div></td>;
- 
-                                            const cellEvents = expandedEvents.filter(e => (e.startDateTime < cellEnd && e.endDateTime > cellStart) && (Array.isArray(e.zone) ? e.zone : [e.zone]).some(z => z === zone.id || zone.children?.some(c => c.id === z)));
-                                            let bookedUnits = new Set();
-                                            cellEvents.forEach(e => {
-                                                const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
-                                                if (eZones.includes(zone.id)) zone.children?.forEach(c => bookedUnits.add(c.id));
-                                                else eZones.forEach(z => { if(zone.children?.some(c => c.id === z)) bookedUnits.add(z); });
-                                            });
-                                            
-                                            const totalCap = zone.children?.length || 1;
-                                            
-                                            // Compute booked duration to check for partial booking when totalCap === 1
-                                            const intervals = cellEvents.map(e => ({
-                                                start: Math.max(e.startDateTime.getTime(), cellStart.getTime()),
-                                                end: Math.min(e.endDateTime.getTime(), cellEnd.getTime())
-                                            })).sort((a, b) => a.start - b.start);
-
-                                            const merged = [];
-                                            if (intervals.length > 0) {
-                                                let current = intervals[0];
-                                                for (let i = 1; i < intervals.length; i++) {
-                                                    const next = intervals[i];
-                                                    if (next.start <= current.end) {
-                                                        current.end = Math.max(current.end, next.end);
-                                                    } else {
-                                                        merged.push(current);
-                                                        current = next;
-                                                    }
-                                                }
-                                                merged.push(current);
-                                            }
-                                            const totalBookedMs = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
-
-                                            const isFull = totalCap === 1 
-                                                ? totalBookedMs >= 3600000 
-                                                : bookedUnits.size >= totalCap;
-
-                                            let bg = "bg-green-500/10 text-green-700 border-green-200/50"; 
-                                            let label = "Free";
-
-                                            if (isFull) { 
-                                                bg = "bg-red-500 text-white border-red-600 shadow-sm"; 
-                                                label = "Full"; 
-                                            } else if (bookedUnits.size > 0 || cellEvents.length > 0) { 
-                                                bg = "bg-amber-500/10 text-amber-800 border-amber-200/50"; 
-                                                if (totalCap === 1) {
-                                                    label = "Limited";
-                                                } else {
-                                                    const freeCount = totalCap - bookedUnits.size;
-                                                    const isProgram = zone.id.toLowerCase().includes('program');
-                                                    if (freeCount === 1) {
-                                                        label = isProgram ? "1 Zone" : "1 Lane";
-                                                    } else {
-                                                        label = isProgram ? `${freeCount} Zones` : `${freeCount} Lanes`;
-                                                    }
-                                                }
-                                            }
-                                            
-                                            return (
-                                                <td key={day.toISOString()} onClick={() => onHourBlockClick({ day, hour, zone, events: cellEvents, totalCap })} className="p-1 border-r border-slate-50 cursor-pointer hover:bg-slate-50 transition-all text-slate-800">
-                                                    <div className={`h-10 rounded-lg border flex flex-col items-center justify-center transition-all ${bg}`}><span className="text-[10px] font-black uppercase tracking-tighter text-slate-800">{label}</span></div>
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </>
-            );
-        };
-
-        const CalendarPanel = ({ currentMonth, eventsByDate, onDayClick, selectedDay }) => {
-            const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-            const startDate = new Date(start); startDate.setDate(start.getDate() - start.getDay());
-            const endDate = new Date(end); endDate.setDate(end.getDate() + (6 - end.getDay()));
-            const days = []; let d = new Date(startDate);
-            while(d <= endDate) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
-            return (
-                <div className="grid grid-cols-7 border-collapse h-full text-slate-800">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (<div key={day} className="py-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 bg-slate-50/50 text-slate-800">{day}</div>))}
-                    {days.map(day => {
-                        const isSelected = day.toDateString() === selectedDay.toDateString(), isCurrentMonth = day.getMonth() === currentMonth.getMonth(), isToday = day.toDateString() === new Date().toDateString();
-                        const dayEvents = eventsByDate[day.toDateString()] || [], hasEvents = dayEvents.length > 0;
-                        return (
-                            <div key={day.toISOString()} onClick={() => onDayClick(day)} className={`min-h-[100px] bg-white hover:bg-blue-50/30 cursor-pointer p-2 flex flex-col justify-between border-r border-b border-slate-50 transition-colors text-slate-800 ${!isCurrentMonth ? 'bg-slate-50/30' : ''} ${isSelected ? 'bg-blue-50 ring-2 ring-inset ring-cyan-500 z-10 relative shadow-sm' : ''}`}>
-                                <span className={`text-[13px] font-black w-8 h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-slate-800' : 'text-slate-300 text-slate-800'}`}>{day.getDate()}</span>
-                                <div className="mt-1 flex flex-wrap gap-1 text-slate-800">{dayEvents.slice(0, 4).map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-cyan-400 font-bold opacity-60 text-slate-800 text-white"></div>)}{dayEvents.length > 4 && <span className="text-[10px] text-slate-400 text-slate-800">+</span>}</div>
-                            </div>
-                        );
-                    })}
-                </div>
-            );
-        };
-
-        const DailyAgendaPanel = ({ selectedDay, events, onEventClick, eventTypes, activeZoneId, activityFilter, onSelectActivityFilter, onSelectDay }) => {
-            const sorted = useMemo(() => groupEvents(events).sort((a,b) => a.startDateTime - b.startDateTime), [events]);
-            const touchStartX = useRef(null);
-            
-            const formatTime = (dt) => dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            
-            const truncateText = (text, maxLength = 80) => {
-                if (!text) return "";
-                return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-            };
-
-            const status = window.YCP_SEASON_LOGIC?.getOperatingStatus(selectedDay, activeZoneId);
-            const isClosed = status && !status.open;
-
-            // Touch Swipe Left / Right to Change Day
-            const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-            const handleTouchEnd = (e) => {
-                if (touchStartX.current === null) return;
-                const diffX = e.changedTouches[0].clientX - touchStartX.current;
-                if (Math.abs(diffX) > 50) {
-                    if (diffX < 0) { // Swipe Left -> Next Day
-                        const d = new Date(selectedDay); d.setDate(d.getDate() + 1); onSelectDay(d);
-                    } else { // Swipe Right -> Previous Day
-                        const d = new Date(selectedDay); d.setDate(d.getDate() - 1); onSelectDay(d);
-                    }
-                }
-                touchStartX.current = null;
-            };
-
-            const activityOptions = ['All', 'Learn to Swim', 'Aqua Fitness', 'Public Swim', 'School Carnival', 'Lane Hire'];
-
-            return (
-                <div 
-                    onTouchStart={handleTouchStart} 
-                    onTouchEnd={handleTouchEnd}
-                    className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full text-slate-800"
-                >
-                    <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between text-slate-800">
-                        <div className="flex items-center gap-2 text-slate-800">
-                            <div className="bg-cyan-100 text-cyan-600 p-1.5 rounded-lg text-slate-800">
-                                <Icons.Calendar size={16} />
-                            </div>
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-900">Daily Agenda</span>
-                        </div>
-                        <span className="text-xs font-black bg-cyan-100 text-cyan-700 px-2.5 py-0.5 rounded-full">{events.length}</span>
-                    </div>
-
-                    {/* Quick Activity Filter Chips ("Can I Swim Right Now?") */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar p-2 bg-slate-50/50 border-b border-slate-100 no-print">
-                        {activityOptions.map(type => {
-                            const isActive = (activityFilter || 'All') === type;
-                            return (
-                                <button
-                                    key={type}
-                                    onClick={() => onSelectActivityFilter && onSelectActivityFilter(type)}
-                                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all ${
-                                        isActive
-                                            ? 'bg-cyan-600 text-white shadow-sm ring-2 ring-cyan-200'
-                                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                                    }`}
-                                >
-                                    {type}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-white text-slate-800">
-                        {sorted.length > 0 ? (
-                            <div className="space-y-2.5">
-                                {sorted.map(event => {
-                                    const timeRange = `${formatTime(event.startDateTime)} – ${formatTime(event.endDateTime)}`;
-                                    const zonesList = Array.isArray(event.zone) ? event.zone.join(', ') : event.zone;
-                                    
-                                    return (
-                                        <div key={event.id} onClick={() => onEventClick(event)} className="group p-3 rounded-xl border border-slate-100 hover:border-cyan-200 hover:shadow-md transition-all cursor-pointer bg-white text-slate-800">
-                                            <div className="flex items-start gap-3 text-slate-800">
-                                                <div className="w-1.5 self-stretch rounded-full flex-shrink-0 text-slate-800" style={{ backgroundColor: eventTypes[event.type] || '#9CA3AF' }}></div>
-                                                <div className="flex-1 min-w-0 text-slate-800">
-                                                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                                                        <span className="inline-block px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-wider" style={{ backgroundColor: (eventTypes[event.type] || '#6B7280') + '25', color: eventTypes[event.type] || '#6B7280' }}>
-                                                            {event.type}
-                                                        </span>
-                                                    </div>
-                                                    <p className="font-black text-slate-800 truncate group-hover:text-cyan-600 transition-colors text-xs uppercase tracking-tight leading-tight text-slate-800">{event.title}</p>
-                                                    
-                                                    <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 text-slate-800 mt-2">
-                                                        <Icons.Clock size={12} />
-                                                        <span>{timeRange}</span>
-                                                    </div>
-                                                    
-                                                    {zonesList && (
-                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 text-slate-800 mt-1">
-                                                            <Icons.MapPin size={11} />
-                                                            <span className="truncate">{zonesList}</span>
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {event.description && (
-                                                        <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed italic border-t border-slate-50 pt-1 text-slate-800">
-                                                            {truncateText(event.description, 80)}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : isClosed ? (
-                            <div className="h-full flex flex-col items-center justify-center py-12 text-slate-400">
-                                <Icons.LockKey size={48} className="mb-4 text-slate-200" />
-                                <p className="text-sm font-bold uppercase tracking-widest text-slate-400 text-center">{status.reason || 'Closed'}</p>
-                            </div>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-30 text-slate-800">
-                                <Icons.CheckCircle size={48} className="text-slate-300" />
-                                <p className="text-xs font-black uppercase tracking-[0.2em] mt-4 text-slate-800">Clear Schedule</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        const EventModal = ({ event, onClose, eventTypes }) => {
-            if (!event) return null;
-            return (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        {/* Mobile Pull Handle */}
-                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
-                        <div className="p-6 text-slate-800 overflow-y-auto">
-                            <div className="flex justify-between items-start mb-6 text-slate-800"><div><span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-[0.2em] mb-3" style={{ backgroundColor: (eventTypes[event.type] || '#6b7280') + '25', color: eventTypes[event.type] || '#6b7280' }}>{event.type}</span><h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{event.title}</h3></div><button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button></div>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Clock size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Range</p><p className="font-black text-slate-800 text-sm">{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} — {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div></div>
-                                <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.MapPin size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assigned Zones</p><div className="flex flex-wrap gap-1 mt-1">{Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{z}</span>) : <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-black border border-slate-200 uppercase tracking-tighter">{event.zone}</span>}</div></div></div>
-                                {event.description && <div className="flex items-start gap-4"><div className="bg-slate-50 p-2 rounded-lg text-slate-400"><Icons.Info size={20} /></div><div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Schedule Notes</p><p className="text-slate-600 text-xs leading-relaxed font-medium">{event.description}</p></div></div>}
-                            </div>
-                        </div>
-                        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-right"><button onClick={onClose} className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm">Dismiss</button></div>
-                    </div>
-                </div>
-            );
-        };
-
-        const HourBlockModal = ({ hourBlock, onClose, eventTypes }) => {
-            if (!hourBlock) return null;
-            const { day, hour, zone, events, totalCap } = hourBlock;
-            
-            let bookedUnits = new Set();
-            events.forEach(e => {
-                const eZones = Array.isArray(e.zone) ? e.zone : [e.zone];
-                if (eZones.includes(zone.id)) zone.children?.forEach(c => bookedUnits.add(c.id));
-                else eZones.forEach(z => { if(zone.children?.some(c => c.id === z)) bookedUnits.add(z); });
-            });
-            
-            const freeCount = totalCap - bookedUnits.size;
-            const isProgram = zone.id.toLowerCase().includes('program');
-            
-            const startTime = new Date(day); startTime.setHours(hour, 0, 0, 0);
-            const endTime = new Date(day); endTime.setHours(hour + 1, 0, 0, 0);
-            const timeStr = `${startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-
-            const displayEvents = useMemo(() => groupEvents(events), [events]);
-
-            return (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center z-[100] p-0 md:p-4 fade-in" onClick={onClose}>
-                    <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        {/* Mobile Pull Handle */}
-                        <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto my-2 md:hidden"></div>
-                        <div className="p-6 overflow-y-auto">
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <span className="inline-block px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-widest bg-cyan-100 text-cyan-700 mb-3">{zone.id}</span>
-                                    <h3 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">{timeStr}</h3>
-                                </div>
-                                <button onClick={onClose} className="text-slate-300 hover:text-slate-600 transition-colors"><Icons.X size={24} /></button>
-                            </div>
-                            
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4 flex justify-between items-center">
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Availability</p>
-                                    <p className="font-black text-slate-800 text-lg">{freeCount} of {totalCap} {isProgram ? 'Zones' : 'Lanes'} Free</p>
-                                </div>
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${freeCount === 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                                    {freeCount === 0 ? <Icons.LockKey size={24} /> : <Icons.Check size={24} />}
+                        {/* KPI Ribbon */}
+                        <div className="px-4 sm:px-5 py-3 bg-slate-50/70 border-b border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Yamba Hours Today</span>
+                                <div className="font-extrabold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                                    <Icons.Clock size={15} className="text-blue-600 shrink-0" />
+                                    <span>{formattedHoursString}</span>
                                 </div>
                             </div>
 
-                            {displayEvents.length > 0 ? (
-                                <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Bookings During This Hour</p>
-                                    {displayEvents.map((event, idx) => (
-                                        <div key={idx} className="p-3 border border-slate-100 rounded-lg hover:border-slate-300 transition-colors bg-white shadow-sm">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h4 className="font-bold text-slate-800 text-sm">{event.title}</h4>
-                                                <span className="px-2 py-0.5 text-[9px] font-black rounded-full uppercase tracking-widest border" style={{ backgroundColor: (eventTypes[event.type] || '#6b7280') + '15', color: eventTypes[event.type] || '#6b7280', borderColor: (eventTypes[event.type] || '#6b7280') + '30' }}>
-                                                    {event.type}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mb-2">
-                                                <Icons.Clock size={14} className="text-slate-400" />
-                                                <span>{event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                {Array.isArray(event.zone) ? event.zone.map(z => <span key={z} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">{z}</span>) : <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">{event.zone}</span>}
-                                            </div>
-                                        </div>
-                                    ))}
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Pool Specifications</span>
+                                <div className="font-extrabold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                                    <Icons.Waves size={15} className="text-blue-600 shrink-0" />
+                                    <span>6 Lanes (25m Outdoor Heated)</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Public Lane Availability</span>
+                                <div className="font-extrabold text-emerald-700 mt-0.5 flex items-center gap-1.5">
+                                    <Icons.CheckCircle size={15} className="text-emerald-600 shrink-0" />
+                                    <span>{kpiMetrics.openHours.toFixed(1)} hrs ({kpiMetrics.percentOpen}% Public)</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Lap Swimming</span>
+                                <div className="font-extrabold text-blue-900 mt-0.5 flex items-center gap-1.5">
+                                    <Icons.Swimmer size={15} className="text-blue-600 shrink-0" />
+                                    <span>{activeClosures.some(c => c.isEntirePool) ? 'Temporarily Suspended' : 'Public Lap Swim Open'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Horizontal Timeline */}
+                        <div className="p-4 sm:p-5">
+                            {fullDayPoolClosure ? (
+                                <div className="py-16 text-center bg-rose-50 border border-dashed border-rose-300 rounded-2xl">
+                                    <Icons.Warning size={40} className="mx-auto text-rose-500 mb-2" />
+                                    <h3 className="font-black text-rose-950 text-base">{fullDayPoolClosure.title}</h3>
+                                    <p className="text-xs text-rose-700 max-w-md mx-auto mt-1 font-medium">
+                                        {fullDayPoolClosure.reason}
+                                    </p>
                                 </div>
                             ) : (
-                                <div className="text-center py-6 bg-slate-50 rounded-lg border border-slate-100">
-                                    <p className="text-sm font-medium text-slate-500">No bookings for this specific hour.</p>
+                                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs">
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <div className="min-w-[760px]">
+                                            {/* Time Column Header */}
+                                            <div className="flex border-b border-slate-200 bg-slate-50/80">
+                                                <div className="w-32 sm:w-36 shrink-0 p-3 text-xs font-black text-slate-500 uppercase tracking-wider border-r border-slate-200 bg-slate-100/60">
+                                                    Lane
+                                                </div>
+                                                <div className="flex-1 flex">
+                                                    {timeTicks.map((tick, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className="flex-1 text-center py-2.5 text-[11px] font-black text-slate-600 border-r border-slate-200/60 last:border-r-0">
+                                                            {tick.label}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Lanes */}
+                                            <div className="divide-y divide-slate-100">
+                                                {YCP_POOL.lanes.map(lane => {
+                                                    const segments = buildCleanLaneSegments(filterLaneEvents(lane), openHour, closeHour, lane);
+                                                    return (
+                                                        <div key={lane} className="flex min-h-[58px] relative hover:bg-slate-50/50 transition">
+                                                            <div className="w-32 sm:w-36 shrink-0 p-3 border-r border-slate-200 bg-slate-50/30 flex flex-col justify-center">
+                                                                <span className="text-xs font-black text-slate-900">{lane}</span>
+                                                                <span className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">
+                                                                    {getLaneSubtitle(lane)}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="flex-1 relative flex">
+                                                                {timeTicks.map((t, idx) => (
+                                                                    <div key={idx} className="flex-1 border-r border-slate-100 h-full pointer-events-none"></div>
+                                                                ))}
+
+                                                                {segments.map((seg, sIdx) => {
+                                                                    const clampedStart = Math.max(openHour, Math.min(closeHour, seg.start));
+                                                                    const clampedEnd = Math.max(openHour, Math.min(closeHour, seg.end));
+
+                                                                    if (clampedEnd <= clampedStart) return null;
+
+                                                                    const leftPct = ((clampedStart - openHour) / totalDayHours) * 100;
+                                                                    const widthPct = Math.max(1.5, ((clampedEnd - clampedStart) / totalDayHours) * 100);
+
+                                                                    const isEvent = seg.type === 'event';
+                                                                    const evt = seg.event;
+                                                                    const isManual = isEvent && (evt.isManualOverride || evt.isDirective || evt.type === 'CLOSURE');
+                                                                    const category = isManual ? 'Maintenance Closure' : (isEvent ? (evt.category || evt.type || 'Bookings') : seg.category);
+                                                                    const style = CATEGORY_STYLES[category] || CATEGORY_STYLES['Default'];
+
+                                                                    return (
+                                                                        <div
+                                                                            key={sIdx}
+                                                                            onClick={() => {
+                                                                                if (isEvent) {
+                                                                                    setSelectedEventModal(evt);
+                                                                                } else {
+                                                                                    setSelectedEventModal({
+                                                                                        title: seg.title,
+                                                                                        category: seg.category,
+                                                                                        pool: '25m Community Pool',
+                                                                                        zones: [lane],
+                                                                                        startTime: formatOperatingTime(seg.start),
+                                                                                        endTime: formatOperatingTime(seg.end),
+                                                                                        isOpenSwim: true,
+                                                                                        publicNote: 'Open public swimming lane. No booking or reservation required.'
+                                                                                    });
+                                                                                }
+                                                                            }}
+                                                                            style={{
+                                                                                left: `${leftPct}%`,
+                                                                                width: `${widthPct}%`
+                                                                            }}
+                                                                            title={`${isEvent ? evt.title : seg.title} (${formatOperatingTime(seg.start)} - ${formatOperatingTime(seg.end)})`}
+                                                                            className={`absolute top-1.5 bottom-1.5 rounded-xl border flex items-center px-2 sm:px-2.5 transition shadow-xs cursor-pointer overflow-hidden ${
+                                                                                isManual
+                                                                                    ? 'hazard-stripes-bold border-rose-500 text-rose-950 z-30 shadow-md ring-1 ring-rose-400'
+                                                                                    : `${style.bg} ${style.hoverBg} ${style.border} ${style.text} z-10`
+                                                                            }`}>
+                                                                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isManual ? 'bg-rose-600' : style.accentBar}`}></div>
+
+                                                                            <div className="truncate pl-1.5 flex flex-col justify-center">
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isManual ? 'bg-rose-600 animate-pulse' : style.dot}`}></span>
+                                                                                    <span className="font-black text-xs truncate">
+                                                                                        {isEvent ? evt.title : seg.title}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span className={`text-[10px] font-bold truncate ${isManual ? 'text-rose-700' : style.subText}`}>
+                                                                                    {formatOperatingTime(seg.start)} - {formatOperatingTime(seg.end)}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </main>
+
+                    {/* Event Detail Modal */}
+                    {selectedEventModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl modal-enter overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 flex items-start justify-between gap-4">
+                                    <div>
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                                            CATEGORY_STYLES[selectedEventModal.category]?.badge || 'bg-slate-100 text-slate-800 border-slate-200'
+                                        }`}>
+                                            {selectedEventModal.category || 'Schedule Details'}
+                                        </span>
+                                        <h3 className="text-lg font-black text-slate-900 mt-2">
+                                            {selectedEventModal.title}
+                                        </h3>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedEventModal(null)}
+                                        className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+                                        <Icons.X size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="p-6 space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-slate-50 border border-slate-200/70 rounded-2xl p-3.5">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Location</span>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <Icons.MapPin size={15} className="text-blue-600 shrink-0" />
+                                                <span className="text-xs font-black text-slate-900 truncate">
+                                                    Yamba 25m Pool
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] text-slate-500 font-bold mt-0.5 block truncate">
+                                                {selectedEventModal.isEntirePool ? 'All 6 Lanes' : (selectedEventModal.zones?.join(', ') || selectedEventModal.zone || 'All Lanes')}
+                                            </span>
+                                        </div>
+
+                                        <div className="bg-slate-50 border border-slate-200/70 rounded-2xl p-3.5">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Time Slot</span>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <Icons.Clock size={15} className="text-blue-600 shrink-0" />
+                                                <span className="text-xs font-black text-slate-900 truncate">
+                                                    {selectedEventModal.startTime || (selectedEventModal.startDateTime ? new Date(selectedEventModal.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')} to {selectedEventModal.endTime || (selectedEventModal.endDateTime ? new Date(selectedEventModal.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] text-emerald-600 font-bold mt-0.5 block">
+                                                {selectedEventModal.isOpenSwim ? 'No Booking Needed' : 'Allocated'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 rounded-2xl border bg-slate-50 border-slate-200 text-slate-800 flex items-start gap-3">
+                                        <div className="shrink-0 mt-0.5">
+                                            <Icons.Info size={18} className="text-blue-600" />
+                                        </div>
+                                        <div className="text-xs">
+                                            <span className="font-black uppercase tracking-wider text-[10px] block mb-0.5">
+                                                Public Schedule Details
+                                            </span>
+                                            <p className="leading-relaxed font-medium">
+                                                {selectedEventModal.publicNote || selectedEventModal.reason || selectedEventModal.description || 'General public swimming is available in this zone.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50/80 px-6 py-3.5 border-t border-slate-100 flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-slate-400">
+                                        Yamba Community Pool Schedule
+                                    </span>
+                                    <button
+                                        onClick={() => setSelectedEventModal(null)}
+                                        className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold shadow-sm transition active:scale-95">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<YCPEmbedApp />);
     </script>
 </body>
 </html>
