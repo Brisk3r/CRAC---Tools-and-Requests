@@ -3,1536 +3,1080 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yamba Community Pool • Duty Manager Operations Console</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React 18 & Babel CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Google Fonts: Plus Jakarta Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Calendar Admin | Yamba Community Pool</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?version=3.4.4"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Season Logic for YCP -->
+    <script src="./ycpSeasonLogic.js"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased">
+    <div id="root"></div>
 
-    <!-- Firebase Compat SDKs (v9.23.0) -->
+    <!-- React 18 -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.24.5/babel.min.js"></script>
+
+    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-    <!-- Yamba Seasonal Operating Rules & PGM Zone Sync API -->
-    <script src="seasonLogic.js"></script>
-    <script src="ycpSeasonLogic.js"></script>
-    <script src="zone-sync-api.js"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                    }
-                }
-            }
-        };
-    </script>
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            background-color: #f1f5f9;
-            color: #0f172a;
-            -webkit-font-smoothing: antialiased;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 7px;
-            width: 7px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 9999px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 9999px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .hazard-stripes-bold {
-            background: repeating-linear-gradient(
-                -45deg,
-                rgba(239, 68, 68, 0.12),
-                rgba(239, 68, 68, 0.12) 14px,
-                rgba(255, 255, 255, 0.95) 14px,
-                rgba(255, 255, 255, 0.95) 28px
-            );
-        }
-        .modal-enter {
-            animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes modalPop {
-            from { opacity: 0; transform: scale(0.96) translateY(8px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-    </style>
-</head>
-<body class="min-h-screen p-3 sm:p-5 md:p-6">
-    <div id="root"></div>
-
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback } = React;
-
-        // ============================================================================
-        // YAMBA COMMUNITY POOL (YCP) DEDICATED CONFIGURATION
-        // Dual-Firebase Sync: synaipse-f45a9 & osf---availability-roster
-        // ============================================================================
-        const YCP_CONFIG = {
-            venueId: 'YCP',
-            venueName: 'Yamba Community Pool',
-            clubId: 2,
-            authEmail: 'yambapool@clarence.nsw.gov.au',
-            eventsCollection: new URLSearchParams(window.location.search).get('v') === '1' ? 'ycp_calendar_events' : 'ycp_calendar_events_v2',
-            settingsCollection: 'ycp_calendar_settings',
-            localStorageKey: 'ycp_manual_closures_v1',
-            broadcastChannelName: 'ycp_zone_sync_channel'
+        // --- ICONS (Lucide React style) ---
+        const Icons = {
+            Search: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Edit: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+            Trash: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>,
+            Repeat: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>,
+            LogOut: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+            Check: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            AlertTriangle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
+            Database: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Filter: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+            ChevronLeft: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+            ChevronRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+            Broom: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2.5 1.52S4.1 21 5.46 21c1.67 0 3.03-1.34 3.03-3.01v-3.05Z"/></svg>,
+            List: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+            Calendar: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            Printer: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
         };
 
+        const { useState, useEffect, useMemo } = React;
+
+        // --- CONSTANTS ---
+        const HIDDEN_ADMIN_EMAIL = "yambapool@clarence.nsw.gov.au"; 
+        const ADMIN_PASSWORD = "YCP*26*"; 
+        const TARGET_VENUE = 'YCP'; 
+
+        // --- DEFAULTS ---
+        // These are ONLY used if the database returns null (first-time init)
+        const YCP_DEFAULTS = { 
+            zones: [ 
+                { id: '25m Pool', children: Array.from({length: 6}, (_, i) => ({id: `Lane ${i+1}`})) }
+            ], 
+            eventTypes: { 
+                'Learn to Swim': '#3B82F6', 
+                'Aqua Fitness': '#10B981', 
+                'Public Swim': '#F59E0B', 
+                'School Carnival': '#EF4444', 
+                'Lane Hire': '#8B5CF6' 
+            },
+            openingHours: [ 
+                {day: 'Monday', open: 6, close: 18}, {day: 'Tuesday', open: 6, close: 18}, 
+                {day: 'Wednesday', open: 6, close: 18}, {day: 'Thursday', open: 6, close: 18}, 
+                {day: 'Friday', open: 6, close: 18}, {day: 'Saturday', open: 8, close: 17}, 
+                {day: 'Sunday', open: 9, close: 16} 
+            ]
+        };
+
+        // --- FIREBASE INIT ---
         const firebaseConfig = {
-            apiKey: "AIzaSyBxkpSPfF9znD4T_tH-juzO5hkf44hWUb4",
-            authDomain: "synaipse-f45a9.firebaseapp.com",
-            projectId: "synaipse-f45a9",
-            storageBucket: "synaipse-f45a9.firebasestorage.app",
-            messagingSenderId: "1054773853865",
-            appId: "1:1054773853865:web:df03635cf472020e1cb3b8"
-        };
-
-        const prodFirebaseConfig = {
             apiKey: "AIzaSyAF44-oMKqTKPcMgOuKfJJqUTJz9JYTHAg",
             authDomain: "osf---availability-roster.firebaseapp.com",
             projectId: "osf---availability-roster",
             storageBucket: "osf---availability-roster.firebasestorage.app",
             messagingSenderId: "1069751236100",
-            appId: "1:1069751236100:web:f21d105f49e47f64e86751"
+            appId: "1:1069751236100:web:f21d105f49e47f64e86751",
+            measurementId: "G-3HM7X3ZPHY"
         };
 
-        let fbApp = null;
-        let db = null;
-        let auth = null;
-        let prodApp = null;
-        let prodDb = null;
-        let prodAuth = null;
-
+        let db, auth;
         try {
-            if (!firebase.apps.length) {
-                fbApp = firebase.initializeApp(firebaseConfig);
-            } else {
-                fbApp = firebase.app();
-            }
-            db = fbApp.firestore();
-            auth = fbApp.auth();
-        } catch (err) {
-            console.warn("Firebase initialisation notice:", err.message);
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
         }
 
-        try {
-            const existingProd = firebase.apps.find(a => a.name === 'prodRoster');
-            prodApp = existingProd || firebase.initializeApp(prodFirebaseConfig, 'prodRoster');
-            prodDb = prodApp.firestore();
-            prodAuth = prodApp.auth();
-        } catch (err) {
-            console.warn("Secondary Firebase initialisation notice:", err.message);
-        }
+        // --- MAIN APP ---
+        const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [user, setUser] = useState(null);
+            const [firebaseReady, setFirebaseReady] = useState(false);
+            const [authError, setAuthError] = useState(null);
 
-        const Icons = {
-            Waves: ({ size = 20, className = "" }) => <i className={`ph-bold ph-waves ${className}`} style={{ fontSize: size }}></i>,
-            ShieldCheck: ({ size = 20, className = "" }) => <i className={`ph-fill ph-shield-check ${className}`} style={{ fontSize: size }}></i>,
-            Warning: ({ size = 20, className = "" }) => <i className={`ph-fill ph-warning ${className}`} style={{ fontSize: size }}></i>,
-            Lightning: ({ size = 20, className = "" }) => <i className={`ph-fill ph-lightning ${className}`} style={{ fontSize: size }}></i>,
-            Clock: ({ size = 20, className = "" }) => <i className={`ph-bold ph-clock ${className}`} style={{ fontSize: size }}></i>,
-            Plus: ({ size = 20, className = "" }) => <i className={`ph-bold ph-plus ${className}`} style={{ fontSize: size }}></i>,
-            Trash: ({ size = 20, className = "" }) => <i className={`ph-bold ph-trash ${className}`} style={{ fontSize: size }}></i>,
-            CheckCircle: ({ size = 20, className = "" }) => <i className={`ph-fill ph-check-circle ${className}`} style={{ fontSize: size }}></i>,
-            SignOut: ({ size = 20, className = "" }) => <i className={`ph-bold ph-sign-out ${className}`} style={{ fontSize: size }}></i>,
-            ChevronLeft: ({ size = 20, className = "" }) => <i className={`ph-bold ph-caret-left ${className}`} style={{ fontSize: size }}></i>,
-            ChevronRight: ({ size = 20, className = "" }) => <i className={`ph-bold ph-caret-right ${className}`} style={{ fontSize: size }}></i>,
-            Broadcast: ({ size = 20, className = "" }) => <i className={`ph-bold ph-broadcast ${className}`} style={{ fontSize: size }}></i>,
-            ArrowSquareOut: ({ size = 20, className = "" }) => <i className={`ph-bold ph-arrow-square-out ${className}`} style={{ fontSize: size }}></i>,
-            Wrench: ({ size = 20, className = "" }) => <i className={`ph-bold ph-wrench ${className}`} style={{ fontSize: size }}></i>,
-            FirstAid: ({ size = 20, className = "" }) => <i className={`ph-fill ph-first-aid ${className}`} style={{ fontSize: size }}></i>,
-            Swimmer: ({ size = 20, className = "" }) => <i className={`ph-bold ph-person-simple-swim ${className}`} style={{ fontSize: size }}></i>,
-            MapPin: ({ size = 20, className = "" }) => <i className={`ph-fill ph-map-pin ${className}`} style={{ fontSize: size }}></i>,
-            X: ({ size = 20, className = "" }) => <i className={`ph-bold ph-x ${className}`} style={{ fontSize: size }}></i>
-        };
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        // In Admin portal, we initially try anonymous to connect to DB for checks,
+                        // but user MUST sign in with email/pass to see the admin UI.
+                        await auth.signInAnonymously();
+                    } catch (err) {
+                        console.error("Auth Error:", err);
+                        setAuthError(err.message);
+                    }
+                };
+                
+                const unsubscribe = auth.onAuthStateChanged((u) => {
+                    // Only consider authenticated if it's NOT anonymous (real login)
+                    if (u && !u.isAnonymous) {
+                        setUser(u);
+                        setIsAuthenticated(true);
+                    } else {
+                        setUser(null);
+                        setIsAuthenticated(false);
+                    }
+                    setFirebaseReady(true);
+                });
+                
+                initAuth();
+                return () => unsubscribe();
+            }, []);
 
-        // Initialise isolated YCP sync engine
-        const syncEngine = ZoneSyncAPI.createSyncEngine({
-            storageKey: YCP_CONFIG.localStorageKey,
-            venue: YCP_CONFIG.venueId
-        });
-
-        const YCP_FACILITY = ZoneSyncAPI.FACILITY_SPECIFICATIONS.YCP;
-        const YCP_POOL = YCP_FACILITY.pools[0]; // 25m Pool (6 Lanes: Lane 1 to Lane 6)
-
-        const CATEGORY_STYLES = {
-            'Learn to Swim': { bg: 'bg-blue-50', text: 'text-blue-900', border: 'border-blue-200', dot: 'bg-blue-600' },
-            'Squads': { bg: 'bg-indigo-50', text: 'text-indigo-900', border: 'border-indigo-200', dot: 'bg-indigo-600' },
-            'Aqua Fitness': { bg: 'bg-teal-50', text: 'text-teal-900', border: 'border-teal-200', dot: 'bg-teal-600' },
-            'Bookings': { bg: 'bg-purple-50', text: 'text-purple-900', border: 'border-purple-200', dot: 'bg-purple-600' },
-            'School Carnival': { bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-200', dot: 'bg-amber-600' },
-            'Maintenance Closure': { bg: 'bg-rose-50', text: 'text-rose-900', border: 'border-rose-300', dot: 'bg-rose-600' },
-            'Default': { bg: 'bg-slate-50', text: 'text-slate-800', border: 'border-slate-200', dot: 'bg-slate-500' }
-        };
-
-        const localDateKey = (value) => {
-            const d = new Date(value);
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        };
-
-        const formatOperatingTime = (decimalHour) => {
-            if (typeof decimalHour !== 'number' || isNaN(decimalHour)) return '';
-            const h = Math.floor(decimalHour);
-            const m = Math.round((decimalHour - h) * 60);
-            const period = h >= 12 ? 'pm' : 'am';
-            const displayH = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-            const displayM = m > 0 ? `:${m.toString().padStart(2, '0')}` : ':00';
-            return `${displayH}${displayM} ${period}`;
-        };
-
-        const parseTimeToDecimal = (timeStr, fallbackDate) => {
-            if (typeof timeStr === 'string' && timeStr.includes(':')) {
-                const parts = timeStr.trim().split(':');
-                const h = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10);
-                if (!isNaN(h) && !isNaN(m)) return h + m / 60;
-            }
-            if (fallbackDate) {
-                const d = new Date(fallbackDate);
-                return d.getHours() + d.getMinutes() / 60;
-            }
-            return 0;
-        };
-
-        const normaliseFirestoreDoc = (doc) => {
-            const d = doc.data();
-            let sDate = d.startDateTime;
-            if (sDate && sDate.toDate) sDate = sDate.toDate();
-            else if (sDate) sDate = new Date(sDate);
-            else if (d.date && d.startTime) sDate = new Date(`${d.date}T${d.startTime}:00`);
-            else sDate = new Date();
-
-            let eDate = d.endDateTime;
-            if (eDate && eDate.toDate) eDate = eDate.toDate();
-            else if (eDate) eDate = new Date(eDate);
-            else if (d.date && d.endTime) eDate = new Date(`${d.date}T${d.endTime}:00`);
-            else eDate = new Date(sDate.getTime() + 60 * 60 * 1000);
-
-            const rawZones = Array.isArray(d.zones) && d.zones.length > 0
-                ? d.zones
-                : (d.lane ? [d.lane] : (d.zone ? [d.zone] : ['All Lanes']));
-            const cleanZones = rawZones.map(z => String(z || '').replace(/^25m\s*Pool\s*-\s*/i, '').trim());
-            const laneVal = cleanZones[0] || 'All Lanes';
-            const isAll = Boolean(
-                d.isEntirePool ||
-                laneVal === 'All Lanes' ||
-                cleanZones.includes('All Lanes') ||
-                cleanZones.includes('Entire Zone') ||
-                cleanZones.length >= 6
-            );
-            const isManual = Boolean(
-                d.isManualOverride ||
-                d.isDirective ||
-                d.type === 'CLOSURE' ||
-                d.category === 'Maintenance Closure'
-            );
-
-            return {
-                id: doc.id,
-                firestoreDocId: doc.id,
-                ...d,
-                startDateTime: sDate,
-                endDateTime: eDate,
-                pool: d.pool || '25m Pool',
-                lane: laneVal,
-                zone: d.zone || laneVal,
-                zones: isAll ? YCP_POOL.lanes : cleanZones,
-                isEntirePool: isAll,
-                isManualOverride: isManual,
-                isDirective: isManual
+            const handleLogout = async () => {
+                await auth.signOut();
+                // Fallback to anonymous so DB connection remains alive if needed
+                await auth.signInAnonymously();
             };
+
+            if (!firebaseReady) return <div className="h-screen flex flex-col items-center justify-center text-gray-500 gap-4"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p>Connecting to YCP System...</p></div>;
+            
+            if (!isAuthenticated) return <Login />;
+            
+            return <AdminPage onLogout={handleLogout} user={user} />;
         };
 
-        // Clean interval slicer for Admin Timeline Inspector so directives override bookings cleanly without overlap
-        const buildAdminLaneEventSegments = (laneEvents, displayMin, displayMax) => {
-            const points = new Set([displayMin, displayMax]);
-            const parsed = laneEvents.map(evt => {
-                const s = Math.max(displayMin, Math.min(displayMax, parseTimeToDecimal(evt.startTime, evt.startDateTime)));
-                const e = Math.max(displayMin, Math.min(displayMax, parseTimeToDecimal(evt.endTime, evt.endDateTime)));
-                if (e > s + 0.01) {
-                    points.add(Number(s.toFixed(4)));
-                    points.add(Number(e.toFixed(4)));
-                }
-                return { evt, s, e, isManual: Boolean(evt.isManualOverride || evt.isDirective) };
-            }).filter(x => x.e > x.s + 0.01);
-
-            const sortedPts = Array.from(points).sort((a, b) => a - b);
-            const rawSlices = [];
-
-            for (let i = 0; i < sortedPts.length - 1; i++) {
-                const sliceStart = sortedPts[i];
-                const sliceEnd = sortedPts[i + 1];
-                if (sliceEnd - sliceStart < 0.01) continue;
-                const mid = (sliceStart + sliceEnd) / 2;
-
-                const covering = parsed.filter(item => item.s <= mid && item.e >= mid);
-                if (covering.length > 0) {
-                    covering.sort((a, b) => {
-                        if (a.isManual !== b.isManual) return a.isManual ? -1 : 1;
-                        return b.s - a.s;
-                    });
-                    rawSlices.push({
-                        start: sliceStart,
-                        end: sliceEnd,
-                        event: covering[0].evt
-                    });
-                }
-            }
-
-            const merged = [];
-            rawSlices.forEach(slice => {
-                const prev = merged[merged.length - 1];
-                if (prev && prev.event.id === slice.event.id && Math.abs(prev.end - slice.start) < 0.01) {
-                    prev.end = slice.end;
-                } else {
-                    merged.push({ ...slice });
-                }
-            });
-
-            return merged;
-        };
-
-        // --- LOGIN SCREEN ---
-        const YCPLoginScreen = ({ onAuthSuccess }) => {
+        const Login = () => {
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
             const [isLoggingIn, setIsLoggingIn] = useState(false);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
-                setError('');
-                const trimmed = password.trim();
-                if (!trimmed) {
-                    setError('Please enter the Yamba Community Pool duty manager password.');
-                    return;
-                }
-
                 setIsLoggingIn(true);
+                setError('');
+                
                 try {
-                    let authedCloud = false;
-                    if (prodAuth) {
-                        try {
-                            await prodAuth.signInWithEmailAndPassword(YCP_CONFIG.authEmail, trimmed);
-                            authedCloud = true;
-                        } catch (prodErr) {
-                            console.warn("Secondary Firebase auth notice:", prodErr.code);
-                        }
-                    }
-                    if (auth) {
-                        try {
-                            await auth.signInAnonymously();
-                            authedCloud = true;
-                        } catch (anonErr) {
-                            console.warn("Primary Firebase anon auth notice:", anonErr.code);
-                        }
-                    }
-
-                    if (trimmed === 'YCP*26*' || trimmed === 'CRAC*26*' || authedCloud) {
-                        if (trimmed !== 'YCP*26*' && trimmed !== 'CRAC*26*' && !authedCloud) {
-                            setError('Incorrect password for Yamba Community Pool.');
-                            setIsLoggingIn(false);
-                            return;
-                        }
-                        onAuthSuccess({ isOffline: false });
-                    } else {
-                        setError('Incorrect password for Yamba Community Pool.');
-                        setIsLoggingIn(false);
-                    }
+                    // STRICT SECURITY: No fallback. Must validate against Firebase.
+                    await auth.signInWithEmailAndPassword(HIDDEN_ADMIN_EMAIL, password);
+                    // App component handles state change via onAuthStateChanged
                 } catch (err) {
-                    setError('System error: ' + err.message);
+                    console.error("Login Failed:", err);
+                    
+                    if (err.code === 'auth/operation-not-allowed') {
+                        setError(
+                            <span>
+                                <strong>Setup Error:</strong> Auth is disabled or API Key is restricted.
+                                <br/><br/>
+                                1. Go to Firebase Console (osf---availability-roster) &gt; Auth &gt; Sign-in method &gt; Enable Email/Password.
+                                <br/>
+                                2. Go to Google Cloud Console &gt; Credentials &gt; Key Restrictions &gt; Enable Identity Toolkit API.
+                            </span>
+                        );
+                    } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email' || err.code === 'auth/invalid-login-credentials') {
+                        setError('Incorrect password or user not found.'); 
+                    } else {
+                        setError(`Connection error: ${err.message}`);
+                    }
                     setIsLoggingIn(false);
                 }
             };
 
             return (
-                <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
-                    <div className="bg-white p-7 sm:p-9 rounded-3xl shadow-xl w-full max-w-md border border-slate-200">
-                        <div className="text-center mb-6">
-                            <div className="inline-flex p-3.5 bg-blue-50 text-blue-700 rounded-2xl mb-3 border border-blue-100 shadow-inner">
-                                <Icons.Waves size={32} />
-                            </div>
-                            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Duty Manager Portal</h1>
-                            <p className="text-sm font-bold text-slate-500 mt-1 flex items-center justify-center gap-1.5">
-                                <Icons.MapPin size={15} className="text-blue-600" />
-                                <span>Yamba Community Pool (Club ID 2)</span>
-                            </p>
-                            <span className="mt-2 inline-block text-[11px] font-extrabold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                                25m Community Pool • 6 Lanes
-                            </span>
+                <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+                    <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm fade-in">
+                        <div className="text-center mb-8">
+                            <h1 className="text-2xl font-bold text-blue-900">Admin Portal</h1>
+                            <p className="text-gray-500 text-sm mt-1">Yamba Community Pool</p>
                         </div>
-
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-1.5">
-                                    Access Password
-                                </label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none font-medium transition"
-                                    placeholder="Enter Yamba duty manager password"
-                                    autoFocus
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Access Password</label>
+                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter password" autoFocus />
                             </div>
-
-                            {error && (
-                                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-bold flex items-start gap-2">
-                                    <Icons.Warning size={16} className="text-rose-600 shrink-0 mt-0.5" />
-                                    <span>{error}</span>
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={isLoggingIn}
-                                className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-black text-sm transition shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
-                                {isLoggingIn ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                        <span>Authorising Yamba Session...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Icons.ShieldCheck size={18} />
-                                        <span>Sign In to YCP Console</span>
-                                    </>
-                                )}
+                            {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-100 leading-tight">{error}</p>}
+                            <button type="submit" disabled={isLoggingIn} className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isLoggingIn ? 'Verifying...' : 'Login'}
                             </button>
                         </form>
-
-                        <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-                            <p className="text-[11px] font-semibold text-slate-400">
-                                Authorises with Yamba Operations credentials (<code className="text-slate-600 font-mono">yambapool@clarence.nsw.gov.au</code>).
-                            </p>
-                        </div>
                     </div>
                 </div>
             );
         };
 
-        // --- MAIN YAMBA DUTY MANAGER PORTAL ---
-        const YCPDutyManagerPortal = ({ onLogout }) => {
-            const [selectedDate, setSelectedDate] = useState(new Date());
-
-            // Live Yamba AEDT Clock
-            const [currentTimeStr, setCurrentTimeStr] = useState(() => new Date().toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-            useEffect(() => {
-                const timer = setInterval(() => {
-                    setCurrentTimeStr(new Date().toLocaleTimeString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-                }, 1000);
-                return () => clearInterval(timer);
-            }, []);
-
-            // YCP Operating Hours Limits
-            const seasonRules = window.YCP_SEASON_LOGIC || (window.getSeasonLogic && window.getSeasonLogic('YCP'));
-            const operatingStatus = seasonRules ? seasonRules.getOperatingStatus(selectedDate, '25m Pool') : { open: true, openHour: 6, closeHour: 18 };
-            const hoursLimits = seasonRules ? seasonRules.getDisplayHoursLimits(selectedDate) : { min: 6, max: 18 };
-
-            const displayMin = Math.min(hoursLimits.min, operatingStatus.openHour || 6);
-            const displayMax = Math.max(hoursLimits.max, operatingStatus.closeHour || 18);
-            const totalHours = Math.max(1, displayMax - displayMin);
-
-            const hoursList = [];
-            for (let h = displayMin; h <= displayMax; h++) {
-                hoursList.push(h);
-            }
-
-            // Local & Dual Cloud State
-            const [syncData, setSyncData] = useState(() => syncEngine.getConsolidatedSchedule('YCP'));
-            const [primaryUser, setPrimaryUser] = useState(() => (auth && auth.currentUser) || null);
-            const [prodUser, setProdUser] = useState(() => (prodAuth && prodAuth.currentUser) || null);
-            const [primaryEvents, setPrimaryEvents] = useState([]);
-            const [secondaryEvents, setSecondaryEvents] = useState([]);
-            const [localDirectives, setLocalDirectives] = useState([]);
-            const [dbStatus, setDbStatus] = useState("Connecting Live Cloud...");
-            const [broadcastNotice, setBroadcastNotice] = useState(null);
-
-            const broadcastChange = useCallback((msg) => {
-                try {
-                    const channel = new BroadcastChannel(YCP_CONFIG.broadcastChannelName);
-                    channel.postMessage({ type: 'MANUAL_CLOSURE_UPDATED', venue: 'YCP', message: msg, timestamp: Date.now() });
-                    channel.close();
-                } catch (e) {
-                    // Fallback
-                }
-                setBroadcastNotice(msg);
-                setTimeout(() => setBroadcastNotice(null), 3500);
-            }, []);
-
-            // Ensure both Firebase instances are authenticated and track auth state
-            useEffect(() => {
-                const unsubs = [];
-                if (auth) {
-                    unsubs.push(auth.onAuthStateChanged(u => {
-                        if (u) setPrimaryUser(u);
-                    }));
-                    if (!auth.currentUser) auth.signInAnonymously().catch(() => {});
-                }
-                if (prodAuth) {
-                    unsubs.push(prodAuth.onAuthStateChanged(u => {
-                        if (u) setProdUser(u);
-                    }));
-                    if (!prodAuth.currentUser) {
-                        prodAuth.signInWithEmailAndPassword(YCP_CONFIG.authEmail, 'YCP*26*').catch(() => {
-                            prodAuth.signInAnonymously().catch(() => {});
-                        });
-                    }
-                }
-                return () => unsubs.forEach(u => u && u());
-            }, []);
-
-            // Primary Firestore real-time listener (attaches strictly after primaryUser is authenticated)
-            useEffect(() => {
-                if (!db || !primaryUser) return;
-                const unsub = db.collection(YCP_CONFIG.eventsCollection).onSnapshot(snapshot => {
-                    setPrimaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
-                    setDbStatus("Live Cloud Sync (Firestore)");
-                }, err => console.warn("Primary YCP Firestore notice:", err));
-                return () => unsub();
-            }, [primaryUser]);
-
-            // Secondary Firestore real-time listener (attaches strictly after prodUser is authenticated)
-            useEffect(() => {
-                if (!prodDb || !prodUser) return;
-                const unsub = prodDb.collection(YCP_CONFIG.eventsCollection).onSnapshot(snapshot => {
-                    setSecondaryEvents(snapshot.docs.map(normaliseFirestoreDoc));
-                    setDbStatus("Live Cloud Sync (Firestore)");
-                }, err => console.warn("Secondary YCP Firestore notice:", err));
-                return () => unsub();
-            }, [prodUser]);
-
-            const firestoreEvents = useMemo(() => {
-                const map = new Map();
-                secondaryEvents.forEach(ev => map.set(ev.id, ev));
-                primaryEvents.forEach(ev => map.set(ev.id, ev));
-                return Array.from(map.values());
-            }, [primaryEvents, secondaryEvents]);
-
-            // Consolidate active closures for Yamba on selected date
-            const dateStr = localDateKey(selectedDate);
-            const activeClosures = useMemo(() => {
-                const localOverrides = (syncData.events || []).filter(e => e.isManualOverride || e.isDirective);
-                const cloudDirectives = firestoreEvents.filter(e => e.isManualOverride || e.isDirective);
-                const map = new Map();
-                [...localDirectives, ...localOverrides, ...cloudDirectives].forEach(ev => {
-                    if (!ev || !ev.id) return;
-                    const evDate = ev.date || localDateKey(ev.startDateTime);
-                    if (evDate === dateStr) {
-                        map.set(ev.id, ev);
-                    }
-                });
-                return Array.from(map.values());
-            }, [syncData, firestoreEvents, localDirectives, dateStr]);
-
-            // Custom Directive Modal State
+        const AdminPage = ({ onLogout, user }) => {
+            const [events, setEvents] = useState([]);
+            const [settings, setSettings] = useState(null);
+            const [isLoading, setIsLoading] = useState(true);
+            const [dbStatus, setDbStatus] = useState("Initializing...");
+            
             const [isModalOpen, setIsModalOpen] = useState(false);
-            const [formTitle, setFormTitle] = useState('');
-            const [formPriority, setFormPriority] = useState('Critical Closure');
-            const [formSelectedZones, setFormSelectedZones] = useState([]);
-            const [formStartDate, setFormStartDate] = useState(() => localDateKey(new Date()));
-            const [formStartTime, setFormStartTime] = useState('09:00');
-            const [formEndTime, setFormEndTime] = useState('11:00');
-            const [formReason, setFormReason] = useState('');
-            const [formIsEntirePool, setFormIsEntirePool] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [selectedEvent, setSelectedEvent] = useState(null);
+            
+            // Layout View State
+            const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
 
-            const toggleZone = (lane) => {
-                if (formSelectedZones.includes(lane)) {
-                    setFormSelectedZones(formSelectedZones.filter(z => z !== lane));
-                } else {
-                    setFormSelectedZones([...formSelectedZones, lane]);
+            // Filtering State
+            const [searchTerm, setSearchTerm] = useState('');
+            const [dateFilter, setDateFilter] = useState('future');
+            const [zoneFilter, setZoneFilter] = useState('all');
+            const [typeFilter, setTypeFilter] = useState('all');
+            
+            // Pagination State
+            const [currentPage, setCurrentPage] = useState(1);
+            const itemsPerPage = 20;
+
+            const paths = useMemo(() => {
+                return {
+                    events: 'ycp_calendar_events',
+                    settings: 'calendar_settings'
+                };
+            }, []);
+
+            // Load Data
+            useEffect(() => {
+                if (!db || !user) return;
+                
+                let settingsLoaded = false, eventsLoaded = false;
+                const checkLoading = () => { 
+                    if (settingsLoaded && eventsLoaded) {
+                        setIsLoading(false);
+                        setDbStatus("Connected");
+                    }
+                };
+
+                const unsubSettings = db.collection(paths.settings).doc('ycp_config').onSnapshot(doc => {
+                    // CRITICAL: Prefer DB data. Only if null do we consider defaults logic later in renders.
+                    if (doc.exists) { setSettings(doc.data()); } 
+                    else { setSettings(YCP_DEFAULTS); }
+                    settingsLoaded = true; checkLoading();
+                }, err => {
+                    console.error("Settings Error:", err);
+                    setDbStatus(`Error: ${err.message}`);
+                    settingsLoaded = true; checkLoading();
+                });
+
+                const unsubEvents = db.collection(paths.events)
+                    .onSnapshot(snapshot => {
+                        const fetched = snapshot.docs.map(doc => {
+                            const d = doc.data();
+                            return {
+                                id: doc.id,
+                                ...d,
+                                startDateTime: d.startDateTime?.toDate ? d.startDateTime.toDate() : new Date(d.startDateTime),
+                                endDateTime: d.endDateTime?.toDate ? d.endDateTime.toDate() : new Date(d.endDateTime) 
+                            };
+                        });
+                        fetched.sort((a,b) => a.startDateTime - b.startDateTime);
+                        setEvents(fetched);
+                        eventsLoaded = true; checkLoading();
+                    }, err => {
+                        console.error("Events Error:", err);
+                        setDbStatus(`Error: ${err.message}`);
+                        eventsLoaded = true; checkLoading();
+                    });
+
+                return () => { unsubSettings(); unsubEvents(); };
+            }, [paths, user]);
+
+            const initializeDatabase = async () => {
+                if (!window.confirm("Initialize database with YCP default settings?")) return;
+                try { await db.collection(paths.settings).doc('ycp_config').set(YCP_DEFAULTS); } 
+                catch(err) { alert("Initialization failed: " + err.message); }
+            };
+
+            const openModal = (event = null) => { setSelectedEvent(event); setIsModalOpen(true); };
+            const closeModal = () => { setIsModalOpen(false); setSelectedEvent(null); };
+
+            const handleSaveEvent = async (eventData) => {
+                try {
+                    const dataToSave = { ...eventData, venue: TARGET_VENUE };
+                    if (selectedEvent) { await db.collection(paths.events).doc(selectedEvent.id).update(dataToSave); } 
+                    else { await db.collection(paths.events).add(dataToSave); }
+                    closeModal();
+                } catch (err) { alert("Error saving: " + err.message); }
+            };
+
+            const handleDeleteEvent = async (id) => {
+                if (!window.confirm('Delete this event?')) return;
+                try { await db.collection(paths.events).doc(id).delete(); } catch(err) { alert("Delete failed: " + err.message); }
+            };
+
+            // NEW: Batch Delete Handler for Maintenance
+            const handleBatchDelete = async (ids) => {
+                if (!ids || ids.length === 0) return;
+                if (!window.confirm(`Are you sure you want to delete ${ids.length} past events? This cannot be undone.`)) return;
+                
+                try {
+                    const batchSize = 400;
+                    for (let i = 0; i < ids.length; i += batchSize) {
+                        const batch = db.batch();
+                        const chunk = ids.slice(i, i + batchSize);
+                        chunk.forEach(id => {
+                            const ref = db.collection(paths.events).doc(id);
+                            batch.delete(ref);
+                        });
+                        await batch.commit();
+                    }
+                    alert("Cleanup complete. Database is now tidy.");
+                } catch (err) {
+                    alert("Error deleting events: " + err.message);
                 }
             };
 
-            const selectAllLanes = () => {
-                setFormSelectedZones([...YCP_POOL.lanes]);
-                setFormIsEntirePool(true);
+            const handleSaveSettings = async (newSettings) => {
+                try { await db.collection(paths.settings).doc('ycp_config').set(newSettings, { merge: true }); } catch(err) { alert("Save failed: " + err.message); }
             };
 
-            const clearAllLanes = () => {
-                setFormSelectedZones([]);
-                setFormIsEntirePool(false);
-            };
-
-            const getSmartDefaultStartTime = () => {
+            // --- RECURRENCE EXPANSION (For Calendar View) ---
+            const expandedEvents = useMemo(() => {
+                if (viewMode === 'list') return events; 
+                
+                const expanded = [];
                 const now = new Date();
-                const nowDec = now.getHours() + now.getMinutes() / 60;
-                if (nowDec >= displayMin && nowDec <= displayMax - 0.5) {
-                    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                }
-                return '09:00';
-            };
+                const startRange = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const endRange = new Date(now.getFullYear(), now.getMonth() + 4, 0);
 
-            // Preset Emergency Directives Customisation Modal State
-            const [presetModal, setPresetModal] = useState({
-                isOpen: false,
-                type: 'LIGHTNING',
-                title: 'Thunderstorm / Lightning Evacuation',
-                priority: 'Critical Closure',
-                startTime: '09:00',
-                durationMinutes: 30,
-                reason: 'Lightning detected within 10 km. Facility safety evacuation mandated.',
-                targetLanes: [...YCP_POOL.lanes],
-                isEntire: true,
-                pool: '25m Pool'
-            });
+                events.forEach(event => {
+                    if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) return;
+                    if (typeFilter !== 'all' && event.type !== typeFilter) return;
+                    if (zoneFilter !== 'all') {
+                        const zones = Array.isArray(event.zone) ? event.zone : [event.zone];
+                        if (!zones.some(z => z === zoneFilter)) return;
+                    }
 
-            const openPresetConfig = (type) => {
-                const defaultStart = getSmartDefaultStartTime();
-                if (type === 'LIGHTNING') {
-                    setPresetModal({
-                        isOpen: true,
-                        type: 'LIGHTNING',
-                        title: 'Thunderstorm / Lightning Evacuation',
-                        priority: 'Critical Closure',
-                        startTime: defaultStart,
-                        durationMinutes: 30,
-                        reason: 'Lightning detected within 10 km. Facility safety evacuation mandated.',
-                        targetLanes: [...YCP_POOL.lanes],
-                        isEntire: true,
-                        pool: '25m Pool'
-                    });
-                } else if (type === 'REMEDIATION') {
-                    setPresetModal({
-                        isOpen: true,
-                        type: 'REMEDIATION',
-                        title: 'Water Quality Remediation',
-                        priority: 'Operational Notice',
-                        startTime: defaultStart,
-                        durationMinutes: 120,
-                        reason: 'Unscheduled chemical remediation and water testing in progress.',
-                        targetLanes: ['Lane 1', 'Lane 2'],
-                        isEntire: false,
-                        pool: '25m Pool'
-                    });
-                } else if (type === 'MAINTENANCE') {
-                    setPresetModal({
-                        isOpen: true,
-                        type: 'MAINTENANCE',
-                        title: 'Lane Block Inspection',
-                        priority: 'Maintenance',
-                        startTime: defaultStart,
-                        durationMinutes: 60,
-                        reason: 'Routine starting block and lane rope tension maintenance.',
-                        targetLanes: ['Lane 1'],
-                        isEntire: false,
-                        pool: '25m Pool'
-                    });
-                } else if (type === 'CARNIVAL') {
-                    setPresetModal({
-                        isOpen: true,
-                        type: 'CARNIVAL',
-                        title: 'District Carnival Preparation',
-                        priority: 'School Carnival',
-                        startTime: defaultStart,
-                        durationMinutes: 240,
-                        reason: 'School swimming carnival setup and dedicated team warm-up zones.',
-                        targetLanes: [...YCP_POOL.lanes],
-                        isEntire: true,
-                        pool: '25m Pool'
-                    });
-                }
-            };
+                    if (event.recurrence && event.recurrence.days) {
+                        let current = new Date(event.startDateTime);
+                        current.setHours(0,0,0,0);
+                        const endRecur = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
+                        const effectiveEnd = new Date(Math.min(endRecur.getTime(), endRange.getTime()));
+                        
+                        if (current < startRange) current = new Date(startRange);
 
-            const writeDirectiveToCloud = async (directiveId, payload) => {
-                const tasks = [];
-                if (db) {
-                    tasks.push(
-                        db.collection(YCP_CONFIG.eventsCollection).doc(directiveId).set(payload, { merge: true })
-                            .catch(e => console.warn("Primary Firestore write warning:", e))
-                    );
-                }
-                if (prodDb) {
-                    tasks.push(
-                        prodDb.collection(YCP_CONFIG.eventsCollection).doc(directiveId).set(payload, { merge: true })
-                            .catch(e => console.warn("Secondary Firestore write warning:", e))
-                    );
-                }
-                await Promise.all(tasks);
-            };
+                        const startTime = { h: event.startDateTime.getHours(), m: event.startDateTime.getMinutes() };
+                        const endTime = { h: event.endDateTime.getHours(), m: event.endDateTime.getMinutes() };
+                        let dur = ((endTime.h * 60 + endTime.m) - (startTime.h * 60 + startTime.m)) * 60000;
+                        if (dur <= 0) dur += 24 * 60 * 60 * 1000; // Handle overnight events
 
-            const executePresetDirective = async () => {
-                const startParts = (presetModal.startTime || '09:00').split(':');
-                const startH = parseInt(startParts[0], 10) || 9;
-                const startM = parseInt(startParts[1], 10) || 0;
-
-                const sDate = new Date(selectedDate);
-                sDate.setHours(startH, startM, 0, 0);
-
-                const duration = Math.max(5, parseInt(presetModal.durationMinutes, 10) || 30);
-                const eDate = new Date(sDate.getTime() + duration * 60000);
-                const pad = (n) => String(n).padStart(2, '0');
-                const startTime = `${pad(sDate.getHours())}:${pad(sDate.getMinutes())}`;
-                const endTime = `${pad(eDate.getHours())}:${pad(eDate.getMinutes())}`;
-
-                const directiveId = 'DIR-YCP-' + Date.now();
-                const targetLanes = presetModal.isEntire ? YCP_POOL.lanes : (presetModal.targetLanes.length ? presetModal.targetLanes : [YCP_POOL.lanes[0]]);
-                const newDirective = {
-                    id: directiveId,
-                    firestoreDocId: directiveId,
-                    venue: 'YCP',
-                    date: localDateKey(sDate),
-                    title: presetModal.title,
-                    category: 'Maintenance Closure',
-                    priority: presetModal.priority,
-                    pool: '25m Pool',
-                    lane: presetModal.isEntire ? 'All Lanes' : targetLanes.join(', '),
-                    zone: presetModal.isEntire ? 'All Lanes' : targetLanes.join(', '),
-                    zones: targetLanes,
-                    isEntirePool: Boolean(presetModal.isEntire),
-                    startDateTime: sDate.toISOString(),
-                    endDateTime: eDate.toISOString(),
-                    startTime: startTime,
-                    endTime: endTime,
-                    reason: presetModal.reason.trim() || 'Duty Manager Directive',
-                    isManualOverride: true,
-                    isDirective: true,
-                    createdAt: new Date().toISOString()
-                };
-
-                // 1. Add to local sync engine & state immediately
-                syncEngine.addManualClosure(newDirective);
-                setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
-                setLocalDirectives(prev => [newDirective, ...prev.filter(d => d.id !== directiveId)]);
-
-                // 2. Close modal & broadcast immediately so UI feels instantaneous
-                setPresetModal(prev => ({ ...prev, isOpen: false }));
-                broadcastChange(`Published YCP directive: ${presetModal.title} (${startTime} to ${endTime})`);
-
-                // 3. Persist to both Firebase projects
-                await writeDirectiveToCloud(directiveId, {
-                    ...newDirective,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        while(current <= effectiveEnd) {
+                            const dayName = current.toLocaleDateString('en-US', { weekday: 'long' });
+                            if (event.recurrence.days.includes(dayName)) {
+                                const s = new Date(current); s.setHours(startTime.h, startTime.m, 0, 0);
+                                const e = new Date(s.getTime() + dur);
+                                expanded.push({ ...event, startDateTime: s, endDateTime: e, isInstance: true });
+                            }
+                            current.setDate(current.getDate() + 1);
+                        }
+                    } else {
+                        if (event.startDateTime >= startRange && event.startDateTime <= endRange) {
+                            expanded.push(event);
+                        }
+                    }
                 });
-            };
+                return expanded.sort((a,b) => a.startDateTime - b.startDateTime);
+            }, [events, viewMode, searchTerm, typeFilter, zoneFilter]);
 
-            const handleSaveCustomDirective = async (e) => {
-                e.preventDefault();
-                if (!formTitle.trim()) return;
 
-                const startDt = new Date(`${formStartDate}T${formStartTime}:00`);
-                const endDt = new Date(`${formStartDate}T${formEndTime}:00`);
+            // --- LIST VIEW FILTERING (Legacy logic for compatibility) ---
+            const filteredEventsList = useMemo(() => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 6);
+                
+                return events.filter(event => {
+                    if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                    if (zoneFilter !== 'all') {
+                        const zones = Array.isArray(event.zone) ? event.zone : [event.zone];
+                        if (!zones.some(z => z === zoneFilter)) return false;
+                    }
+                    if (typeFilter !== 'all' && event.type !== typeFilter) return false;
 
-                if (endDt <= startDt) {
-                    alert('End time must be after start time.');
-                    return;
-                }
+                    const eventStart = new Date(event.startDateTime);
+                    eventStart.setHours(0,0,0,0);
+                    let effectiveEnd = new Date(event.endDateTime);
+                    if (event.recurrence && event.recurrence.endDate) {
+                        const recEnd = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
+                        effectiveEnd = new Date(recEnd);
+                    }
+                    effectiveEnd.setHours(23, 59, 59, 999);
 
-                const zonesToAssign = formIsEntirePool ? YCP_POOL.lanes : (formSelectedZones.length ? formSelectedZones : [YCP_POOL.lanes[0]]);
-                const directiveId = 'DIR-YCP-' + Date.now();
-
-                const newDirective = {
-                    id: directiveId,
-                    firestoreDocId: directiveId,
-                    venue: 'YCP',
-                    date: formStartDate,
-                    title: formTitle.trim(),
-                    category: 'Maintenance Closure',
-                    priority: formPriority,
-                    pool: '25m Pool',
-                    lane: formIsEntirePool ? 'All Lanes' : zonesToAssign.join(', '),
-                    zone: formIsEntirePool ? 'All Lanes' : zonesToAssign.join(', '),
-                    zones: zonesToAssign,
-                    isEntirePool: Boolean(formIsEntirePool),
-                    startDateTime: startDt.toISOString(),
-                    endDateTime: endDt.toISOString(),
-                    startTime: formStartTime,
-                    endTime: formEndTime,
-                    reason: formReason.trim() || 'Duty Manager Operational Directive',
-                    isManualOverride: true,
-                    isDirective: true,
-                    createdAt: new Date().toISOString()
-                };
-
-                syncEngine.addManualClosure(newDirective);
-                setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
-                setLocalDirectives(prev => [newDirective, ...prev.filter(d => d.id !== directiveId)]);
-
-                setIsModalOpen(false);
-                setFormTitle('');
-                setFormReason('');
-                setFormSelectedZones([]);
-                setFormIsEntirePool(false);
-                broadcastChange(`Published YCP directive: ${newDirective.title}`);
-
-                await writeDirectiveToCloud(directiveId, {
-                    ...newDirective,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    if (dateFilter === 'today') {
+                        if (!event.recurrence) return eventStart.getTime() === today.getTime();
+                        if (today < eventStart || today > effectiveEnd) return false;
+                        const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+                        return event.recurrence.days && event.recurrence.days.includes(dayName);
+                    }
+                    if (dateFilter === 'week') return eventStart <= endOfWeek && effectiveEnd >= today;
+                    if (dateFilter === 'future') return effectiveEnd >= today;
+                    return true;
                 });
-            };
+            }, [events, searchTerm, dateFilter, zoneFilter, typeFilter]);
 
-            // Remove Directive (1-click Re-open)
-            const handleRemoveClosure = async (closureId, firestoreDocId) => {
-                const targetId = firestoreDocId || closureId;
-                syncEngine.removeManualClosure(closureId);
-                setSyncData(syncEngine.getConsolidatedSchedule('YCP'));
-                setLocalDirectives(prev => prev.filter(d => d.id !== closureId && d.firestoreDocId !== closureId && d.id !== targetId));
-                setPrimaryEvents(prev => prev.filter(d => d.id !== closureId && d.firestoreDocId !== closureId && d.id !== targetId));
-                setSecondaryEvents(prev => prev.filter(d => d.id !== closureId && d.firestoreDocId !== closureId && d.id !== targetId));
-
-                broadcastChange('Yamba Zone re-opened: Directive cleared');
-
-                const tasks = [];
-                if (db) {
-                    tasks.push(db.collection(YCP_CONFIG.eventsCollection).doc(targetId).delete().catch(() => {}));
-                }
-                if (prodDb) {
-                    tasks.push(prodDb.collection(YCP_CONFIG.eventsCollection).doc(targetId).delete().catch(() => {}));
-                }
-                await Promise.all(tasks);
-            };
-
-            // Pool events for selected date (only real Firestore events + manual overrides, zero fake seed events)
-            const poolEvents = useMemo(() => {
-                const localManuals = (syncData.events || []).filter(e => e && (e.isManualOverride || e.isDirective));
-                const combined = [...localDirectives, ...localManuals, ...firestoreEvents];
-                const seen = new Set();
-                return combined.filter(ev => {
-                    if (!ev || !ev.id || seen.has(ev.id)) return false;
-                    seen.add(ev.id);
-                    const evStartKey = ev.date || localDateKey(ev.startDateTime);
-                    return evStartKey === dateStr;
+            // Grouping for List View
+            const groupedEventsList = useMemo(() => {
+                const groups = {};
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const slicedEvents = filteredEventsList.slice(startIndex, startIndex + itemsPerPage);
+                slicedEvents.forEach(event => {
+                    const dateKey = event.startDateTime.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+                    if (!groups[dateKey]) groups[dateKey] = [];
+                    groups[dateKey].push(event);
                 });
-            }, [localDirectives, syncData, firestoreEvents, dateStr]);
+                return groups;
+            }, [filteredEventsList, currentPage]);
+
+            const totalPages = Math.ceil(filteredEventsList.length / itemsPerPage);
+
+            const allZonesFlat = useMemo(() => {
+                const z = [];
+                if (settings && settings.zones) {
+                    settings.zones.forEach(zone => {
+                        z.push(zone.id);
+                        if(zone.children) zone.children.forEach(c => z.push(c.id));
+                    });
+                }
+                return z.sort();
+            }, [settings]);
+
+            const formatZoneList = (zones) => {
+                if (!Array.isArray(zones) || zones.length === 0) return "-";
+                if (zones.length <= 2) return zones.join(", ");
+                return `${zones[0]} + ${zones.length - 1} others`;
+            };
+
+            if (isLoading) return <div className="h-screen flex items-center justify-center text-gray-500">Loading Database...</div>;
 
             return (
-                <div className="max-w-[1500px] w-full mx-auto space-y-5">
-                    {/* Header */}
-                    <header className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-                                <Icons.Waves size={26} />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                                        Yamba Community Pool
-                                    </h1>
-                                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wide bg-blue-100 text-blue-800 border border-blue-200">
-                                        Duty Manager
-                                    </span>
+                <div className="min-h-screen bg-gray-50 pb-20">
+                    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
+                        <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 text-white p-2 rounded-lg"><Icons.Settings size={20} /></div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-900 leading-none">Calendar Admin</h1>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{TARGET_VENUE}</span>
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${dbStatus.includes('Error') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>{dbStatus}</span>
+                                    </div>
                                 </div>
-                                <p className="text-xs font-semibold text-slate-500 mt-0.5 flex items-center gap-1.5">
-                                    <Icons.MapPin size={13} className="text-blue-600" />
-                                    <span>Yamba, NSW (Club ID 2)</span>
-                                    <span>•</span>
-                                    <span>25m Community Pool (6 Lanes)</span>
-                                </p>
                             </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                            {/* Live Clock */}
-                            <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                <Icons.Clock size={16} className="text-blue-600" />
-                                <span className="tabular-nums">{currentTimeStr}</span>
-                                <span className="text-[10px] text-slate-400 uppercase">AEST</span>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"><Icons.Settings size={16} /> Config</button>
+                                <button onClick={onLogout} className="flex items-center gap-2 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-sm font-medium"><Icons.LogOut size={16} /> Logout</button>
                             </div>
-
-                            {/* Cloud Status */}
-                            <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span>{dbStatus}</span>
-                            </div>
-
-                            {/* Open Public Embed */}
-                            <a
-                                href="ycp-cal-embed.html"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200"
-                                title="Open Yamba Patron Public Embed">
-                                <Icons.ArrowSquareOut size={16} />
-                                <span>Patron Display</span>
-                            </a>
-
-                            {/* Logout */}
-                            <button
-                                onClick={onLogout}
-                                className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
-                                <Icons.SignOut size={16} />
-                                <span>Logout</span>
-                            </button>
                         </div>
                     </header>
 
-                    {/* Broadcast Notification Alert */}
-                    {broadcastNotice && (
-                        <div className="bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between text-sm font-bold animate-bounce">
-                            <div className="flex items-center gap-2">
-                                <Icons.Broadcast size={20} className="animate-pulse" />
-                                <span>{broadcastNotice}</span>
+                    <main className="container mx-auto px-4 py-6">
+                        {!settings && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8 flex flex-col items-center justify-center text-center">
+                                <Icons.AlertTriangle className="text-yellow-600 mb-2" size={32} />
+                                <h3 className="text-lg font-bold text-yellow-800">Configuration Not Found</h3>
+                                <button onClick={initializeDatabase} className="mt-3 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-sm flex items-center gap-2"><Icons.Database size={18} /> Initialise Database Settings</button>
                             </div>
-                            <span className="text-xs bg-blue-700 px-2 py-0.5 rounded text-blue-100">Live Synchronised</span>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Quick Emergency Directives Ribbon */}
-                    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                            <div>
-                                <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                                    <Icons.Warning size={20} className="text-amber-500" />
-                                    <span>Yamba Emergency Directives</span>
-                                </h2>
-                                <p className="text-xs text-slate-500 font-medium">
-                                    Instantly close lanes or evacuate the 25m pool across public displays with 1 click.
-                                </p>
+                        {/* TOOLBAR */}
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
+                            <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto items-center">
+                                <div className="relative flex-grow md:w-64 w-full">
+                                    <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <input type="text" placeholder="Search events..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full" />
+                                </div>
+                                
+                                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
+                                    <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Card View"><Icons.List size={18} /></button>
+                                    <button onClick={() => setViewMode('calendar')} className={`p-2 rounded ${viewMode === 'calendar' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Calendar View"><Icons.Calendar size={18} /></button>
+                                </div>
+
+                                {viewMode === 'list' && (
+                                    <select value={dateFilter} onChange={e => { setDateFilter(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                                        <option value="future">Upcoming</option>
+                                        <option value="today">Today Only</option>
+                                        <option value="week">Next 7 Days</option>
+                                        <option value="all">All Events</option>
+                                    </select>
+                                )}
+                                
+                                <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                                    <option value="all">All Types</option>
+                                    {settings && Object.keys(settings.eventTypes).map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                
+                                <select value={zoneFilter} onChange={e => { setZoneFilter(e.target.value); setCurrentPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm max-w-[200px]">
+                                    <option value="all">All Zones</option>
+                                    {allZonesFlat.map(z => <option key={z} value={z}>{z}</option>)}
+                                </select>
                             </div>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 active:scale-95">
-                                <Icons.Plus size={16} />
-                                <span>Custom Yamba Directive</span>
-                            </button>
+                            <button onClick={() => openModal()} className="w-full lg:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap"><Icons.Plus size={18} /> Add Event</button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {/* Preset 1: Lightning Evacuation */}
-                            <button
-                                onClick={() => openPresetConfig('LIGHTNING')}
-                                className="p-3.5 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 rounded-xl text-left transition flex items-start gap-3 group active:scale-95 shadow-2xs">
-                                <div className="p-2.5 bg-rose-600 text-white rounded-xl group-hover:scale-105 transition shadow-sm">
-                                    <Icons.Lightning size={20} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1.5">
-                                        <h3 className="font-extrabold text-slate-900 text-xs">Lightning Evac</h3>
-                                        <span className="text-[10px] font-black bg-rose-200 text-rose-800 px-1.5 py-0.2 rounded">Set Duration</span>
-                                    </div>
-                                    <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-                                        Evacuate all 6 lanes for thunderstorm within 10 km.
-                                    </p>
-                                </div>
-                            </button>
-
-                            {/* Preset 2: Water Remediation */}
-                            <button
-                                onClick={() => openPresetConfig('REMEDIATION')}
-                                className="p-3.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 rounded-xl text-left transition flex items-start gap-3 group active:scale-95 shadow-2xs">
-                                <div className="p-2.5 bg-amber-600 text-white rounded-xl group-hover:scale-105 transition shadow-sm">
-                                    <Icons.FirstAid size={20} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1.5">
-                                        <h3 className="font-extrabold text-slate-900 text-xs">Water Remediation</h3>
-                                        <span className="text-[10px] font-black bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded">Set Duration</span>
-                                    </div>
-                                    <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-                                        Close lanes for chemical shock &amp; testing.
-                                    </p>
-                                </div>
-                            </button>
-
-                            {/* Preset 3: Maintenance */}
-                            <button
-                                onClick={() => openPresetConfig('MAINTENANCE')}
-                                className="p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left transition flex items-start gap-3 group active:scale-95 shadow-2xs">
-                                <div className="p-2.5 bg-slate-700 text-white rounded-xl group-hover:scale-105 transition shadow-sm">
-                                    <Icons.Wrench size={20} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1.5">
-                                        <h3 className="font-extrabold text-slate-900 text-xs">Block Maintenance</h3>
-                                        <span className="text-[10px] font-black bg-slate-200 text-slate-800 px-1.5 py-0.2 rounded">Set Duration</span>
-                                    </div>
-                                    <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-                                        Close edge lane for starter block maintenance.
-                                    </p>
-                                </div>
-                            </button>
-
-                            {/* Preset 4: School Carnival */}
-                            <button
-                                onClick={() => openPresetConfig('CARNIVAL')}
-                                className="p-3.5 bg-purple-50 hover:bg-purple-100/80 border border-purple-200 rounded-xl text-left transition flex items-start gap-3 group active:scale-95 shadow-2xs">
-                                <div className="p-2.5 bg-purple-600 text-white rounded-xl group-hover:scale-105 transition shadow-sm">
-                                    <Icons.Swimmer size={20} />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1.5">
-                                        <h3 className="font-extrabold text-slate-900 text-xs">School Carnival</h3>
-                                        <span className="text-[10px] font-black bg-purple-200 text-purple-800 px-1.5 py-0.2 rounded">Set Duration</span>
-                                    </div>
-                                    <p className="text-[11px] text-slate-600 font-medium mt-0.5">
-                                        Reserve entire 25m pool for school swimming event.
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Operational Layout */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                        {/* Left 2 Cols: Timeline Inspector */}
-                        <div className="lg:col-span-2 space-y-4">
-                            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                                            25m Community Pool (6 Lanes)
-                                        </span>
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                                            Outdoor Heated
-                                        </span>
-                                    </div>
-
-                                    {/* Date Selector */}
-                                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                                        <button
-                                            onClick={() => {
-                                                const prev = new Date(selectedDate);
-                                                prev.setDate(prev.getDate() - 1);
-                                                setSelectedDate(prev);
-                                            }}
-                                            className="p-1.5 hover:bg-white rounded-lg text-slate-600 transition"
-                                            title="Previous Day">
-                                            <Icons.ChevronLeft size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedDate(new Date())}
-                                            className="px-2.5 py-1 text-xs font-extrabold hover:bg-white rounded-lg text-slate-700 transition">
-                                            Today
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                const next = new Date(selectedDate);
-                                                next.setDate(next.getDate() + 1);
-                                                setSelectedDate(next);
-                                            }}
-                                            className="p-1.5 hover:bg-white rounded-lg text-slate-600 transition"
-                                            title="Next Day">
-                                            <Icons.ChevronRight size={16} />
-                                        </button>
-                                        <span className="text-xs font-bold text-slate-700 px-2">
-                                            {selectedDate.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Timeline Visualiser */}
-                                <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
-                                    <div className="overflow-x-auto custom-scrollbar">
-                                        <div className="min-w-[720px]">
-                                            {/* Header */}
-                                            <div className="flex border-b border-slate-200 bg-white">
-                                                <div className="w-28 sm:w-32 shrink-0 p-2.5 text-xs font-extrabold text-slate-500 uppercase tracking-wider border-r border-slate-200">
-                                                    Lane
-                                                </div>
-                                                <div className="flex-1 flex">
-                                                    {hoursList.map(hour => (
-                                                        <div key={hour} className="flex-1 text-center py-2 text-[11px] font-bold text-slate-500 border-r border-slate-100 last:border-r-0">
-                                                            {formatOperatingTime(hour)}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                        {/* --- VIEW SWITCHER --- */}
+                        {viewMode === 'list' && (
+                            <div className="space-y-6">
+                                {Object.keys(groupedEventsList).length === 0 ? (
+                                    <div className="text-center py-12 bg-white rounded-xl border border-gray-200 text-gray-500">No events found matching your filters.</div>
+                                ) : (
+                                    Object.entries(groupedEventsList).map(([date, dayEvents]) => (
+                                        <div key={date} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-bold text-gray-700 flex justify-between items-center">
+                                                <span>{date}</span>
+                                                <span className="text-xs font-normal text-gray-500">{dayEvents.length} events</span>
                                             </div>
-
-                                            {/* Lanes */}
-                                            <div className="divide-y divide-slate-200 bg-white">
-                                                {YCP_POOL.lanes.map(lane => {
-                                                    const laneEvents = poolEvents.filter(ev => {
-                                                        if (ev.isEntirePool || ev.lane === 'All Lanes' || ev.zone === 'All Lanes') return true;
-                                                        if (Array.isArray(ev.zones)) return ev.zones.includes(lane) || ev.zones.includes('All Lanes') || ev.zones.includes('Entire Zone');
-                                                        return ev.zone === lane || ev.lane === lane;
-                                                    });
-
-                                                    const cleanSlices = buildAdminLaneEventSegments(laneEvents, displayMin, displayMax);
-
-                                                    return (
-                                                        <div key={lane} className="flex min-h-[50px] relative hover:bg-slate-50/60 transition">
-                                                            <div className="w-28 sm:w-32 shrink-0 p-2.5 border-r border-slate-200 bg-slate-50/40 flex flex-col justify-center">
-                                                                <span className="text-xs font-black text-slate-800">{lane}</span>
-                                                                <span className="text-[10px] text-slate-400 font-semibold truncate">
-                                                                    Outdoor Heated
+                                            <div className="divide-y divide-gray-100">
+                                                {dayEvents.map(event => (
+                                                    <div key={event.id} className="p-4 hover:bg-blue-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                                                        <div className="flex items-start gap-3 flex-1">
+                                                            <div className="flex-shrink-0 w-28 text-sm text-gray-600 font-medium pt-1 flex flex-col">
+                                                                {/* Time Range */}
+                                                                <span>
+                                                                    {event.startDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                                                    {' - '}
+                                                                    {event.endDateTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                                                 </span>
                                                             </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <h4 className="font-bold text-gray-900 truncate">{event.title}</h4>
+                                                                    {event.recurrence && <Icons.Repeat size={14} className="text-blue-500 flex-shrink-0" title="Recurring Event" />}
+                                                                    {event.signageRequired && <span className="text-[9px] bg-blue-100 text-blue-700 font-black px-1.5 py-0.5 rounded border border-blue-200 uppercase tracking-tighter">Signage Req.</span>}
+                                                                </div>
 
-                                                            <div className="flex-1 relative flex">
-                                                                {hoursList.map(h => (
-                                                                    <div key={h} className="flex-1 border-r border-slate-100/70 h-full pointer-events-none"></div>
-                                                                ))}
+                                                                <div className="flex flex-wrap gap-2 mt-1">
+                                                                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded text-white" style={{ backgroundColor: settings?.eventTypes?.[event.type] || '#9ca3af' }}>{event.type}</span>
+                                                                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 truncate max-w-[200px]" title={Array.isArray(event.zone) ? event.zone.join(', ') : event.zone}>
+                                                                        {formatZoneList(event.zone)}
+                                                                    </span>
+                                                                </div>
 
-                                                                {cleanSlices.map((slice, sIdx) => {
-                                                                    const event = slice.event;
-                                                                    const clampedStart = Math.max(displayMin, Math.min(displayMax, slice.start));
-                                                                    const clampedEnd = Math.max(displayMin, Math.min(displayMax, slice.end));
+                                                                {/* Description Snippet */}
+                                                                {event.description && (
+                                                                    <p className="text-sm text-gray-500 mt-1 truncate">{event.description}</p>
+                                                                )}
 
-                                                                    if (clampedEnd <= clampedStart) return null;
-
-                                                                    const leftPct = ((clampedStart - displayMin) / totalHours) * 100;
-                                                                    const widthPct = Math.max(2, ((clampedEnd - clampedStart) / totalHours) * 100);
-
-                                                                    const isManual = event.isManualOverride || event.isDirective;
-                                                                    const categoryKey = isManual ? 'Maintenance Closure' : (event.category || 'Bookings');
-                                                                    const style = CATEGORY_STYLES[categoryKey] || CATEGORY_STYLES['Default'];
-
-                                                                    return (
-                                                                        <div
-                                                                            key={`${event.id}-${sIdx}`}
-                                                                            style={{
-                                                                                left: `${leftPct}%`,
-                                                                                width: `${widthPct}%`
-                                                                            }}
-                                                                            className={`absolute top-1 bottom-1 rounded-lg px-2 flex items-center justify-between text-xs font-bold border transition shadow-sm overflow-hidden ${
-                                                                                isManual ? 'hazard-stripes-bold border-rose-500 text-rose-950 z-30 ring-1 ring-rose-400' : `${style.bg} ${style.border} ${style.text} z-10`
-                                                                            }`}>
-                                                                            <div className="truncate flex items-center gap-1.5">
-                                                                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isManual ? 'bg-rose-600 animate-pulse' : style.dot}`}></span>
-                                                                                <span className="truncate">{event.title}</span>
-                                                                            </div>
-                                                                            {isManual && (
-                                                                                <button
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleRemoveClosure(event.id, event.firestoreDocId);
-                                                                                    }}
-                                                                                    className="ml-1 p-1 bg-white/90 hover:bg-rose-600 hover:text-white text-rose-700 rounded text-[10px] font-extrabold transition shadow-xs shrink-0"
-                                                                                    title="Re-open this lane now">
-                                                                                    Clear
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
+                                                                {/* Recurrence Summary */}
+                                                                {event.recurrence && event.recurrence.days && (
+                                                                    <p className="text-xs text-blue-600 mt-0.5">
+                                                                        Weekly on {event.recurrence.days.map(d=>d.slice(0,3)).join(', ')}
+                                                                    </p>
+                                                                )}
                                                             </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                            </div>
+                                                            <div className="flex gap-2 self-end sm:self-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {event.signageRequired && (
+                                                                <a 
+                                                                    href={`../NoticeSignGenerator.html?headline=${encodeURIComponent(event.title)}&body=${encodeURIComponent(event.description || '')}`} 
+                                                                    target="_blank" 
+                                                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                                                    title="Print Notice Sign"
+                                                                >
+                                                                    <Icons.Printer size={18} />
+                                                                </a>
+                                                            )}
+                                                            <button onClick={() => openModal(event)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded transition-colors"><Icons.Edit size={18} /></button>
+                                                            <button onClick={() => handleDeleteEvent(event.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded transition-colors"><Icons.Trash size={18} /></button>
+                                                            </div>
+
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Col: Active Directives */}
-                        <div className="space-y-4">
-                            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
-                                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                    <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                                        <Icons.Warning size={18} className="text-rose-500" />
-                                        <span>Active Yamba Directives</span>
-                                    </h3>
-                                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">
-                                        {activeClosures.length} Active
-                                    </span>
-                                </div>
-
-                                {activeClosures.length === 0 ? (
-                                    <div className="py-10 text-center text-slate-400">
-                                        <Icons.CheckCircle size={36} className="mx-auto text-emerald-500 mb-2 opacity-80" />
-                                        <p className="font-extrabold text-slate-700 text-sm">All 6 Lanes Normal</p>
-                                        <p className="text-xs text-slate-400 mt-1 max-w-[200px] mx-auto font-medium">
-                                            No active emergency directives or manual lane closures in force for Yamba.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3 mt-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
-                                        {activeClosures.map(closure => (
-                                            <div
-                                                key={closure.id}
-                                                className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl space-y-2 text-xs">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-200 text-rose-900">
-                                                            {closure.isEntirePool ? 'Full Pool Closure' : 'Lane Closure'}
-                                                        </span>
-                                                        <h4 className="font-black text-slate-900 text-sm mt-1">{closure.title}</h4>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleRemoveClosure(closure.id, closure.firestoreDocId)}
-                                                        className="px-2.5 py-1 bg-white hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-300 rounded-lg font-black text-xs transition flex items-center gap-1 active:scale-95 shadow-xs"
-                                                        title="Re-open zone immediately">
-                                                        <Icons.CheckCircle size={14} />
-                                                        <span>Re-open</span>
-                                                    </button>
-                                                </div>
-
-                                                <p className="text-slate-700 font-medium leading-relaxed">
-                                                    {closure.reason}
-                                                </p>
-
-                                                <div className="pt-2 border-t border-rose-200/80 flex items-center justify-between text-[11px] font-bold text-slate-600">
-                                                    <span>Target: <strong>{closure.pool} ({closure.zones?.join(', ') || 'All'})</strong></span>
-                                                    <span>Slot: <strong>{closure.startTime} to {closure.endTime || new Date(closure.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong></span>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    ))
+                                )}
+                                {totalPages > 1 && (
+                                    <div className="mt-6 flex justify-center items-center gap-4">
+                                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border bg-white hover:bg-gray-50 disabled:opacity-50"><Icons.ChevronLeft size={20} /></button>
+                                        <span className="text-sm font-medium text-gray-600">Page {currentPage} of {totalPages}</span>
+                                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border bg-white hover:bg-gray-50 disabled:opacity-50"><Icons.ChevronRight size={20} /></button>
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    </div>
+                        )}
 
-                    {/* Preset Directive Customisation Modal */}
-                    {presetModal.isOpen && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                            <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl modal-enter space-y-4">
-                                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2.5 rounded-xl text-white shadow-sm ${
-                                            presetModal.type === 'LIGHTNING' ? 'bg-rose-600' :
-                                            presetModal.type === 'REMEDIATION' ? 'bg-amber-600' :
-                                            presetModal.type === 'MAINTENANCE' ? 'bg-slate-700' : 'bg-purple-600'
-                                        }`}>
-                                            {presetModal.type === 'LIGHTNING' && <Icons.Lightning size={22} />}
-                                            {presetModal.type === 'REMEDIATION' && <Icons.FirstAid size={22} />}
-                                            {presetModal.type === 'MAINTENANCE' && <Icons.Wrench size={22} />}
-                                            {presetModal.type === 'CARNIVAL' && <Icons.Swimmer size={22} />}
-                                        </div>
-                                        <div>
-                                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                                presetModal.priority === 'Critical Closure' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                                                presetModal.priority === 'Operational Notice' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                                                presetModal.priority === 'School Carnival' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                                                'bg-slate-100 text-slate-800 border border-slate-200'
-                                            }`}>
-                                                {presetModal.priority}
-                                            </span>
-                                            <h3 className="text-base font-extrabold text-slate-900 mt-0.5">{presetModal.title}</h3>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setPresetModal(prev => ({ ...prev, isOpen: false }))}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                                        <Icons.X size={20} />
-                                    </button>
-                                </div>
+                        {viewMode === 'calendar' && <CalendarView events={expandedEvents} onEdit={openModal} onDelete={handleDeleteEvent} eventTypes={settings?.eventTypes} />}
+                        
+                    </main>
 
-                                <div className="space-y-4">
-                                    {/* 1. START TIME & DURATION SECTION */}
-                                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                                                <Icons.Clock size={16} className="text-blue-600" />
-                                                <span>Start Time &amp; Duration</span>
-                                            </label>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="time"
-                                                    value={presetModal.startTime}
-                                                    onChange={e => setPresetModal(prev => ({ ...prev, startTime: e.target.value }))}
-                                                    className="px-2 py-0.5 bg-white border border-slate-300 rounded-md text-xs font-black text-slate-900"
-                                                />
-                                                <span className="text-xs font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md">
-                                                    {presetModal.durationMinutes} Mins
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Quick Duration Pills */}
-                                        <div className="grid grid-cols-6 gap-1.5">
-                                            {[15, 30, 45, 60, 90, 120].map(mins => (
-                                                <button
-                                                    key={mins}
-                                                    type="button"
-                                                    onClick={() => setPresetModal(prev => ({ ...prev, durationMinutes: mins }))}
-                                                    className={`py-1.5 rounded-lg text-xs font-black transition ${
-                                                        Number(presetModal.durationMinutes) === mins
-                                                            ? 'bg-blue-600 text-white shadow-xs'
-                                                            : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                                                    }`}>
-                                                    {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Custom Duration Input */}
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPresetModal(prev => ({ ...prev, durationMinutes: Math.max(5, (Number(prev.durationMinutes) || 30) - 15) }))}
-                                                className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-700 hover:bg-slate-100 active:scale-95 transition">
-                                                - 15m
-                                            </button>
-                                            <div className="relative flex-1">
-                                                <input
-                                                    type="number"
-                                                    min="5"
-                                                    max="720"
-                                                    step="5"
-                                                    value={presetModal.durationMinutes}
-                                                    onChange={e => setPresetModal(prev => ({ ...prev, durationMinutes: Math.max(1, parseInt(e.target.value, 10) || 0) }))}
-                                                    className="w-full text-center px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
-                                                    placeholder="Enter minutes"
-                                                />
-                                                <span className="absolute right-3 top-2 text-[11px] font-bold text-slate-400 pointer-events-none">mins</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPresetModal(prev => ({ ...prev, durationMinutes: (Number(prev.durationMinutes) || 30) + 15 }))}
-                                                className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-700 hover:bg-slate-100 active:scale-95 transition">
-                                                + 15m
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* 2. TARGET LANES */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <label className="text-xs font-black uppercase tracking-wider text-slate-700">Affected Lanes (Yamba 25m Pool)</label>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPresetModal(prev => ({ ...prev, isEntire: true, targetLanes: [...YCP_POOL.lanes] }))}
-                                                    className="text-[11px] font-bold text-blue-600 hover:underline">
-                                                    All 6 Lanes
-                                                </button>
-                                                <span className="text-slate-300">•</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPresetModal(prev => ({ ...prev, isEntire: false, targetLanes: ['Lane 1'] }))}
-                                                    className="text-[11px] font-bold text-slate-500 hover:underline">
-                                                    Single Lane
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-6 gap-1 p-2 bg-slate-50 border border-slate-200 rounded-xl">
-                                            {YCP_POOL.lanes.map(lane => {
-                                                const isSelected = presetModal.isEntire || presetModal.targetLanes.includes(lane);
-                                                return (
-                                                    <button
-                                                        key={lane}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (presetModal.isEntire) {
-                                                                setPresetModal(prev => ({ ...prev, isEntire: false, targetLanes: [lane] }));
-                                                            } else {
-                                                                const has = presetModal.targetLanes.includes(lane);
-                                                                const updated = has ? presetModal.targetLanes.filter(l => l !== lane) : [...presetModal.targetLanes, lane];
-                                                                setPresetModal(prev => ({ ...prev, targetLanes: updated.length ? updated : [lane] }));
-                                                            }
-                                                        }}
-                                                        className={`py-1.5 rounded-lg text-xs font-black transition ${
-                                                            isSelected
-                                                                ? (presetModal.type === 'LIGHTNING' ? 'bg-rose-600 text-white' : presetModal.type === 'REMEDIATION' ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white')
-                                                                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                                                        }`}>
-                                                        {lane.replace('Lane ', 'L')}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* 3. PUBLIC REASON / NOTICE */}
-                                    <div>
-                                        <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                                            Public Notice / Reason
-                                        </label>
-                                        <textarea
-                                            rows="2"
-                                            value={presetModal.reason}
-                                            onChange={e => setPresetModal(prev => ({ ...prev, reason: e.target.value }))}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-
-                                    {/* 4. ACTIONS */}
-                                    <div className="pt-2 flex items-center justify-end gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setPresetModal(prev => ({ ...prev, isOpen: false }))}
-                                            className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition">
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={executePresetDirective}
-                                            className={`px-5 py-2 text-white rounded-xl text-xs font-black transition shadow-md active:scale-95 flex items-center gap-1.5 ${
-                                                presetModal.type === 'LIGHTNING' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-500/20' :
-                                                presetModal.type === 'REMEDIATION' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/20' :
-                                                presetModal.type === 'MAINTENANCE' ? 'bg-slate-800 hover:bg-slate-900 shadow-slate-700/20' :
-                                                'bg-purple-600 hover:bg-purple-700 shadow-purple-500/20'
-                                            }`}>
-                                            {presetModal.type === 'LIGHTNING' && <Icons.Lightning size={16} />}
-                                            {presetModal.type === 'REMEDIATION' && <Icons.FirstAid size={16} />}
-                                            {presetModal.type === 'MAINTENANCE' && <Icons.Wrench size={16} />}
-                                            {presetModal.type === 'CARNIVAL' && <Icons.Swimmer size={16} />}
-                                            <span>Activate Directive Now ({presetModal.durationMinutes}m)</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Custom Directive Modal */}
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-                            <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl modal-enter space-y-4">
-                                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                                        <Icons.Plus size={20} className="text-blue-600" />
-                                        <span>Create Yamba Directive</span>
-                                    </h3>
-                                    <button
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                                        ✕
-                                    </button>
-                                </div>
-
-                                <form onSubmit={handleSaveCustomDirective} className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1">Directive Title</label>
-                                        <input
-                                            type="text"
-                                            value={formTitle}
-                                            onChange={e => setFormTitle(e.target.value)}
-                                            placeholder="e.g. Unscheduled Pool Cleaning"
-                                            required
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1">Priority / Type</label>
-                                        <select
-                                            value={formPriority}
-                                            onChange={e => setFormPriority(e.target.value)}
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-bold bg-white outline-none">
-                                            <option value="Critical Closure">Critical Closure</option>
-                                            <option value="Operational Notice">Operational Notice</option>
-                                            <option value="Maintenance">Maintenance</option>
-                                            <option value="School Carnival">School Carnival</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Lane Selection */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <label className="text-xs font-extrabold text-slate-700 uppercase">Target Lanes (Yamba 25m Pool)</label>
-                                            <div className="flex items-center gap-2">
-                                                <button type="button" onClick={selectAllLanes} className="text-[11px] font-bold text-blue-600 hover:underline">Select All</button>
-                                                <span className="text-slate-300">•</span>
-                                                <button type="button" onClick={clearAllLanes} className="text-[11px] font-bold text-slate-500 hover:underline">Clear</button>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl">
-                                            {YCP_POOL.lanes.map(lane => (
-                                                <button
-                                                    key={lane}
-                                                    type="button"
-                                                    onClick={() => toggleZone(lane)}
-                                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition ${
-                                                        formSelectedZones.includes(lane) || formIsEntirePool
-                                                            ? 'bg-rose-600 text-white shadow-xs'
-                                                            : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                                                    }`}>
-                                                    {lane}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Date & Times */}
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div>
-                                            <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1">Date</label>
-                                            <input
-                                                type="date"
-                                                value={formStartDate}
-                                                onChange={e => setFormStartDate(e.target.value)}
-                                                className="w-full px-2.5 py-2 border border-slate-300 rounded-xl text-xs font-bold outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1">Start Time</label>
-                                            <input
-                                                type="time"
-                                                value={formStartTime}
-                                                onChange={e => setFormStartTime(e.target.value)}
-                                                className="w-full px-2.5 py-2 border border-slate-300 rounded-xl text-xs font-bold outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1">End Time</label>
-                                            <input
-                                                type="time"
-                                                value={formEndTime}
-                                                onChange={e => setFormEndTime(e.target.value)}
-                                                className="w-full px-2.5 py-2 border border-slate-300 rounded-xl text-xs font-bold outline-none"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-extrabold text-slate-700 uppercase mb-1">Public Reason / Notice</label>
-                                        <textarea
-                                            value={formReason}
-                                            onChange={e => setFormReason(e.target.value)}
-                                            rows="2"
-                                            placeholder="Reason displayed on public Yamba availability displays..."
-                                            className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-
-                                    <div className="pt-2 flex justify-end gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsModalOpen(false)}
-                                            className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-extrabold hover:bg-slate-50 transition">
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition shadow-md shadow-blue-500/20">
-                                            Publish Yamba Directive
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
+                    {isModalOpen && <EventForm event={selectedEvent} onSave={handleSaveEvent} onClose={closeModal} settings={settings || YCP_DEFAULTS} />}
+                    {isSettingsOpen && <SettingsModal settings={settings || YCP_DEFAULTS} events={events} onSave={handleSaveSettings} onDeleteBatch={handleBatchDelete} onClose={() => setIsSettingsOpen(false)} />}
                 </div>
             );
         };
 
-        // --- ROOT APP ---
-        const App = () => {
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
+        // --- SUB-VIEWS ---
 
-            const handleAuthSuccess = () => {
-                setIsAuthenticated(true);
+        const CalendarView = ({ events, onEdit, onDelete, eventTypes }) => {
+            const [currentMonth, setCurrentMonth] = useState(new Date());
+            
+            const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const startDay = new Date(startOfMonth); startDay.setDate(1 - startDay.getDay()); // Start on Sunday
+            const endDay = new Date(endOfMonth); endDay.setDate(endOfMonth.getDate() + (6 - endOfMonth.getDay())); // End on Saturday
+
+            const days = [];
+            let d = new Date(startDay);
+            while (d <= endDay) { days.push(new Date(d)); d.setDate(d.getDate() + 1); }
+
+            const getEventsForDay = (date) => {
+                return events.filter(e => e.startDateTime.toDateString() === date.toDateString());
             };
 
-            const handleLogout = async () => {
-                try {
-                    if (prodAuth && prodAuth.currentUser) await prodAuth.signOut();
-                } catch (e) {}
-                setIsAuthenticated(false);
+            return (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in">
+                    <div className="p-4 flex justify-between items-center border-b border-gray-200">
+                        <h2 className="text-lg font-bold text-gray-900">{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</h2>
+                        <div className="flex gap-2">
+                            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-1 hover:bg-gray-100 rounded"><Icons.ChevronLeft /></button>
+                            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-1 hover:bg-gray-100 rounded"><Icons.ChevronRight /></button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-7 text-center text-xs font-semibold text-gray-500 border-b border-gray-200 bg-gray-50">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-2">{d}</div>)}
+                    </div>
+                    <div className="grid grid-cols-7 auto-rows-[minmax(120px,auto)] divide-x divide-gray-200">
+                        {days.map(day => {
+                            const dayEvents = getEventsForDay(day);
+                            const isCurr = day.getMonth() === currentMonth.getMonth();
+                            return (
+                                <div key={day.toISOString()} className={`p-2 flex flex-col gap-1 ${isCurr ? 'bg-white' : 'bg-gray-50/50 text-gray-400'}`}>
+                                    <div className="text-right text-xs font-medium mb-1">{day.getDate()}</div>
+                                    <div className="flex-1 flex flex-col gap-1 overflow-y-auto max-h-[150px] no-scrollbar">
+                                        {dayEvents.map(e => (
+                                            <div key={e.id + e.startDateTime.toISOString()} onClick={() => onEdit(e)} className="text-[10px] p-1.5 rounded cursor-pointer text-white truncate shadow-sm hover:opacity-80 transition-opacity" style={{ backgroundColor: eventTypes?.[e.type] || '#9ca3af' }}>
+                                                <span className="font-bold mr-1">{e.startDateTime.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span>
+                                                {e.title}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const EventForm = ({ event, onSave, onClose, settings }) => {
+            const [formData, setFormData] = useState({ title: '', description: '', zone: [], type: '', recurrence: null, signageRequired: false });
+            const [startDateTime, setStartDateTime] = useState('');
+            const [endDateTime, setEndDateTime] = useState('');
+
+            // Simple date helpers
+            const toLocalISOString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+            const toLocalDateString = (date) => { if (!date) return ''; const d = new Date(date); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; };
+
+            useEffect(() => {
+                if (event) {
+                    setFormData({
+                        title: event.title, description: event.description || '', zone: Array.isArray(event.zone) ? event.zone : [], type: event.type,
+                        recurrence: event.recurrence ? { ...event.recurrence } : null,
+                        signageRequired: event.signageRequired || false
+                    });
+                    
+                    // CRITICAL FIX: Always init start/end times from the event object itself
+                    // This ensures the daily time (e.g. 10am) is preserved and not overwritten by recurrence end date
+                    setStartDateTime(toLocalISOString(event.startDateTime));
+                    
+                    // If recurring, event.endDateTime holds the daily end time (e.g. 11am)
+                    // event.recurrence.endDate holds the series end date (e.g. Dec 31)
+                    // We must use event.endDateTime for the time input
+                    setEndDateTime(toLocalISOString(event.endDateTime));
+
+                    // Fix recurrence end date display
+                    if (event.recurrence?.endDate) {
+                        const ed = event.recurrence.endDate.toDate ? event.recurrence.endDate.toDate() : new Date(event.recurrence.endDate);
+                        setFormData(prev => ({...prev, recurrence: {...prev.recurrence, endDate: toLocalDateString(ed)}}));
+                    }
+                } else {
+                    const now = new Date(); now.setMinutes(0); now.setSeconds(0); const end = new Date(now); end.setHours(now.getHours() + 1);
+                    setStartDateTime(toLocalISOString(now)); setEndDateTime(toLocalISOString(end));
+                }
+            }, [event]);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const sTime = new Date(startDateTime);
+                
+                // IMPORTANT: The endDateTime state holds the daily end time (e.g. today at 11am)
+                // We use this regardless of whether it's recurring or not to define the daily slot
+                const eTime = new Date(endDateTime);
+
+                const finalData = { 
+                    ...formData, 
+                    startDateTime: sTime,
+                    endDateTime: eTime 
+                };
+
+                if (formData.recurrence) {
+                    // Fix recurrence endDate to be a proper Date object
+                    if (formData.recurrence.endDate) {
+                        const [y,m,d] = formData.recurrence.endDate.split('-').map(Number);
+                        finalData.recurrence.endDate = new Date(y, m-1, d);
+                    }
+                }
+                onSave(finalData);
             };
 
-            if (!isAuthenticated) {
-                return <YCPLoginScreen onAuthSuccess={handleAuthSuccess} />;
-            }
+            const handleZoneToggle = (zoneId) => {
+                const newZones = new Set(formData.zone);
+                if (newZones.has(zoneId)) newZones.delete(zoneId); else newZones.add(zoneId);
+                setFormData({...formData, zone: Array.from(newZones)});
+            };
 
-            return <YCPDutyManagerPortal onLogout={handleLogout} />;
+            const isRecurring = !!formData.recurrence;
+
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-bold text-gray-900">{event ? 'Edit Event' : 'New Event'}</h2><button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button></div>
+                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label><input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g., Aqua Fitness Class" /></div>
+                                
+                                {/* Time Inputs: These now strictly control the DAILY start/end time */}
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label><input type="datetime-local" required value={startDateTime} onChange={e => setStartDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">End Time {isRecurring && '(Daily)'}</label><input type="datetime-local" required value={endDateTime} onChange={e => setEndDateTime(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"><option value="">Select Type</option>{Object.keys(settings?.eventTypes || {}).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                            </div>
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isRecurring} onChange={e => setFormData(p => ({...p, recurrence: e.target.checked ? { frequency: 'weekly', days: [], endDate: '' } : null}))} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" /><span className="font-semibold text-gray-700">Repeat Weekly</span></label>
+                                {isRecurring && (
+                                    <div className="mt-4 pl-7 space-y-4">
+                                        <div><span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Repeat On</span><div className="flex flex-wrap gap-2">{['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (<button type="button" key={day} onClick={() => { const d = formData.recurrence.days || []; const newD = d.includes(day) ? d.filter(x => x !== day) : [...d, day]; setFormData(p => ({...p, recurrence: {...p.recurrence, days: newD}})); }} className={`px-3 py-1.5 text-sm rounded-md transition-colors ${formData.recurrence.days.includes(day) ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>{day.slice(0,3)}</button>))}</div></div>
+                                        {/* Series End Date: Separate from daily time */}
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Series Ends On</label><input type="date" required value={formData.recurrence.endDate || ''} onChange={e => setFormData(p => ({...p, recurrence: {...p.recurrence, endDate: e.target.value}}))} className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Allocated Zones</label>
+                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-200 max-h-48 overflow-y-auto bg-gray-50">
+                                    {settings.zones.length > 0 ? settings.zones.map(zone => (
+                                        <div key={zone.id} className="p-3">
+                                            <label className="flex items-center gap-2 font-medium text-gray-900 cursor-pointer"><input type="checkbox" checked={formData.zone.includes(zone.id)} onChange={() => handleZoneToggle(zone.id)} className="rounded text-blue-600 focus:ring-blue-500" />{zone.id}</label>
+                                            {zone.children && zone.children.length > 0 && (<div className="ml-6 mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">{zone.children.map(child => (<label key={child.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><input type="checkbox" checked={formData.zone.includes(child.id)} onChange={() => handleZoneToggle(child.id)} className="rounded text-blue-600 focus:ring-blue-500" />{child.id.replace(zone.id + ' - ', '')}</label>))}</div>)}
+                                        </div>
+                                    )) : <div className="p-4 text-center text-gray-500">No zones configured in settings.</div>}
+                                </div>
+                            </div>
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={formData.signageRequired} onChange={e => setFormData(p => ({...p, signageRequired: e.target.checked}))} className="w-5 h-5 text-blue-600 rounded" />
+                                    <span className="font-semibold text-blue-800">Signage Required</span>
+                                </label>
+                                <p className="text-xs text-blue-600 ml-7 mt-1">Check this to flag that a physical sign is needed for this event.</p>
+                            </div>
+
+                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label><textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3" placeholder="Additional details..."></textarea></div>
+                        </form>
+                        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-xl"><button onClick={onClose} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button><button onClick={handleSubmit} className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Event</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SettingsModal = ({ settings, events, onSave, onDeleteBatch, onClose }) => {
+            const [localSettings, setLocalSettings] = useState(JSON.parse(JSON.stringify(settings))); 
+            const [activeTab, setActiveTab] = useState('zones'); 
+            const handleSave = () => { onSave(localSettings); onClose(); };
+            
+            const Tabs = { 
+                zones: <ZoneSettings settings={localSettings} setSettings={setLocalSettings} />, 
+                eventTypes: <EventTypeSettings settings={localSettings} setSettings={setLocalSettings} />, 
+                hours: <HoursSettings settings={localSettings} setSettings={setLocalSettings} />,
+                maintenance: <MaintenanceSettings events={events} onDeleteBatch={onDeleteBatch} />
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+                        <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-bold text-gray-900">System Configuration</h2><button onClick={onClose}><Icons.X className="text-gray-400 hover:text-gray-600" /></button></div>
+                        <div className="flex flex-1 overflow-hidden">
+                            <aside className="w-64 bg-gray-50 border-r p-4 space-y-1">
+                                {['zones', 'eventTypes', 'hours', 'maintenance'].map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200' : 'text-gray-600 hover:bg-gray-100'}`}>{tab === 'zones' ? 'Zone Management' : tab === 'eventTypes' ? 'Event Types' : tab === 'maintenance' ? 'Maintenance' : 'Opening Hours'}</button>)}
+                            </aside>
+                            <main className="flex-1 overflow-y-auto p-6">{Tabs[activeTab]}</main>
+                        </div>
+                        <div className="p-6 border-t flex justify-end gap-3"><button onClick={onClose} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors">Cancel</button><button onClick={handleSave} className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md transition-colors">Save Configuration</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const MaintenanceSettings = ({ events, onDeleteBatch }) => {
+            const [pastEvents, setPastEvents] = useState([]);
+            const [scanned, setScanned] = useState(false);
+            const [isDeleting, setIsDeleting] = useState(false);
+
+            // Re-run scan when events or scanned state changes (auto-update list after deletion)
+            useEffect(() => {
+                if (scanned) {
+                    const now = new Date();
+                    const past = events.filter(e => {
+                        if (e.recurrence && e.recurrence.endDate) {
+                            const end = e.recurrence.endDate.toDate ? e.recurrence.endDate.toDate() : new Date(e.recurrence.endDate);
+                            const cutoff = new Date(end);
+                            cutoff.setHours(23, 59, 59, 999);
+                            return now > cutoff;
+                        }
+                        if (!e.endDateTime) return false;
+                        const endDt = e.endDateTime.toDate ? e.endDateTime.toDate() : new Date(e.endDateTime);
+                        return endDt < now;
+                    });
+                    setPastEvents(past);
+                }
+            }, [events, scanned]);
+
+            const handleScanClick = () => {
+                setScanned(true);
+            };
+
+            const handleDeleteClick = async () => {
+                if (pastEvents.length === 0) return;
+                setIsDeleting(true);
+                await onDeleteBatch(pastEvents.map(e => e.id));
+                setIsDeleting(false);
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Data Cleanup</h3>
+                        <p className="text-sm text-gray-500 mb-4">Identify and remove events that have already finished to keep your calendar running smoothly.</p>
+                        
+                        {!scanned ? (
+                            <button onClick={handleScanClick} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
+                                <Icons.Search size={18} /> Scan for Past Events
+                            </button>
+                        ) : (
+                            <div className="animate-in fade-in slide-in-from-top-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-semibold text-gray-800">{pastEvents.length} Achieved Events Found</h4>
+                                    <button onClick={handleScanClick} className="text-sm text-blue-600 hover:underline">Rescan</button>
+                                </div>
+                                
+                                {pastEvents.length > 0 ? (
+                                    <div className="space-y-4">
+                                        <div className="bg-gray-50 border rounded-lg p-3 max-h-60 overflow-y-auto text-sm space-y-2">
+                                            {pastEvents.map(e => (
+                                                <div key={e.id} className="flex justify-between border-b border-gray-200 pb-2 last:border-0 last:pb-0">
+                                                    <span className="font-medium text-gray-700">{e.title}</span>
+                                                    <span className="text-gray-500 text-xs">
+                                                        {e.recurrence ? `Ended: ${new Date(e.recurrence.endDate.toDate ? e.recurrence.endDate.toDate() : e.recurrence.endDate).toLocaleDateString()}` : `Ended: ${e.endDateTime.toLocaleDateString()}`}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button 
+                                            onClick={handleDeleteClick}
+                                            disabled={isDeleting}
+                                            className="w-full bg-red-600 disabled:bg-red-400 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            {isDeleting ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> : <Icons.Trash size={18} />}
+                                            {isDeleting ? 'Deleting...' : `Delete ${pastEvents.length} Events`}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200 flex items-center gap-2">
+                                        <Icons.Check size={20} /> Your database is clean! No past events found.
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const ZoneSettings = ({ settings, setSettings }) => {
+            const [newZone, setNewZone] = useState('');
+            const [editingId, setEditingId] = useState(null);
+            const [tempName, setTempName] = useState('');
+            const [newChildNames, setNewChildNames] = useState({}); // Track new child input for each parent
+
+            const add = () => { if(!newZone) return; setSettings(s => ({...s, zones: [...s.zones, {id: newZone, children: []}]})); setNewZone(''); };
+            const remove = (id) => { setSettings(s => ({...s, zones: s.zones.filter(z => z.id !== id)})); };
+            
+            const startEdit = (id) => { setEditingId(id); setTempName(id); };
+            const saveEdit = (oldId) => {
+                if (!tempName) return;
+                setSettings(s => ({
+                    ...s, 
+                    zones: s.zones.map(z => z.id === oldId ? {...z, id: tempName} : z)
+                }));
+                setEditingId(null);
+            };
+
+            const addChild = (parentId) => {
+                const childName = newChildNames[parentId];
+                if (!childName) return;
+                setSettings(s => ({
+                    ...s,
+                    zones: s.zones.map(z => z.id === parentId ? {...z, children: [...(z.children || []), {id: childName}]} : z)
+                }));
+                setNewChildNames({...newChildNames, [parentId]: ''});
+            };
+
+            const removeChild = (parentId, childId) => {
+                setSettings(s => ({
+                    ...s,
+                    zones: s.zones.map(z => z.id === parentId ? {...z, children: z.children.filter(c => c.id !== childId)} : z)
+                }));
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Facility Zones</h3>
+                        <p className="text-sm text-gray-500 mb-4">Manage major areas and their sub-lanes.</p>
+                        <div className="space-y-3">
+                            {settings.zones.map(z => (
+                                <div key={z.id} className="bg-white border rounded-lg shadow-sm overflow-hidden">
+                                    <div className="flex items-center justify-between p-3 bg-gray-50 border-b">
+                                        {editingId === z.id ? (
+                                            <div className="flex gap-2 flex-1 mr-4">
+                                                <input value={tempName} onChange={e => setTempName(e.target.value)} className="flex-1 p-1 border rounded" />
+                                                <button onClick={() => saveEdit(z.id)} className="text-green-600"><Icons.Check size={18} /></button>
+                                                <button onClick={() => setEditingId(null)} className="text-gray-500"><Icons.X size={18} /></button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-gray-800">{z.id}</span>
+                                                <button onClick={() => startEdit(z.id)} className="text-gray-400 hover:text-blue-600"><Icons.Edit size={14} /></button>
+                                            </div>
+                                        )}
+                                        <button onClick={() => remove(z.id)} className="text-red-500 text-sm hover:underline">Delete Zone</button>
+                                    </div>
+                                    <div className="p-3 bg-white">
+                                        <div className="space-y-2 mb-3">
+                                            {z.children && z.children.map(child => (
+                                                <div key={child.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded border border-gray-100">
+                                                    <span>{child.id}</span>
+                                                    <button onClick={() => removeChild(z.id, child.id)} className="text-red-400 hover:text-red-600"><Icons.Trash size={14} /></button>
+                                                </div>
+                                            ))}
+                                            {(!z.children || z.children.length === 0) && <p className="text-xs text-gray-400 italic">No sub-zones (lanes) configured.</p>}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                value={newChildNames[z.id] || ''} 
+                                                onChange={e => setNewChildNames({...newChildNames, [z.id]: e.target.value})} 
+                                                className="flex-1 p-1.5 text-sm border rounded" 
+                                                placeholder="New Lane Name (e.g. Lane 1)" 
+                                            />
+                                            <button onClick={() => addChild(z.id)} className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-medium hover:bg-blue-200">Add Lane</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex gap-3 pt-4 border-t"><input value={newZone} onChange={e => setNewZone(e.target.value)} className="flex-1 p-2 border rounded-lg" placeholder="New Parent Zone (e.g. 50m Pool)" /><button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700">Add Zone</button></div>
+                </div>
+            );
+        };
+
+        const EventTypeSettings = ({ settings, setSettings }) => {
+            const [newName, setNewName] = useState('');
+            const [newColor, setNewColor] = useState('#3B82F6');
+            const [editingKey, setEditingKey] = useState(null);
+            const [editName, setEditName] = useState('');
+            
+            const add = () => { if(!newName) return; setSettings(s => ({...s, eventTypes: {...s.eventTypes, [newName]: newColor}})); setNewName(''); };
+            const remove = (key) => { const n = {...settings.eventTypes}; delete n[key]; setSettings(s => ({...s, eventTypes: n})); };
+            
+            const updateColor = (key, color) => { setSettings(s => ({...s, eventTypes: {...s.eventTypes, [key]: color}})); };
+            
+            const startRename = (key) => { setEditingKey(key); setEditName(key); };
+            const saveRename = (oldKey) => {
+                if (!editName) return;
+                const newTypes = {};
+                Object.keys(settings.eventTypes).forEach(k => {
+                    if (k === oldKey) newTypes[editName] = settings.eventTypes[oldKey];
+                    else newTypes[k] = settings.eventTypes[k];
+                });
+                setSettings(s => ({...s, eventTypes: newTypes}));
+                setEditingKey(null);
+            };
+
+            return (
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Event Types</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                        {Object.entries(settings.eventTypes).map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm">
+                                <input type="color" value={val} onChange={(e) => updateColor(key, e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" title="Change Color" />
+                                {editingKey === key ? (
+                                    <div className="flex gap-2 flex-1">
+                                        <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full text-sm border rounded px-1" />
+                                        <button onClick={() => saveRename(key)} className="text-green-600"><Icons.Check size={16} /></button>
+                                        <button onClick={() => setEditingKey(null)} className="text-gray-400"><Icons.X size={16} /></button>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex items-center gap-2">
+                                        <span className="font-medium">{key}</span>
+                                        <button onClick={() => startRename(key)} className="text-gray-300 hover:text-blue-600"><Icons.Edit size={12} /></button>
+                                    </div>
+                                )}
+                                <button onClick={() => remove(key)} className="text-red-400 hover:text-red-600"><Icons.Trash size={16} /></button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-3 items-center bg-gray-50 p-4 rounded-lg"><input value={newName} onChange={e => setNewName(e.target.value)} placeholder="New Type Name" className="flex-1 p-2 border rounded-lg" /><input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="h-10 w-14 rounded cursor-pointer border-0" /><button onClick={add} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">Add</button></div>
+                </div>
+            );
+        };
+
+        const HoursSettings = ({ settings, setSettings }) => {
+            const updateHour = (day, field, val) => {
+                setSettings(s => ({
+                    ...s,
+                    openingHours: s.openingHours.map(h => h.day === day ? {...h, [field]: parseInt(val)} : h)
+                }));
+            };
+            return (
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Opening Hours</h3>
+                    <div className="space-y-2">
+                        {settings.openingHours?.length > 0 ? settings.openingHours.map(h => (
+                            <div key={h.day} className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                                <span className="font-medium w-32">{h.day}</span>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 uppercase">Open</span>
+                                        <select value={h.open} onChange={e => updateHour(h.day, 'open', e.target.value)} className="border rounded p-1 text-sm">
+                                            {Array.from({length: 24}, (_, i) => <option key={i} value={i}>{i}:00</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 uppercase">Close</span>
+                                        <select value={h.close} onChange={e => updateHour(h.day, 'close', e.target.value)} className="border rounded p-1 text-sm">
+                                            {Array.from({length: 24}, (_, i) => <option key={i} value={i}>{i}:00</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )) : <div className="text-gray-500 italic">No opening hours configured.</div>}
+                    </div>
+                </div>
+            );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    <script src="../nav.js" data-title="YCP Calendar Admin" data-icon="ph-calendar-star"></script>
 </body>
 </html>
