@@ -12,19 +12,35 @@
         .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; font-size: 1.25rem !important; }
         .fc-event { border-radius: 6px; padding: 3px 5px; font-weight: 700; cursor: pointer; border: none; font-size: 0.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s;}
         .fc-event:hover { transform: scale(1.02); }
-        #modalRewrittenPost p { margin-bottom: 0.75rem; line-height: 1.6; }
-        #modalRewrittenPost strong { font-weight: 700; color: #1e3a8a; }
+        #contentSocial p, #contentNews p, #contentWeb p { margin-bottom: 0.65rem; line-height: 1.6; }
+        #contentSocial ul, #contentNews ul, #contentWeb ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.65rem; }
+        #contentSocial strong, #contentNews strong, #contentWeb strong { font-weight: 700; color: #1e3a8a; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
 
+    <!-- Local Test Sandbox Banner -->
+    <div id="localTestBanner" class="hidden max-w-7xl mx-auto mb-6 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-start gap-3">
+            <span class="px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5">Local Test Mode</span>
+            <div>
+                <p class="text-sm font-extrabold text-amber-950">Sandbox Active — All form submissions &amp; bulk imports stay local in browser storage.</p>
+                <p class="text-xs text-amber-800">Live Firestore and Apps Script uploads are bypassed so QA testing never touches production data.</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" id="seedLocalTestBtn" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-xs">Load Sample Briefs</button>
+            <button type="button" id="clearLocalTestBtn" class="px-3 py-1.5 rounded-xl bg-white hover:bg-red-50 text-red-700 border border-amber-300 text-xs font-bold transition shadow-xs">Clear Local Tests (<span id="localTestCount">0</span>)</button>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Structured Submission Form -->
         <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 h-fit">
-            <div class="mb-8 flex items-center justify-between">
+            <div class="mb-6 flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-extrabold text-blue-900 leading-tight">Marketing Brief</h2>
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Structured Input Engine v4.1</p>
+                    <h2 class="text-2xl font-extrabold text-blue-900 leading-tight">Comms &amp; Sign Brief</h2>
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Structured Request Portal v4.2</p>
                 </div>
                 <button type="button" id="openBulkModalBtn" class="text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-200 transition-all flex items-center gap-1.5 shadow-sm active:scale-95">
                     <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -36,17 +52,17 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Staff Name</label>
-                        <input type="text" id="staffName" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="text" id="staffName" required placeholder="Your name" class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Date Needed</label>
-                        <input type="date" id="requestDate" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none transition-all">
+                        <input type="date" id="requestDate" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Facility</label>
-                    <select id="facility" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none transition-all">
+                    <select id="facility" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                         <option value="" disabled selected>Select centre...</option>
                         <option value="Clarence Regional Aquatic Centre">Clarence Regional (CRAC)</option>
                         <option value="Yamba Community Pool">Yamba Community Pool</option>
@@ -65,51 +81,145 @@
                         <option value="Lane Availability">Public Swim / Lane Availability</option>
                         <option value="Community Event">Event / BBQ / Fun Day</option>
                         <option value="Staff Spotlight">Staff Spotlight / Careers</option>
-                        <option value="Health Fitness">Health & Fitness / Aqua</option>
+                        <option value="Health Fitness">Health &amp; Fitness / Aqua</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Publish To (Select all that apply)</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-blue-200 transition-all has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 group">
-                            <input type="checkbox" name="channels" value="Social" checked class="hidden">
-                            <svg class="w-5 h-5 text-slate-400 group-has-[:checked]:text-blue-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
-                            <span class="text-[9px] font-black text-slate-500 group-has-[:checked]:text-blue-900 uppercase">Social</span>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Specific Topic / Headline Summary</label>
+                    <input type="text" id="requestTitle" placeholder="e.g. 50m Pool Pump Repair" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Core Facts (Dates, Times, Who It Affects)</label>
+                    <textarea id="keyMessage" rows="4" required placeholder="List exact dates, times, affected pools/lanes, prices, or patron instructions..." class="w-full bg-slate-50 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 resize-y transition-all text-sm"></textarea>
+                </div>
+
+                <!-- Structured Deliverables & Output Formats -->
+                <div class="pt-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Deliverables &amp; Output Formats</label>
+                        <span class="text-[10px] font-bold text-slate-400">Select at least 1</span>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <!-- Social Media Deliverable -->
+                        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-blue-200 transition-all has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/70">
+                            <input type="checkbox" name="channels" value="Social" checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-xs font-extrabold text-slate-800">Social Media Post</span>
+                                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-700">FB / IG</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Short visual post drafted from your Core Facts + attached photo.</p>
+                            </div>
                         </label>
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-pink-200 transition-all has-[:checked]:border-pink-600 has-[:checked]:bg-pink-50 group">
-                            <input type="checkbox" name="channels" value="Newsletter" class="hidden">
-                            <svg class="w-5 h-5 text-slate-400 group-has-[:checked]:text-pink-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                            <span class="text-[9px] font-black text-slate-500 group-has-[:checked]:text-pink-900 uppercase">News</span>
+
+                        <!-- Website Alert Deliverable -->
+                        <label class="flex items-start gap-3 p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-emerald-200 transition-all has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50/70">
+                            <input type="checkbox" name="channels" value="Website" class="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-xs font-extrabold text-slate-800">Website Alert Banner</span>
+                                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">1–2 Sentences</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Short factual facility banner (what is affected, dates, and alternatives).</p>
+                            </div>
                         </label>
-                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-emerald-200 transition-all has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 group">
-                            <input type="checkbox" name="channels" value="Website" class="hidden">
-                            <svg class="w-5 h-5 text-slate-400 group-has-[:checked]:text-emerald-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                            <span class="text-[9px] font-black text-slate-500 group-has-[:checked]:text-emerald-900 uppercase">Web</span>
-                        </label>
+
+                        <!-- Newsletter Deliverable + Format Panel -->
+                        <div class="rounded-xl border-2 border-slate-100 bg-slate-50 transition-all has-[input[value='Newsletter']:checked]:border-pink-600 has-[input[value='Newsletter']:checked]:bg-pink-50/40">
+                            <label class="flex items-start gap-3 p-3 cursor-pointer">
+                                <input type="checkbox" id="channelNewsletter" name="channels" value="Newsletter" class="mt-0.5 w-4 h-4 rounded text-pink-600 focus:ring-pink-500">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-xs font-extrabold text-slate-800">Newsletter / Email Blurb</span>
+                                        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-pink-100 text-pink-700">PGM / Email</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Structured member email section with audience targeting &amp; booking link.</p>
+                                </div>
+                            </label>
+                            <div id="newsletterFields" class="hidden px-3 pb-3 pt-2 border-t border-pink-200/70 space-y-2.5">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block text-[9px] font-black text-pink-800 uppercase mb-1">Target Audience</label>
+                                        <select id="newsletterAudience" class="w-full bg-white border border-pink-200 rounded-lg p-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-pink-500">
+                                            <option value="All Centre Members">All Centre Members</option>
+                                            <option value="Swim School Parents">Swim School Parents</option>
+                                            <option value="Squad Families">Squad Families</option>
+                                            <option value="Health & Fitness / Aqua">Health &amp; Fitness / Aqua</option>
+                                            <option value="Lap Swimmers">Lap Swimmers</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-black text-pink-800 uppercase mb-1">Email Heading (Optional)</label>
+                                        <input type="text" id="newsletterSubject" placeholder="e.g. Term 4 Enrolments" class="w-full bg-white border border-pink-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-pink-500">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-black text-pink-800 uppercase mb-1">Booking / Action Link (Optional CTA URL)</label>
+                                    <input type="url" id="newsletterCtaUrl" placeholder="https://..." class="w-full bg-white border border-pink-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-pink-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Physical Signage Deliverable + Format Panel -->
+                        <div class="rounded-xl border-2 border-slate-100 bg-slate-50 transition-all has-[#generateSign:checked]:border-amber-500 has-[#generateSign:checked]:bg-amber-50/40">
+                            <label class="flex items-start gap-3 p-3 cursor-pointer">
+                                <input type="checkbox" id="generateSign" class="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-xs font-extrabold text-slate-800">Physical A4 Signage</span>
+                                        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800">A4 Print Sign</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Printable A4 sign for reception, doors, or pool deck (auto-populates A4 Sign Generator).</p>
+                                </div>
+                            </label>
+                            <div id="signageFields" class="hidden px-3 pb-3 pt-2 border-t border-amber-200/80 space-y-2.5">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block text-[9px] font-black text-amber-900 uppercase mb-1">Sign Header Style</label>
+                                        <select id="signType" class="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-amber-500">
+                                            <option value="notice">NOTICE (Blue Header)</option>
+                                            <option value="warning">WARNING (Yellow Header)</option>
+                                            <option value="danger">DANGER (Red Header)</option>
+                                            <option value="information">INFORMATION (Green Header)</option>
+                                            <option value="none">Standard (No Coloured Banner)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-black text-amber-900 uppercase mb-1">Display Location &amp; Copies</label>
+                                        <input type="text" id="signLocation" placeholder="e.g. Reception + Main Door (x2)" class="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-amber-500">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-black text-amber-900 uppercase mb-1">A4 Sign Headline (Short, 2–6 words)</label>
+                                    <input type="text" id="signHeadline" placeholder="Leave blank to use Specific Topic" class="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-[9px] font-black text-amber-900 uppercase">A4 Sign Body / Patron Instructions</label>
+                                        <button type="button" id="copyFactsToSignBtn" class="text-[10px] font-bold text-amber-800 hover:text-amber-950 underline">Copy from Facts</button>
+                                    </div>
+                                    <textarea id="signBody" rows="2" placeholder="Leave blank to use Core Facts, or write short bullet-friendly text for A4..." class="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-amber-500 resize-y"></textarea>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="button" id="previewSignBtn" class="text-[11px] font-extrabold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                                        <span>Preview in A4 Sign Generator</span>
+                                        <span>↗</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Specific Topic / Detail</label>
-                    <input type="text" id="requestTitle" placeholder="e.g. Pump repair on Main Pool" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Attach Photo / Flyer (Optional)</label>
+                    <input type="file" id="assetUpload" accept="image/*,.pdf" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 cursor-pointer">
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Raw Message Details (Facts Only)</label>
-                    <textarea id="keyMessage" rows="4" required placeholder="Paste dates, times, and specific instructions here..." class="w-full bg-slate-50 border rounded-xl p-3 outline-none resize-none transition-all"></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Attach Photo</label>
-                        <input type="file" id="assetUpload" accept="image/*,.pdf" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 cursor-pointer">
-                    </div>
-                    <div class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 mt-4">
-                        <input type="checkbox" id="generateSign" class="w-4 h-4 rounded text-blue-600">
-                        <label for="generateSign" class="text-[10px] font-bold text-slate-700">Need physical sign?</label>
-                    </div>
-                </div>
+                <div id="formError" class="hidden bg-red-50 text-red-700 p-3 rounded-xl border border-red-200 text-xs font-bold"></div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-95">Submit Request</button>
             </form>
@@ -153,28 +263,30 @@
                 </div>
             </div>
 
-            <div id='calendar' class="flex-grow"></div>
+            <div id='calendar' class="flex-grow min-h-[620px]"></div>
         </div>
     </div>
 
     <!-- View Modal -->
     <div id="eventModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col p-6">
-            <div class="flex justify-between items-start mb-6">
+            <div class="flex justify-between items-start mb-4">
                 <div>
                     <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900 leading-tight">-</h3>
-                    <div class="flex gap-2 mt-2">
+                    <div class="flex flex-wrap gap-2 mt-2">
                         <div id="modalCategoryBadge" class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase bg-blue-600 tracking-widest">Category</div>
                         <div id="modalFacilityBadge" class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-slate-600 uppercase bg-slate-100 border border-slate-200 tracking-widest">Facility</div>
+                        <div id="modalLocalBadge" class="hidden inline-block px-2 py-0.5 rounded text-[10px] font-bold text-amber-900 uppercase bg-amber-100 border border-amber-300 tracking-widest">Local Test</div>
                     </div>
+                    <div id="modalDeliverableBadges" class="flex flex-wrap gap-1.5 mt-2"></div>
                 </div>
                 <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
             <div class="space-y-4">
-                <div class="bg-slate-50 p-4 rounded border grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 p-4 rounded-xl border grid grid-cols-2 gap-4">
                     <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Staff</span><span id="modalStaffName" class="text-sm font-medium text-slate-800">-</span></div>
                     <div id="modalAssetWrapper" class="hidden text-right"><a id="modalAssetLink" target="_blank" class="text-blue-600 font-bold text-xs underline">View Asset</a></div>
-                    <div class="col-span-2 border-t pt-3"><span class="block text-[10px] font-bold text-slate-400 uppercase">Message Brief</span><p id="modalKeyMessage" class="text-sm mt-1 text-slate-700 whitespace-pre-wrap"></p></div>
+                    <div class="col-span-2 border-t pt-3"><span class="block text-[10px] font-bold text-slate-400 uppercase">Core Facts</span><p id="modalKeyMessage" class="text-sm mt-1 text-slate-700 whitespace-pre-wrap"></p></div>
                 </div>
                 
                 <div id="modalChannelsWrapper" class="space-y-4">
@@ -182,25 +294,37 @@
                     <div id="wrapperSocial" class="hidden">
                         <h4 class="text-[10px] font-black text-blue-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
-                            Social Media Copy
+                            Social Media Post
                         </h4>
-                        <div id="contentSocial" class="bg-blue-50 p-4 rounded border border-blue-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                        <div id="contentSocial" class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-slate-800 italic">Awaiting review...</div>
                     </div>
                     <!-- News Content -->
                     <div id="wrapperNews" class="hidden">
                         <h4 class="text-[10px] font-black text-pink-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                            Newsletter / Email Copy
+                            Newsletter / Email Blurb
                         </h4>
-                        <div id="contentNews" class="bg-pink-50 p-4 rounded border border-pink-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                        <div id="modalNewsMeta" class="hidden mb-2 bg-pink-50/70 border border-pink-100 rounded-lg px-3 py-2 text-xs text-pink-950 space-y-1"></div>
+                        <div id="contentNews" class="bg-pink-50 p-4 rounded-xl border border-pink-100 text-sm text-slate-800 italic">Awaiting review...</div>
                     </div>
                     <!-- Web Content -->
                     <div id="wrapperWeb" class="hidden">
                         <h4 class="text-[10px] font-black text-emerald-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                            Website Alert Copy
+                            Website Alert Banner
                         </h4>
-                        <div id="contentWeb" class="bg-emerald-50 p-4 rounded border border-emerald-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                        <div id="contentWeb" class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                    <!-- Physical Signage Content -->
+                    <div id="wrapperSign" class="hidden">
+                        <div class="flex items-center justify-between border-b pb-1 mb-2">
+                            <h4 class="text-[10px] font-black text-amber-800 uppercase flex items-center gap-2">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Physical A4 Signage
+                            </h4>
+                            <a id="modalSignLink" href="../NoticeSignGenerator.html" target="_blank" class="text-[11px] font-extrabold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 rounded-lg transition">Open in A4 Sign Generator ↗</a>
+                        </div>
+                        <div id="contentSign" class="bg-amber-50 p-4 rounded-xl border border-amber-200 text-sm text-slate-800 space-y-1.5"></div>
                     </div>
                 </div>
             </div>
@@ -215,7 +339,7 @@
                         <span class="p-1.5 bg-blue-100 text-blue-600 rounded-lg">⚡</span>
                         Bulk Campaign Importer
                     </h3>
-                    <p class="text-xs text-slate-400 font-medium mt-0.5">Paste raw Markdown briefs (e.g. Entry 1, Entry 2...) or JSON array to batch-insert into Firestore.</p>
+                    <p id="bulkModalSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">Paste raw Markdown briefs (e.g. Entry 1, Entry 2...) or JSON array to batch-insert.</p>
                 </div>
                 <button id="closeBulkModalBtn" class="text-slate-400 hover:text-slate-700 transition p-1">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -230,12 +354,16 @@ Entry 1: Monday, 14/09/2026
 STAFF NAME: Avram Parker
 DATE NEEDED: 14/09/2026
 FACILITY: Clarence Regional Aquatic Centre
-PRIMARY CATEGORY: Facilities / Promotion
-PUBLISH TO: [x] SOCIAL   [ ] NEWS   [x] WEB
+PRIMARY CATEGORY: Maintenance Closure
+PUBLISH TO: [x] SOCIAL   [x] NEWS   [x] WEB
 Need physical sign?: [x]
-SPECIFIC TOPIC / DETAIL: Concession Multi-Pass Campaign
+SIGN TYPE: warning
+SIGN HEADLINE: 50m Pool Closed
+SIGN LOCATION: Reception + 50m Pool Doors (x2)
+NEWSLETTER AUDIENCE: All Centre Members
+SPECIFIC TOPIC / DETAIL: 50m Pool Pump Repair
 RAW MESSAGE DETAILS (FACTS ONLY):
-10-visit multi-passes go live on 1 October..." class="w-full flex-grow p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+The 50m pool will close from 6am-12pm on 14 September for pump maintenance." class="w-full flex-grow p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                 
                 <div id="bulkStatusBox" class="hidden p-3 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
                     <span id="bulkStatusText">Processing...</span>
@@ -270,31 +398,205 @@ RAW MESSAGE DETAILS (FACTS ONLY):
             appId: "1:489224390639:web:c5da72d0dc302d8332581a"
         };
 
+        const LOCAL_STORAGE_KEY = 'crac_soccal_local_test_requests';
+        const isLocalHost = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+        const isLocalTestMode = isLocalHost || new URLSearchParams(window.location.search).get('localTest') === '1';
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        let remoteRequests = [];
+        let localRequests = isLocalTestMode ? loadLocalRequests() : [];
         let allRequests = [];
         let calendar;
         let unsubscribe = null;
 
+        function loadLocalRequests() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (err) {
+                console.warn('Could not read local test requests:', err);
+                return [];
+            }
+        }
+
+        function saveLocalRequests(items) {
+            localRequests = items;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+            updateLocalTestCount();
+            syncRequests();
+        }
+
+        function updateLocalTestCount() {
+            const countEl = document.getElementById('localTestCount');
+            if (countEl) countEl.innerText = localRequests.length;
+        }
+
+        function syncRequests() {
+            allRequests = [...localRequests, ...remoteRequests];
+            if (calendar) renderCalendarEvents();
+        }
+
+        function buildSignGeneratorUrl(data) {
+            const params = new URLSearchParams();
+            const headline = (data.signHeadline || data.title || 'NOTICE').trim();
+            const bodyRaw = (data.signBody || data.keyMessage || '').trim();
+            const bodyHtml = bodyRaw
+                ? bodyRaw.split(/\n+/).map(line => `<p>${escapeHtml(line)}</p>`).join('')
+                : '';
+
+            if (data.facility) params.set('facility', data.facility);
+            if (data.signType) params.set('type', data.signType);
+            params.set('headline', headline);
+            if (bodyHtml) params.set('body', bodyHtml);
+            return `../NoticeSignGenerator.html?${params.toString()}`;
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function toggleDeliverablePanels() {
+            const newsChecked = document.getElementById('channelNewsletter').checked;
+            const signChecked = document.getElementById('generateSign').checked;
+            document.getElementById('newsletterFields').classList.toggle('hidden', !newsChecked);
+            document.getElementById('signageFields').classList.toggle('hidden', !signChecked);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Default date to today for faster QA & staff entry
+            const dateInput = document.getElementById('requestDate');
+            if (dateInput && !dateInput.value) {
+                const now = new Date();
+                const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                dateInput.value = localIso;
+            }
+
+            // Local Test Sandbox UI
+            if (isLocalTestMode) {
+                document.getElementById('localTestBanner').classList.remove('hidden');
+                document.getElementById('bulkModalSubtitle').innerText =
+                    'Local Test Mode: entries load into browser storage only (live Firestore untouched).';
+                updateLocalTestCount();
+
+                document.getElementById('seedLocalTestBtn').onclick = () => {
+                    const today = new Date();
+                    const fmt = (offset) => {
+                        const d = new Date(today.getTime() + offset * 86400000 - today.getTimezoneOffset() * 60000);
+                        return d.toISOString().split('T')[0];
+                    };
+                    const samples = [
+                        {
+                            id: 'local-sample-sign-' + Date.now(),
+                            isLocalTest: true,
+                            staffName: 'Avram Parker',
+                            date: fmt(1),
+                            title: '50m Pool Pump Maintenance',
+                            category: 'Maintenance Closure',
+                            facility: 'Clarence Regional Aquatic Centre',
+                            keyMessage: 'The 50m Outdoor Pool will be closed from 6:00am to 12:00pm for scheduled pump repairs. The 25m Indoor Pool and Program Pool remain open.',
+                            channels: ['Website'],
+                            generateSign: true,
+                            signType: 'warning',
+                            signHeadline: '50m Pool Closed',
+                            signBody: 'Closed 6:00am – 12:00pm today for pump maintenance.\nThe 25m Indoor Pool remains open for lap swimming.',
+                            signLocation: 'Reception desk & 50m Pool glass doors (x2)',
+                            status: 'Pending'
+                        },
+                        {
+                            id: 'local-sample-news-' + (Date.now() + 1),
+                            isLocalTest: true,
+                            staffName: 'Swim School Coordinator',
+                            date: fmt(3),
+                            title: 'Term 4 Swim School Enrolments',
+                            category: 'Swim School General',
+                            facility: 'Yamba Community Pool',
+                            keyMessage: 'Term 4 Learn to Swim enrolments open Monday 9:00am. Active Kids vouchers accepted at reception or online via the Client Portal.',
+                            channels: ['Newsletter', 'Social'],
+                            newsletterAudience: 'Swim School Parents',
+                            newsletterSubject: 'Term 4 Learn to Swim Enrolments Open Monday',
+                            newsletterCtaUrl: 'https://www.clarence.nsw.gov.au',
+                            generateSign: false,
+                            status: 'Pending'
+                        }
+                    ];
+                    saveLocalRequests([...samples, ...localRequests]);
+                };
+
+                document.getElementById('clearLocalTestBtn').onclick = () => {
+                    saveLocalRequests([]);
+                };
+            }
+
+            // Deliverable conditional panels
+            document.getElementById('channelNewsletter').addEventListener('change', toggleDeliverablePanels);
+            document.getElementById('generateSign').addEventListener('change', toggleDeliverablePanels);
+            toggleDeliverablePanels();
+
+            document.getElementById('copyFactsToSignBtn').onclick = () => {
+                const facts = document.getElementById('keyMessage').value.trim();
+                if (facts) document.getElementById('signBody').value = facts;
+            };
+
+            document.getElementById('previewSignBtn').onclick = () => {
+                const url = buildSignGeneratorUrl({
+                    facility: document.getElementById('facility').value || 'Clarence Regional Aquatic Centre',
+                    signType: document.getElementById('signType').value,
+                    signHeadline: document.getElementById('signHeadline').value,
+                    signBody: document.getElementById('signBody').value,
+                    title: document.getElementById('requestTitle').value,
+                    keyMessage: document.getElementById('keyMessage').value
+                });
+                window.open(url, '_blank');
+            };
+
             calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth',
+                height: 'auto',
+                contentHeight: 620,
                 eventClick: (info) => {
                     const p = info.event.extendedProps;
-                    document.getElementById('modalTitle').innerText = info.event.title.split(' | ')[0].replace('✅ ', '').replace('⏳ ', '');
-                    document.getElementById('modalStaffName').innerText = p.staffName;
-                    document.getElementById('modalKeyMessage').innerText = p.keyMessage;
+                    document.getElementById('modalTitle').innerText = p.title || info.event.title;
+                    document.getElementById('modalStaffName').innerText = p.staffName || 'Staff';
+                    document.getElementById('modalKeyMessage').innerText = p.keyMessage || '';
                     document.getElementById('modalCategoryBadge').innerText = p.category || 'Request';
                     document.getElementById('modalFacilityBadge').innerText = p.facility && p.facility.includes('Clarence') ? 'CRAC' : 'Yamba';
+                    document.getElementById('modalLocalBadge').classList.toggle('hidden', !p.isLocalTest);
+
+                    // Deliverable Badges
+                    const badgesEl = document.getElementById('modalDeliverableBadges');
+                    badgesEl.innerHTML = '';
+                    const channels = p.channels || [];
+                    const badgeDefs = [
+                        { active: channels.includes('Social'), label: 'Social Post', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+                        { active: channels.includes('Newsletter'), label: 'Newsletter', cls: 'bg-pink-50 text-pink-700 border-pink-200' },
+                        { active: channels.includes('Website'), label: 'Website Alert', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                        { active: !!p.generateSign, label: 'Physical A4 Sign', cls: 'bg-amber-50 text-amber-800 border-amber-200' }
+                    ];
+                    badgeDefs.filter(b => b.active).forEach(b => {
+                        const span = document.createElement('span');
+                        span.className = `px-2 py-0.5 rounded border text-[10px] font-bold ${b.cls}`;
+                        span.textContent = b.label;
+                        badgesEl.appendChild(span);
+                    });
                     
                     const asset = document.getElementById('modalAssetWrapper');
-                    if(p.assetUrl) { asset.classList.remove('hidden'); document.getElementById('modalAssetLink').href = p.assetUrl; }
-                    else { asset.classList.add('hidden'); }
+                    if (p.assetUrl) {
+                        asset.classList.remove('hidden');
+                        document.getElementById('modalAssetLink').href = p.assetUrl;
+                    } else {
+                        asset.classList.add('hidden');
+                    }
                     
                     // Channel content population
-                    const channels = p.channels || [];
                     const isApproved = p.status === 'Approved';
 
                     const updateSection = (id, wrapperId, content, channelKey) => {
@@ -302,7 +604,6 @@ RAW MESSAGE DETAILS (FACTS ONLY):
                         const display = document.getElementById(id);
                         if (!wrapper || !display) return;
                         
-                        // Show section if requested OR if it has approved content
                         const hasApprovedContent = isApproved && content && content.trim() !== '' && content !== 'Awaiting review...';
                         const isRequested = channels.includes(channelKey);
 
@@ -327,65 +628,178 @@ RAW MESSAGE DETAILS (FACTS ONLY):
                     updateSection('contentNews', 'wrapperNews', p.rewrittenNewsletter, 'Newsletter');
                     updateSection('contentWeb', 'wrapperWeb', p.rewrittenWebsite, 'Website');
 
+                    // Newsletter Format Metadata
+                    const newsMeta = document.getElementById('modalNewsMeta');
+                    if (channels.includes('Newsletter') && (p.newsletterAudience || p.newsletterSubject || p.newsletterCtaUrl)) {
+                        newsMeta.classList.remove('hidden');
+                        const safeCta = p.newsletterCtaUrl && /^https?:\/\//i.test(p.newsletterCtaUrl) ? p.newsletterCtaUrl : '';
+                        newsMeta.innerHTML = [
+                            p.newsletterAudience ? `<div><strong>Audience:</strong> ${escapeHtml(p.newsletterAudience)}</div>` : '',
+                            p.newsletterSubject ? `<div><strong>Heading:</strong> ${escapeHtml(p.newsletterSubject)}</div>` : '',
+                            safeCta ? `<div><strong>Action Link:</strong> <a href="${escapeHtml(safeCta)}" target="_blank" rel="noopener noreferrer" class="underline text-pink-700">${escapeHtml(safeCta)}</a></div>` : ''
+                        ].filter(Boolean).join('');
+                    } else {
+                        newsMeta.classList.add('hidden');
+                    }
+
+                    // Physical Signage Section
+                    const signWrapper = document.getElementById('wrapperSign');
+                    const signContent = document.getElementById('contentSign');
+                    const signLink = document.getElementById('modalSignLink');
+                    if (p.generateSign) {
+                        signWrapper.classList.remove('hidden');
+                        const signHeadlineText = p.signHeadline || p.title || 'NOTICE';
+                        const signBodyText = p.signBody || p.keyMessage || '';
+                        signContent.innerHTML = [
+                            `<div><strong>Header Style:</strong> ${escapeHtml((p.signType || 'notice').toUpperCase())}</div>`,
+                            `<div><strong>Sign Headline:</strong> ${escapeHtml(signHeadlineText)}</div>`,
+                            signBodyText ? `<div><strong>Sign Body:</strong> <span class="whitespace-pre-wrap">${escapeHtml(signBodyText)}</span></div>` : '',
+                            p.signLocation ? `<div><strong>Display Location:</strong> ${escapeHtml(p.signLocation)}</div>` : ''
+                        ].filter(Boolean).join('');
+                        signLink.href = buildSignGeneratorUrl(p);
+                    } else {
+                        signWrapper.classList.add('hidden');
+                    }
+
                     document.getElementById('eventModal').classList.remove('hidden');
                 }
             });
             calendar.render();
+            requestAnimationFrame(() => calendar.updateSize());
+            window.addEventListener('load', () => calendar.updateSize());
+            syncRequests();
             document.getElementById('closeModalBtn').onclick = () => document.getElementById('eventModal').classList.add('hidden');
 
             // Listen for Filter Changes
             document.getElementById('calendarFilter').addEventListener('change', renderCalendarEvents);
             document.getElementById('statusFilter').addEventListener('change', renderCalendarEvents);
 
-            // Auth & Fetch Data
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    console.log("Connected to Comms Engine");
-                    if (unsubscribe) unsubscribe();
-                    unsubscribe = onSnapshot(collection(db, 'requests'), (snap) => {
-                        allRequests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        renderCalendarEvents();
-                    });
-                } else {
-                    signInAnonymously(auth).catch(err => console.error("Database Connection Failed:", err));
-                }
-            });
+            // Auth & Fetch Data (Skipped in Local Test Mode to keep everything 100% local)
+            if (!isLocalTestMode) {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        console.log("Connected to Comms Engine");
+                        if (unsubscribe) unsubscribe();
+                        unsubscribe = onSnapshot(collection(db, 'requests'), (snap) => {
+                            remoteRequests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            syncRequests();
+                        }, (err) => {
+                            console.warn("Firestore read skipped or unavailable:", err);
+                        });
+                    } else {
+                        signInAnonymously(auth).catch(err => console.warn("Database Connection Note:", err));
+                    }
+                });
+            }
 
             document.getElementById('requestForm').onsubmit = async (e) => {
                 e.preventDefault();
-                const btn = document.getElementById('submitBtn');
-                btn.disabled = true; btn.innerText = "Sending Brief...";
-                
-                let assetUrl = null;
-                const file = document.getElementById('assetUpload').files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    const b64 = await new Promise(res => { reader.onload = () => res(reader.result.split(',')[1]); reader.readAsDataURL(file); });
-                    const uploadRes = await fetch(UPLOAD_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ filename: file.name, mimeType: file.type, base64: b64 })});
-                    const json = await uploadRes.json();
-                    if(json.status === 'success') assetUrl = json.url;
-                }
+                const errorBox = document.getElementById('formError');
+                errorBox.classList.add('hidden');
 
                 const channels = Array.from(document.querySelectorAll('input[name="channels"]:checked')).map(cb => cb.value);
+                const generateSign = document.getElementById('generateSign').checked;
 
-                await addDoc(collection(db, "requests"), {
-                    staffName: document.getElementById('staffName').value,
-                    date: document.getElementById('requestDate').value,
-                    title: document.getElementById('requestTitle').value,
-                    category: document.getElementById('requestCategory').value,
-                    facility: document.getElementById('facility').value,
-                    keyMessage: document.getElementById('keyMessage').value,
-                    channels: channels,
-                    generateSign: document.getElementById('generateSign').checked,
-                    status: "Pending",
-                    assetUrl: assetUrl,
-                    timestamp: serverTimestamp()
-                });
+                if (channels.length === 0 && !generateSign) {
+                    errorBox.innerText = 'Please select at least one deliverable (Social, Website, Newsletter, or Physical A4 Signage).';
+                    errorBox.classList.remove('hidden');
+                    return;
+                }
 
-                document.getElementById('requestForm').reset();
-                document.getElementById('successMessage').classList.remove('hidden');
-                setTimeout(() => document.getElementById('successMessage').classList.add('hidden'), 4000);
-                btn.disabled = false; btn.innerText = "Submit Request";
+                const btn = document.getElementById('submitBtn');
+                btn.disabled = true;
+                btn.innerText = isLocalTestMode ? "Saving Local Test..." : "Sending Brief...";
+                
+                try {
+                    let assetUrl = null;
+                    const file = document.getElementById('assetUpload').files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        const dataUrl = await new Promise((res, rej) => {
+                            reader.onload = () => res(reader.result);
+                            reader.onerror = () => rej(new Error('Failed to read attached file.'));
+                            reader.readAsDataURL(file);
+                        });
+
+                        if (isLocalTestMode) {
+                            assetUrl = dataUrl;
+                        } else {
+                            const b64 = dataUrl.split(',')[1];
+                            const uploadRes = await fetch(UPLOAD_SCRIPT_URL, {
+                                method: 'POST',
+                                body: JSON.stringify({ filename: file.name, mimeType: file.type, base64: b64 })
+                            });
+                            const json = await uploadRes.json();
+                            if (json.status === 'success') assetUrl = json.url;
+                        }
+                    }
+
+                    const titleVal = document.getElementById('requestTitle').value.trim();
+                    const keyMsgVal = document.getElementById('keyMessage').value.trim();
+                    const payload = {
+                        staffName: document.getElementById('staffName').value.trim(),
+                        date: document.getElementById('requestDate').value,
+                        title: titleVal,
+                        category: document.getElementById('requestCategory').value,
+                        facility: document.getElementById('facility').value,
+                        keyMessage: keyMsgVal,
+                        channels: channels,
+                        generateSign: generateSign,
+                        status: "Pending",
+                        assetUrl: assetUrl
+                    };
+
+                    if (channels.includes('Newsletter')) {
+                        payload.newsletterAudience = document.getElementById('newsletterAudience').value;
+                        const subj = document.getElementById('newsletterSubject').value.trim();
+                        const cta = document.getElementById('newsletterCtaUrl').value.trim();
+                        if (subj) payload.newsletterSubject = subj;
+                        if (cta) payload.newsletterCtaUrl = cta;
+                    }
+
+                    if (generateSign) {
+                        payload.signType = document.getElementById('signType').value;
+                        payload.signHeadline = document.getElementById('signHeadline').value.trim() || titleVal;
+                        payload.signBody = document.getElementById('signBody').value.trim() || keyMsgVal;
+                        const loc = document.getElementById('signLocation').value.trim();
+                        if (loc) payload.signLocation = loc;
+                    }
+
+                    if (isLocalTestMode) {
+                        const localEntry = {
+                            id: 'local-' + Date.now(),
+                            isLocalTest: true,
+                            createdAt: new Date().toISOString(),
+                            ...payload
+                        };
+                        saveLocalRequests([localEntry, ...localRequests]);
+                    } else {
+                        await addDoc(collection(db, "requests"), {
+                            ...payload,
+                            timestamp: serverTimestamp()
+                        });
+                    }
+
+                    document.getElementById('requestForm').reset();
+                    if (dateInput) {
+                        const now = new Date();
+                        dateInput.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                    }
+                    toggleDeliverablePanels();
+                    const successEl = document.getElementById('successMessage');
+                    successEl.innerText = isLocalTestMode
+                        ? 'Saved locally to Test Calendar (live Firestore untouched)'
+                        : 'Request Logged Successfully';
+                    successEl.classList.remove('hidden');
+                    setTimeout(() => successEl.classList.add('hidden'), 4000);
+                } catch (err) {
+                    console.error('Error submitting request:', err);
+                    errorBox.innerText = 'Could not submit request: ' + (err.message || 'Unknown error');
+                    errorBox.classList.remove('hidden');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = "Submit Request";
+                }
             };
 
             // Bulk Loader Modal Handlers
@@ -407,17 +821,13 @@ RAW MESSAGE DETAILS (FACTS ONLY):
             };
 
             function parseBulkText(text) {
-                // Check if JSON
                 try {
                     const parsedJson = JSON.parse(text);
                     if (Array.isArray(parsedJson)) return parsedJson;
                 } catch(e) {}
 
-                // Parse Markdown / Structured Text
                 const results = [];
                 const chunks = text.split(/Entry\s+\d+:/i).slice(1);
-                
-                // If no "Entry X:" prefix found, try splitting by double line breaks with STAFF NAME or DATE NEEDED
                 const blocks = chunks.length > 0 ? chunks : text.split(/(?=STAFF\s+NAME:|DATE\s+NEEDED:)/i);
 
                 for (const raw of blocks) {
@@ -431,10 +841,13 @@ RAW MESSAGE DETAILS (FACTS ONLY):
                     let title = '';
                     let keyMessage = '';
 
-                    const dateMatch = raw.match(/DATE\s+NEEDED:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
-                    if (dateMatch) {
-                        const [d, m, y] = dateMatch[1].split('/');
+                    const dmyMatch = raw.match(/DATE\s+NEEDED:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+                    const isoMatch = raw.match(/DATE\s+NEEDED:\s*(\d{4}-\d{2}-\d{2})/i);
+                    if (dmyMatch) {
+                        const [d, m, y] = dmyMatch[1].split('/');
                         dateStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                    } else if (isoMatch) {
+                        dateStr = isoMatch[1];
                     }
 
                     const staffMatch = raw.match(/STAFF\s+NAME:\s*([^\n\r]+)/i);
@@ -448,7 +861,10 @@ RAW MESSAGE DETAILS (FACTS ONLY):
                     const catMatch = raw.match(/PRIMARY\s+CATEGORY:\s*([^\n\r]+)/i);
                     if (catMatch) {
                         const c = catMatch[1].trim();
-                        if (/fitness|aqua|health/i.test(c)) category = 'Health Fitness';
+                        if (/maintenance|closure/i.test(c)) category = 'Maintenance Closure';
+                        else if (/lane/i.test(c)) category = 'Lane Availability';
+                        else if (/spotlight|career/i.test(c)) category = 'Staff Spotlight';
+                        else if (/fitness|aqua|health/i.test(c)) category = 'Health Fitness';
                         else if (/squad/i.test(c)) category = 'Squad Training';
                         else if (/intensive/i.test(c)) category = 'Swim School Intensive';
                         else if (/swim school/i.test(c)) category = 'Swim School General';
@@ -462,6 +878,13 @@ RAW MESSAGE DETAILS (FACTS ONLY):
 
                     if (/Need physical sign\?:\s*\[x\]/i.test(raw)) generateSign = true;
 
+                    const signTypeMatch = raw.match(/SIGN\s+TYPE:\s*([^\n\r]+)/i);
+                    const signHeadlineMatch = raw.match(/SIGN\s+HEADLINE:\s*([^\n\r]+)/i);
+                    const signLocMatch = raw.match(/SIGN\s+LOCATION:\s*([^\n\r]+)/i);
+                    const newsAudMatch = raw.match(/NEWSLETTER\s+AUDIENCE:\s*([^\n\r]+)/i);
+                    const newsSubjMatch = raw.match(/NEWSLETTER\s+SUBJECT:\s*([^\n\r]+)/i);
+                    const newsLinkMatch = raw.match(/NEWSLETTER\s+LINK:\s*([^\n\r]+)/i);
+
                     const topicMatch = raw.match(/SPECIFIC\s+TOPIC\s*\/\s*DETAIL:\s*([^\n\r]+)/i);
                     if (topicMatch) title = topicMatch[1].trim();
 
@@ -469,7 +892,14 @@ RAW MESSAGE DETAILS (FACTS ONLY):
                     if (rawMsgMatch) keyMessage = rawMsgMatch[1].trim();
 
                     if (dateStr && title) {
-                        results.push({ staffName, date: dateStr, facility, category, channels, generateSign, title, keyMessage });
+                        const entry = { staffName, date: dateStr, facility, category, channels, generateSign, title, keyMessage };
+                        if (signTypeMatch) entry.signType = signTypeMatch[1].trim().toLowerCase();
+                        if (signHeadlineMatch) entry.signHeadline = signHeadlineMatch[1].trim();
+                        if (signLocMatch) entry.signLocation = signLocMatch[1].trim();
+                        if (newsAudMatch) entry.newsletterAudience = newsAudMatch[1].trim();
+                        if (newsSubjMatch) entry.newsletterSubject = newsSubjMatch[1].trim();
+                        if (newsLinkMatch) entry.newsletterCtaUrl = newsLinkMatch[1].trim();
+                        results.push(entry);
                     }
                 }
                 return results;
@@ -490,39 +920,65 @@ RAW MESSAGE DETAILS (FACTS ONLY):
 
                 bulkExecuteBtn.disabled = true;
                 bulkStatusBox.classList.remove('hidden');
-                bulkStatusText.innerText = `Preparing to upload ${parsed.length} entries...`;
+                bulkStatusText.innerText = isLocalTestMode
+                    ? `Loading ${parsed.length} local test entries...`
+                    : `Preparing to upload ${parsed.length} entries...`;
 
                 let successCount = 0;
+                const newLocalEntries = [];
                 for (let i = 0; i < parsed.length; i++) {
                     const item = parsed[i];
-                    bulkStatusText.innerText = `Uploading [${i + 1}/${parsed.length}]: "${item.title}"...`;
-                    try {
-                        await addDoc(collection(db, "requests"), {
-                            staffName: item.staffName || 'Staff',
-                            date: item.date,
-                            title: item.title,
-                            category: item.category || 'Important Notice',
-                            facility: item.facility || 'Clarence Regional Aquatic Centre',
-                            keyMessage: item.keyMessage || '',
-                            channels: item.channels || [],
-                            generateSign: !!item.generateSign,
-                            status: item.status || "Pending",
-                            assetUrl: item.assetUrl || null,
-                            timestamp: serverTimestamp()
-                        });
+                    const payload = {
+                        staffName: item.staffName || 'Staff',
+                        date: item.date,
+                        title: item.title,
+                        category: item.category || 'Important Notice',
+                        facility: item.facility || 'Clarence Regional Aquatic Centre',
+                        keyMessage: item.keyMessage || '',
+                        channels: item.channels || [],
+                        generateSign: !!item.generateSign,
+                        signType: item.signType || undefined,
+                        signHeadline: item.signHeadline || undefined,
+                        signBody: item.signBody || undefined,
+                        signLocation: item.signLocation || undefined,
+                        newsletterAudience: item.newsletterAudience || undefined,
+                        newsletterSubject: item.newsletterSubject || undefined,
+                        newsletterCtaUrl: item.newsletterCtaUrl || undefined,
+                        status: item.status || "Pending",
+                        assetUrl: item.assetUrl || null
+                    };
+                    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+                    if (isLocalTestMode) {
+                        newLocalEntries.push({ id: `local-bulk-${Date.now()}-${i}`, isLocalTest: true, ...payload });
                         successCount++;
-                    } catch(err) {
-                        console.error('Error inserting bulk item:', item, err);
+                    } else {
+                        bulkStatusText.innerText = `Uploading [${i + 1}/${parsed.length}]: "${item.title}"...`;
+                        try {
+                            await addDoc(collection(db, "requests"), {
+                                ...payload,
+                                timestamp: serverTimestamp()
+                            });
+                            successCount++;
+                        } catch(err) {
+                            console.error('Error inserting bulk item:', item, err);
+                        }
                     }
                 }
 
-                bulkStatusText.innerText = `🎉 Successfully loaded ${successCount} of ${parsed.length} entries!`;
+                if (isLocalTestMode && newLocalEntries.length > 0) {
+                    saveLocalRequests([...newLocalEntries, ...localRequests]);
+                }
+
+                bulkStatusText.innerText = isLocalTestMode
+                    ? `🧪 Loaded ${successCount} of ${parsed.length} local test entries!`
+                    : `🎉 Successfully loaded ${successCount} of ${parsed.length} entries!`;
                 bulkExecuteBtn.disabled = false;
                 setTimeout(() => {
                     bulkModal.classList.add('hidden');
                     bulkInput.value = '';
                     bulkStatusBox.classList.add('hidden');
-                }, 2000);
+                }, 1500);
             };
         });
 
@@ -533,27 +989,21 @@ RAW MESSAGE DETAILS (FACTS ONLY):
             const statusVal = document.getElementById('statusFilter').value;
             
             allRequests.forEach(d => {
-                // Apply Dropdown Filter
                 if (filterVal !== 'all' && (!d.facility || !d.facility.includes(filterVal))) return;
-                
-                // Apply Status Filter
                 if (statusVal !== 'all' && d.status !== statusVal) return;
                 
                 const isApproved = d.status === 'Approved';
                 const isCrac = d.facility && d.facility.includes('Clarence');
                 
-                // Clear Visual Hierarchy
-                // CRAC = Blue | Yamba = Teal | Approved = Solid | Pending = Faded
                 const bgColor = isCrac ? (isApproved ? '#2563eb' : '#bfdbfe') : (isApproved ? '#0d9488' : '#99f6e4');
                 const txtColor = isApproved ? '#ffffff' : '#1e293b';
-                const statusEmoji = isApproved ? '✅ ' : '⏳ ';
+                const statusEmoji = d.isLocalTest ? '🧪 ' : (isApproved ? '✅ ' : '⏳ ');
                 
-                // Channel Shorthand
-                let channelsStr = '';
                 const channels = d.channels || [];
-                if (channels.length > 0) {
-                    channelsStr = ' | ' + channels.map(c => c[0]).join('/');
-                }
+                const parts = [];
+                if (channels.length > 0) parts.push(channels.map(c => c[0]).join('/'));
+                if (d.generateSign) parts.push('Sign');
+                const channelsStr = parts.length > 0 ? ' | ' + parts.join(' + ') : '';
                 
                 calendar.addEvent({ 
                     id: d.id, 
@@ -567,6 +1017,6 @@ RAW MESSAGE DETAILS (FACTS ONLY):
             });
         }
     </script>
-    <script src="../nav.js" data-title="Social Calendar" data-icon="ph-share-network" data-help="Submit and schedule requests for the Clarence Regional Aquatic Centre and YCP social media channels, email newsletters, and website updates."></script>
+    <script src="../nav.js" data-title="Social Calendar" data-icon="ph-share-network" data-help="Submit and schedule requests for the Clarence Regional Aquatic Centre and YCP social media channels, email newsletters, physical signage, and website updates."></script>
 </body>
 </html>

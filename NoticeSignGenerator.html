@@ -27,6 +27,8 @@
             height: 297mm;
             margin: 0 auto;
             background-color: white;
+            color: #1e293b;
+            color-scheme: light;
             box-shadow: 0 0 15px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
@@ -35,6 +37,26 @@
             box-sizing: border-box;
             transform-origin: top center;
         }
+
+        /* Restore Quill formatting inside preview (Tailwind Preflight resets lists & paragraphs) */
+        #previewBody p { margin-bottom: 0.45em; }
+        #previewBody p:last-child { margin-bottom: 0; }
+        #previewBody ul {
+            list-style-type: disc;
+            list-style-position: inside;
+            margin: 0.35em 0;
+            padding-left: 0.5em;
+        }
+        #previewBody ol {
+            list-style-type: decimal;
+            list-style-position: inside;
+            margin: 0.35em 0;
+            padding-left: 0.5em;
+        }
+        #previewBody li { margin-bottom: 0.2em; }
+        #previewBody strong, #previewBody b { font-weight: 700; }
+        #previewBody em, #previewBody i { font-style: italic; }
+        #previewBody u { text-decoration: underline; }
 
         @media (max-width: 1280px) {
             #previewPane { transform: scale(0.85); margin-bottom: -150px; }
@@ -247,30 +269,7 @@
                                 <!-- Icon Slot 1 -->
                                 <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                     <span class="text-xs font-bold text-slate-400 w-4">1.</span>
-                                    <select id="iconSelect1" onchange="handleIconSelect(1)" class="flex-grow p-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded text-sm min-w-0">
-                                        <option value="none">No Icon</option>
-                                        <option value="ban">Prohibited (Ban)</option>
-                                        <option value="alert-triangle">Warning (Triangle)</option>
-                                        <option value="info">Info (Circle)</option>
-                                        <option value="clock">Time / Clock</option>
-                                        <option value="waves">Waves / Swim</option>
-                                        <option value="sparkles">Cleaning / Sparkles</option>
-                                        <option value="camera">Camera / CCTV</option>
-                                        <option value="parking-circle">Parking</option>
-                                        <option value="accessibility">Wheelchair / Access</option>
-                                        <option value="user">Accessibility (Person)</option>
-                                        <option value="flame">Flammable</option>
-                                        <option value="zap">High Voltage / Electricity</option>
-                                        <option value="cigarette-off">No Smoking</option>
-                                        <option value="dog">Pets / Dogs</option>
-                                        <option value="trash-2">Trash / Waste</option>
-                                        <option value="users">People / Group</option>
-                                        <option value="arrow-right">Arrow (Right)</option>
-                                        <option value="arrow-left">Arrow (Left)</option>
-                                        <option value="arrow-up">Arrow (Up)</option>
-                                        <option value="arrow-down">Arrow (Down)</option>
-                                        <option value="custom">Upload Custom Icon...</option>
-                                    </select>
+                                    <select id="iconSelect1" onchange="handleIconSelect(1)" class="icon-select flex-grow p-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded text-sm min-w-0"></select>
                                     <input type="color" id="iconColor1" value="#dc2626" oninput="updatePreview()" class="h-8 w-10 p-0 border-0 rounded cursor-pointer shrink-0 dark:bg-slate-800">
                                     <input type="file" id="customIconUpload1" accept="image/*" onchange="handleCustomIcon(event, 1)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
                                 </div>
@@ -278,30 +277,7 @@
                                 <!-- Icon Slot 2 -->
                                 <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                     <span class="text-xs font-bold text-slate-400 w-4">2.</span>
-                                    <select id="iconSelect2" onchange="handleIconSelect(2)" class="flex-grow p-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded text-sm min-w-0">
-                                        <option value="none">No Icon</option>
-                                        <option value="ban">Prohibited (Ban)</option>
-                                        <option value="alert-triangle">Warning (Triangle)</option>
-                                        <option value="info">Info (Circle)</option>
-                                        <option value="clock">Time / Clock</option>
-                                        <option value="waves">Waves / Swim</option>
-                                        <option value="sparkles">Cleaning / Sparkles</option>
-                                        <option value="camera">Camera / CCTV</option>
-                                        <option value="parking-circle">Parking</option>
-                                        <option value="accessibility">Wheelchair / Access</option>
-                                        <option value="user">Accessibility (Person)</option>
-                                        <option value="flame">Flammable</option>
-                                        <option value="zap">High Voltage / Electricity</option>
-                                        <option value="cigarette-off">No Smoking</option>
-                                        <option value="dog">Pets / Dogs</option>
-                                        <option value="trash-2">Trash / Waste</option>
-                                        <option value="users">People / Group</option>
-                                        <option value="arrow-right">Arrow (Right)</option>
-                                        <option value="arrow-left">Arrow (Left)</option>
-                                        <option value="arrow-up">Arrow (Up)</option>
-                                        <option value="arrow-down">Arrow (Down)</option>
-                                        <option value="custom">Upload Custom Icon...</option>
-                                    </select>
+                                    <select id="iconSelect2" onchange="handleIconSelect(2)" class="icon-select flex-grow p-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded text-sm min-w-0"></select>
                                     <input type="color" id="iconColor2" value="#2563eb" oninput="updatePreview()" class="h-8 w-10 p-0 border-0 rounded cursor-pointer shrink-0 dark:bg-slate-800">
                                     <input type="file" id="customIconUpload2" accept="image/*" onchange="handleCustomIcon(event, 2)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
                                 </div>
@@ -309,30 +285,7 @@
                                 <!-- Icon Slot 3 -->
                                 <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                     <span class="text-xs font-bold text-slate-400 w-4">3.</span>
-                                    <select id="iconSelect3" onchange="handleIconSelect(3)" class="flex-grow p-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded text-sm min-w-0">
-                                        <option value="none">No Icon</option>
-                                        <option value="ban">Prohibited (Ban)</option>
-                                        <option value="alert-triangle">Warning (Triangle)</option>
-                                        <option value="info">Info (Circle)</option>
-                                        <option value="clock">Time / Clock</option>
-                                        <option value="waves">Waves / Swim</option>
-                                        <option value="sparkles">Cleaning / Sparkles</option>
-                                        <option value="camera">Camera / CCTV</option>
-                                        <option value="parking-circle">Parking</option>
-                                        <option value="accessibility">Wheelchair / Access</option>
-                                        <option value="user">Accessibility (Person)</option>
-                                        <option value="flame">Flammable</option>
-                                        <option value="zap">High Voltage / Electricity</option>
-                                        <option value="cigarette-off">No Smoking</option>
-                                        <option value="dog">Pets / Dogs</option>
-                                        <option value="trash-2">Trash / Waste</option>
-                                        <option value="users">People / Group</option>
-                                        <option value="arrow-right">Arrow (Right)</option>
-                                        <option value="arrow-left">Arrow (Left)</option>
-                                        <option value="arrow-up">Arrow (Up)</option>
-                                        <option value="arrow-down">Arrow (Down)</option>
-                                        <option value="custom">Upload Custom Icon...</option>
-                                    </select>
+                                    <select id="iconSelect3" onchange="handleIconSelect(3)" class="icon-select flex-grow p-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded text-sm min-w-0"></select>
                                     <input type="color" id="iconColor3" value="#eab308" oninput="updatePreview()" class="h-8 w-10 p-0 border-0 rounded cursor-pointer shrink-0 dark:bg-slate-800">
                                     <input type="file" id="customIconUpload3" accept="image/*" onchange="handleCustomIcon(event, 3)" class="hidden w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700">
                                 </div>
@@ -349,7 +302,10 @@
 
                         <!-- Main Image Control -->
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Main Image (Optional)</label>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-500 uppercase">Main Image (Optional)</label>
+                                <button type="button" id="clearMainImageBtn" onclick="clearMainImage()" class="hidden text-xs text-red-600 hover:text-red-700 font-semibold">Remove Image</button>
+                            </div>
                             <input type="file" id="mainImageUpload" accept="image/*" onchange="handleMainImage(event)" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-100 dark:file:bg-slate-800 file:text-slate-700 dark:file:text-slate-300 hover:file:bg-slate-200 dark:hover:file:bg-slate-700 mb-2">
                             
                             <label class="block text-xs font-semibold text-slate-500 uppercase mb-1 mt-3">Image Position</label>
@@ -383,7 +339,7 @@
                             <label class="block text-xs text-slate-500">Default Align</label>
                             <select id="contentAlign" onchange="updatePreview()" class="w-full border rounded p-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
                                 <option value="left">Left</option>
-                                <option value="center" selected>Center</option>
+                                <option value="center" selected>Centre</option>
                                 <option value="justify">Justify</option>
                             </select>
                         </div>
@@ -420,7 +376,7 @@
                                 <select id="qrPosition" onchange="updatePreview()" class="w-full p-1 text-sm border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded">
                                     <option value="right" selected>Right</option>
                                     <option value="left">Left</option>
-                                    <option value="center">Center</option>
+                                    <option value="center">Centre</option>
                                 </select>
                              </div>
                              <div>
@@ -449,10 +405,10 @@
                     </div>
 
                     <!-- Main Content Container -->
-                    <div id="previewContentContainer" class="flex-grow flex flex-col p-12 transition-colors duration-300">
+                    <div id="previewContentContainer" class="flex-grow flex flex-col p-12 transition-colors duration-300 overflow-hidden">
                         
                         <!-- Top Logo -->
-                        <div class="flex justify-center mb-6 h-16 shrink-0">
+                        <div id="previewLogoWrapper" class="flex justify-center mb-6 h-16 shrink-0">
                             <img id="previewLogo" src="" class="h-full object-contain" onerror="this.style.display='none'">
                         </div>
 
@@ -496,40 +452,126 @@
 
 <script>
     // State
+    let quill = null;
     let mainImageData = null;
     let customIconData1 = null;
     let customIconData2 = null;
     let customIconData3 = null;
 
-    // Assets
+    // Local relative assets (falls back gracefully if missing)
     const logos = {
-        crac: "https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/98325202cc3f831a80e250d16d0c56168515c40a/CRAC%20Large%20Wordmark2.png",
-        ycp: "https://raw.githubusercontent.com/Brisk3r/CRAC---Tools-and-Requests/aec03b349e712519927321f47dade540f2b5bce9/YCP%20Wordmark%20-%20Full%20Horizontal.png",
+        crac: "./CRAC Large Wordmark2.png",
+        ycp: "./YCP Wordmark - Full Horizontal.png",
         none: ""
     };
 
-    // Custom built-in SVGs for specific safety icons not natively in Lucide
-    // Converted to raw paths to render as unbreakable data-URI images
-    const standardSafetyPaths = {
-        'wheelchair': 'M192 96a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm-71.5 161.3c-20.8-21.1-54.6-21.5-76-1s-21.8 54.9-1 76l61.2 61.2c20.8 21.1 54.6 21.5 76 1l14.4-14.4c17.1-17.1 17.1-44.9 0-62s-44.9-17.1-62 0l-12.6 12.6zM256 224v-64H192c-17.7 0-32-14.3-32-32s14.3-32 32-32h96c17.7 0 32 14.3 32 32v128h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H288c-17.7 0-32-14.3-32-32v-64H256zm-104.6 111.6c-7.9 7.9-10.3 19.8-6.1 30.3C158.4 398.9 191.9 416 224 416c44.2 0 80-35.8 80-80c0-11-2.1-21.5-5.9-31.2c-4-10.2-15-16.1-25.9-14.5s-19.3 9.4-19.3 20.4c0 14.1-11.5 25.6-25.6 25.6c-11.4 0-21-7.5-24.5-17.8c-2.9-8.5-11.8-13.4-20.5-11.4s-14.8 10.9-12.8 19.6l-31 34.2z',
-        'slippery': 'M192 112a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm-95.6 156.4c-8-11.4-23.6-14.2-35-6.2s-14.2 23.6-6.2 35l74.5 106.5c17.2 24.5 45.4 39.3 75.5 39.3h32.9l-37.8 103.9c-4.8 13.2 2.1 27.7 15.3 32.5s27.7-2.1 32.5-15.3l46.1-126.7c4.5-12.4 1.5-26.3-7.8-35.8l-34.8-35.5 44.5-61.2L357.6 311c16.5 10.6 38.6 5.8 49.3-10.8s5.8-38.6-10.8-49.3L324.4 160c-15.3-9.9-35.1-10.2-50.7-.7l-57.1 34.8c-5.7 3.5-11.2 7.2-16.5 11.2l-79.7-93.5c-9.6-11.3-26.5-12.7-37.8-3.1s-12.7 26.5-3.1 37.8l60.9 71.5zM32 448c-17.7 0-32 14.3-32 32s14.3 32 32 32h448c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z',
-        'triangle-alert': 'M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7.1-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z',
-        'ban': 'M367.2 412.5L99.5 144.8C77.1 176.1 64 214.5 64 256c0 106 86 192 192 192c41.5 0 79.9-13.1 111.2-35.5zm45.3-45.3C434.9 335.9 448 297.5 448 256c0-106-86-192-192-192c-41.5 0-79.9 13.1-111.2 35.5L412.5 367.2zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z',
-        'info': 'M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z'
-    };
+    const ICON_OPTIONS = [
+        { value: 'none', label: 'No Icon' },
+        { value: 'ban', label: 'Prohibited (Ban)' },
+        { value: 'alert-triangle', label: 'Warning (Triangle)' },
+        { value: 'info', label: 'Info (Circle)' },
+        { value: 'clock', label: 'Time / Clock' },
+        { value: 'waves', label: 'Waves / Swim' },
+        { value: 'sparkles', label: 'Cleaning / Sparkles' },
+        { value: 'camera', label: 'Camera / CCTV' },
+        { value: 'parking-circle', label: 'Parking' },
+        { value: 'accessibility', label: 'Wheelchair / Access' },
+        { value: 'user', label: 'Accessibility (Person)' },
+        { value: 'flame', label: 'Flammable' },
+        { value: 'zap', label: 'High Voltage / Electricity' },
+        { value: 'cigarette-off', label: 'No Smoking' },
+        { value: 'dog', label: 'Pets / Dogs' },
+        { value: 'trash-2', label: 'Trash / Waste' },
+        { value: 'users', label: 'People / Group' },
+        { value: 'arrow-right', label: 'Arrow (Right)' },
+        { value: 'arrow-left', label: 'Arrow (Left)' },
+        { value: 'arrow-up', label: 'Arrow (Up)' },
+        { value: 'arrow-down', label: 'Arrow (Down)' },
+        { value: 'custom', label: 'Upload Custom Icon...' }
+    ];
 
     const safetyStyles = {
-        none: { bg: 'transparent', text: '', class: '', textCol: '#000000' },
-        danger: { bg: '#dc2626', text: 'DANGER', class: 'bg-red-600', textCol: '#ffffff' }, // Red
-        warning: { bg: '#eab308', text: 'WARNING', class: 'bg-yellow-500 text-black', textCol: '#000000' }, // Yellow
-        notice: { bg: '#2563eb', text: 'NOTICE', class: 'bg-blue-600', textCol: '#ffffff' }, // Blue
-        information: { bg: '#22c55e', text: 'INFORMATION', class: 'bg-green-500', textCol: '#ffffff' }, // Green
-        custom: { bg: '#000000', text: 'CUSTOM', class: 'bg-black', textCol: '#ffffff' }
+        none: { bg: 'transparent', text: '', textCol: '#000000' },
+        danger: { bg: '#dc2626', text: 'DANGER', textCol: '#ffffff' },
+        warning: { bg: '#eab308', text: 'WARNING', textCol: '#000000' },
+        notice: { bg: '#2563eb', text: 'NOTICE', textCol: '#ffffff' },
+        information: { bg: '#22c55e', text: 'INFORMATION', textCol: '#ffffff' },
+        custom: { bg: '#000000', text: 'CUSTOM', textCol: '#ffffff' }
     };
+
+    // --- Helpers ---
+
+    function populateIconSelects() {
+        document.querySelectorAll('.icon-select').forEach(select => {
+            select.innerHTML = '';
+            ICON_OPTIONS.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                select.appendChild(option);
+            });
+        });
+    }
+
+    function getContrastTextColor(hexColor) {
+        if (!hexColor || !/^#[0-9a-f]{6}$/i.test(hexColor)) return '#ffffff';
+        const r = parseInt(hexColor.slice(1, 3), 16) / 255;
+        const g = parseInt(hexColor.slice(3, 5), 16) / 255;
+        const b = parseInt(hexColor.slice(5, 7), 16) / 255;
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        return luminance > 0.55 ? '#000000' : '#ffffff';
+    }
+
+    function sanitizeHtml(html) {
+        if (!html) return '';
+        const allowedTags = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'UL', 'OL', 'LI', 'SPAN']);
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const walk = (node) => {
+            Array.from(node.childNodes).forEach(child => {
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (!allowedTags.has(child.tagName)) {
+                        const textNode = document.createTextNode(child.textContent || '');
+                        node.replaceChild(textNode, child);
+                        return;
+                    }
+                    // Strip unsafe attributes; only keep safe color/background-color inline styles from Quill
+                    Array.from(child.attributes).forEach(attr => {
+                        if (attr.name === 'style') {
+                            const safeStyles = [];
+                            if (child.style.color) safeStyles.push(`color: ${child.style.color}`);
+                            if (child.style.backgroundColor) safeStyles.push(`background-color: ${child.style.backgroundColor}`);
+                            if (safeStyles.length > 0) {
+                                child.setAttribute('style', safeStyles.join('; '));
+                            } else {
+                                child.removeAttribute('style');
+                            }
+                        } else if (attr.name === 'class' && /^ql-/.test(attr.value)) {
+                            // Keep Quill alignment classes only
+                            const safeClasses = attr.value.split(/\s+/).filter(c => /^ql-align-(center|right|justify)$/.test(c));
+                            if (safeClasses.length) child.setAttribute('class', safeClasses.join(' '));
+                            else child.removeAttribute('class');
+                        } else {
+                            child.removeAttribute(attr.name);
+                        }
+                    });
+                    walk(child);
+                }
+            });
+        };
+        walk(doc.body);
+        return doc.body.innerHTML;
+    }
+
+    function mapLegacyIcon(name) {
+        if (name === 'triangle-alert') return 'alert-triangle';
+        if (name === 'cctv') return 'camera';
+        if (name === 'slippery') return 'accessibility';
+        return name || 'none';
+    }
 
     // --- Core Functions ---
 
-    function handleSignTypeChange() {
+    function handleSignTypeChange(preserveCustom = false) {
         const signType = document.getElementById('signType').value;
         const controls = document.getElementById('headerCustomControls');
         const textInput = document.getElementById('headerTextInput');
@@ -539,16 +581,21 @@
             controls.classList.add('hidden');
         } else {
             controls.classList.remove('hidden');
-            if (safetyStyles[signType]) {
+            if (!preserveCustom && safetyStyles[signType]) {
                 textInput.value = safetyStyles[signType].text;
                 colorInput.value = safetyStyles[signType].bg;
+            } else if (safetyStyles[signType]) {
+                if (!textInput.value.trim()) textInput.value = safetyStyles[signType].text;
+                if (!colorInput.value || colorInput.value === '#000000' && signType !== 'custom') {
+                    colorInput.value = safetyStyles[signType].bg;
+                }
             }
         }
         updatePreview();
     }
 
     function updatePreview() {
-        // Z-Index 50: Header
+        // Header
         const signType = document.getElementById('signType').value;
         const headerEl = document.getElementById('safetyHeader');
         const headerTextEl = document.getElementById('safetyHeaderText');
@@ -558,19 +605,14 @@
         } else {
             headerEl.classList.remove('hidden');
             const customText = document.getElementById('headerTextInput').value;
-            const customColor = document.getElementById('headerColorInput').value;
+            const customColor = document.getElementById('headerColorInput').value || (safetyStyles[signType] ? safetyStyles[signType].bg : '#000000');
             
-            headerTextEl.innerText = customText || safetyStyles[signType].text;
+            headerTextEl.innerText = customText || (safetyStyles[signType] ? safetyStyles[signType].text : 'NOTICE');
             headerEl.style.backgroundColor = customColor;
-            
-            if (customColor.toLowerCase() === '#eab308' || signType === 'warning') {
-                headerEl.style.color = 'black';
-            } else {
-                headerEl.style.color = 'white';
-            }
+            headerEl.style.color = getContrastTextColor(customColor);
         }
 
-        // Z-Index 40: Borders
+        // Borders
         const borderStyle = document.getElementById('borderStyle').value;
         const borderEl = document.getElementById('previewBorder');
         borderEl.style.border = 'none';
@@ -594,18 +636,26 @@
         document.getElementById('previewContentContainer').style.backgroundColor = document.getElementById('bgColor').value;
         const logoVal = document.getElementById('logoSelect').value;
         const logoImg = document.getElementById('previewLogo');
-        if (logoVal !== 'none') {
+        const logoWrapper = document.getElementById('previewLogoWrapper');
+        if (logoVal !== 'none' && logos[logoVal]) {
             logoImg.src = logos[logoVal];
             logoImg.style.display = 'block';
+            logoWrapper.classList.remove('hidden');
         } else {
             logoImg.style.display = 'none';
+            logoWrapper.classList.add('hidden');
         }
 
-        // Headline
+        // Headline (safe text rendering preserving newlines)
         const hl = document.getElementById('previewHeadline');
-        hl.innerHTML = document.getElementById('headlineInput').value.replace(/\n/g, '<br>');
+        hl.textContent = '';
+        const headlineLines = document.getElementById('headlineInput').value.split('\n');
+        headlineLines.forEach((line, idx) => {
+            if (idx > 0) hl.appendChild(document.createElement('br'));
+            hl.appendChild(document.createTextNode(line));
+        });
         hl.style.color = document.getElementById('headlineColor').value;
-        hl.style.fontSize = document.getElementById('headlineSize').value + 'px';
+        hl.style.fontSize = (parseInt(document.getElementById('headlineSize').value, 10) || 48) + 'px';
         hl.style.textAlign = document.getElementById('headlineAlign').value;
 
         // Multiple Icons Logic
@@ -615,22 +665,25 @@
         const iconSize = document.getElementById('iconSize').value;
         document.getElementById('iconSizeLabel').innerText = iconSize + 'px';
 
-        for(let i = 1; i <= 3; i++) {
+        let hasAnyIcon = false;
+        for (let i = 1; i <= 3; i++) {
             const val = document.getElementById('iconSelect' + i).value;
             const col = document.getElementById('iconColor' + i).value;
             
             let customData = null;
-            if(i === 1) customData = customIconData1;
-            if(i === 2) customData = customIconData2;
-            if(i === 3) customData = customIconData3;
+            if (i === 1) customData = customIconData1;
+            if (i === 2) customData = customIconData2;
+            if (i === 3) customData = customIconData3;
 
             if (val === 'custom' && customData) {
+                hasAnyIcon = true;
                 const img = document.createElement('img');
                 img.src = customData;
                 img.style.height = iconSize + 'px';
                 img.style.width = 'auto';
                 iconContainer.appendChild(img);
-            } else if (val !== 'none') {
+            } else if (val !== 'none' && val !== 'custom') {
+                hasAnyIcon = true;
                 const wrapper = document.createElement('div');
                 wrapper.style.color = col;
                 wrapper.className = "flex shrink-0";
@@ -641,6 +694,7 @@
                 iconContainer.appendChild(wrapper);
             }
         }
+        iconContainer.classList.toggle('hidden', !hasAnyIcon);
         
         lucide.createIcons();
         const previewLucideIcons = iconContainer.querySelectorAll('.lucide');
@@ -654,6 +708,8 @@
         const imgContainer = document.getElementById('previewImageContainer');
         const imgPos = document.getElementById('imagePosition').value;
         const bodyText = document.getElementById('previewBody');
+        const clearImgBtn = document.getElementById('clearMainImageBtn');
+        if (clearImgBtn) clearImgBtn.classList.toggle('hidden', !mainImageData);
         
         if (mainImageData && imgPos !== 'hidden') {
             document.getElementById('previewImage').src = mainImageData;
@@ -669,7 +725,7 @@
 
         // Body Content & Alignment
         bodyText.innerHTML = quill ? quill.root.innerHTML : '';
-        bodyText.style.fontSize = document.getElementById('contentSize').value + 'px';
+        bodyText.style.fontSize = (parseInt(document.getElementById('contentSize').value, 10) || 28) + 'px';
         bodyText.style.textAlign = document.getElementById('contentAlign').value;
 
         const vertAlign = document.getElementById('contentVerticalAlign').value;
@@ -689,7 +745,7 @@
         footerText.innerText = footerTextVal;
         
         if (qrUrl.trim()) {
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl.trim())}`;
             qrImg.classList.remove('hidden');
             qrImg.style.width = qrSize + 'px';
             qrImg.style.height = qrSize + 'px';
@@ -731,19 +787,19 @@
             upload.classList.remove('hidden');
         } else {
             upload.classList.add('hidden');
-            updatePreview();
         }
+        updatePreview();
     }
 
     function handleCustomIcon(e, index) {
         const reader = new FileReader();
         reader.onload = (ev) => {
-            if(index === 1) customIconData1 = ev.target.result;
-            if(index === 2) customIconData2 = ev.target.result;
-            if(index === 3) customIconData3 = ev.target.result;
+            if (index === 1) customIconData1 = ev.target.result;
+            if (index === 2) customIconData2 = ev.target.result;
+            if (index === 3) customIconData3 = ev.target.result;
             updatePreview();
         };
-        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        if (e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
     }
 
     function handleMainImage(e) {
@@ -752,16 +808,26 @@
             mainImageData = ev.target.result;
             updatePreview();
         };
-        if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        if (e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    }
+
+    function clearMainImage() {
+        mainImageData = null;
+        document.getElementById('mainImageUpload').value = '';
+        updatePreview();
     }
 
     function checkOverflow() {
         const pane = document.getElementById('previewPane');
-        if (pane.scrollHeight > pane.clientHeight + 2) {
-            document.getElementById('overflowWarning').classList.remove('hidden');
-        } else {
-            document.getElementById('overflowWarning').classList.add('hidden');
-        }
+        const borderEl = document.getElementById('previewBorder');
+        const dynamicArea = document.getElementById('dynamicContentArea');
+        const contentContainer = document.getElementById('previewContentContainer');
+        const isOverflowing =
+            pane.scrollHeight > pane.clientHeight + 2 ||
+            borderEl.scrollHeight > borderEl.clientHeight + 2 ||
+            contentContainer.scrollHeight > contentContainer.clientHeight + 2 ||
+            dynamicArea.scrollHeight > dynamicArea.clientHeight + 2;
+        document.getElementById('overflowWarning').classList.toggle('hidden', !isOverflowing);
     }
 
     function printSign() {
@@ -776,7 +842,7 @@
             hlText: 'Pool Closure', hlColor: '#1e293b', hlSize: 48,
             icon1: 'ban', iconColor1: '#dc2626', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
             iconSize: 120, bg: '#ffffff',
-            body: 'The 50m Pool is closed for maintenance.',
+            body: '<p>The 50m Pool is closed for maintenance.</p>',
             footer: 'Clarence Regional Aquatic Centre'
         },
         ycp_friendly: {
@@ -784,7 +850,7 @@
             hlText: 'Lane Reserved', hlColor: '#2563eb', hlSize: 42,
             icon1: 'clock', iconColor1: '#2563eb', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
             iconSize: 120, bg: '#eff6ff',
-            body: 'This lane is reserved for swim squad training.<br>Please use alternative lanes.',
+            body: '<p>This lane is reserved for swim squad training.<br>Please use alternative lanes.</p>',
             footer: 'Yamba Community Pool'
         },
         danger_stop: {
@@ -792,7 +858,7 @@
             hlText: 'DO NOT ENTER', hlColor: '#000000', hlSize: 60,
             icon1: 'alert-triangle', iconColor1: '#dc2626', icon2: 'none', iconColor2: '#000000', icon3: 'none', iconColor3: '#000000',
             iconSize: 160, bg: '#ffffff',
-            body: 'Chemical handling in progress.<br>Authorised Personnel Only.',
+            body: '<p>Chemical handling in progress.<br>Authorised Personnel Only.</p>',
             footer: 'Clarence Valley Council'
         },
         cleaning: {
@@ -800,13 +866,33 @@
             hlText: 'Cleaning In Progress', hlColor: '#000000', hlSize: 42,
             icon1: 'sparkles', iconColor1: '#eab308', icon2: 'accessibility', iconColor2: '#2563eb', icon3: 'none', iconColor3: '#000000',
             iconSize: 100, bg: '#fefce8',
-            body: 'Floors may be slippery. Please watch your step.',
+            body: '<p>Floors may be slippery. Please watch your step.</p>',
             footer: 'Clarence Regional Aquatic Centre'
         }
     };
 
     function loadTemplate(key) {
         const t = templates[key];
+        if (!t) return;
+
+        // Reset stale state from previous edits
+        mainImageData = null;
+        customIconData1 = null;
+        customIconData2 = null;
+        customIconData3 = null;
+        document.getElementById('mainImageUpload').value = '';
+        document.getElementById('customIconUpload1').value = '';
+        document.getElementById('customIconUpload2').value = '';
+        document.getElementById('customIconUpload3').value = '';
+        document.getElementById('qrUrl').value = '';
+        document.getElementById('qrPosition').value = 'right';
+        document.getElementById('qrSize').value = '100';
+        document.getElementById('imagePosition').value = 'top';
+        document.getElementById('headlineAlign').value = 'center';
+        document.getElementById('contentSize').value = '28';
+        document.getElementById('contentAlign').value = 'center';
+        document.getElementById('contentVerticalAlign').value = 'start';
+
         document.getElementById('signType').value = t.type;
         document.getElementById('borderStyle').value = t.border;
         document.getElementById('logoSelect').value = t.logo;
@@ -814,8 +900,8 @@
         document.getElementById('headlineColor').value = t.hlColor;
         document.getElementById('headlineSize').value = t.hlSize;
         
-        document.getElementById('iconSelect1').value = t.icon1 || t.icon || 'none';
-        document.getElementById('iconColor1').value = t.iconColor1 || t.iconColor || '#000000';
+        document.getElementById('iconSelect1').value = t.icon1 || 'none';
+        document.getElementById('iconColor1').value = t.iconColor1 || '#000000';
         document.getElementById('iconSelect2').value = t.icon2 || 'none';
         document.getElementById('iconColor2').value = t.iconColor2 || '#000000';
         document.getElementById('iconSelect3').value = t.icon3 || 'none';
@@ -823,29 +909,40 @@
         document.getElementById('iconSize').value = t.iconSize || 120;
 
         document.getElementById('bgColor').value = t.bg;
-        if(quill) quill.root.innerHTML = t.body;
+        if (quill) quill.root.innerHTML = t.body;
         document.getElementById('footerText').value = t.footer;
         
         handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
-        handleSignTypeChange(); 
-        updatePreview();
+        handleSignTypeChange(false); 
     }
 
     // --- Local Storage (Save/Load) ---
 
     function saveCurrentState() {
         const name = prompt("Enter a name for this preset (e.g., 'Weekly Cleaning'):");
-        if (!name) return;
+        if (!name || !name.trim()) return;
+        const cleanName = name.trim();
 
         const state = {
             headline: document.getElementById('headlineInput').value,
+            headlineColor: document.getElementById('headlineColor').value,
+            headlineSize: document.getElementById('headlineSize').value,
+            headlineAlign: document.getElementById('headlineAlign').value,
             content: quill ? quill.root.innerHTML : '',
+            contentSize: document.getElementById('contentSize').value,
+            contentAlign: document.getElementById('contentAlign').value,
+            contentVerticalAlign: document.getElementById('contentVerticalAlign').value,
             signType: document.getElementById('signType').value,
-            logo: document.getElementById('logoSelect').value,
-            footer: document.getElementById('footerText').value,
             headerText: document.getElementById('headerTextInput').value,
             headerColor: document.getElementById('headerColorInput').value,
-            // Icons
+            borderStyle: document.getElementById('borderStyle').value,
+            bgColor: document.getElementById('bgColor').value,
+            logo: document.getElementById('logoSelect').value,
+            footer: document.getElementById('footerText').value,
+            qrUrl: document.getElementById('qrUrl').value,
+            qrPosition: document.getElementById('qrPosition').value,
+            qrSize: document.getElementById('qrSize').value,
+            imagePosition: document.getElementById('imagePosition').value,
             icon1: document.getElementById('iconSelect1').value,
             iconColor1: document.getElementById('iconColor1').value,
             icon2: document.getElementById('iconSelect2').value,
@@ -856,55 +953,61 @@
         };
 
         const saves = JSON.parse(localStorage.getItem('mySignPresets') || '{}');
-        saves[name] = state;
+        saves[cleanName] = state;
         localStorage.setItem('mySignPresets', JSON.stringify(saves));
         refreshSavedList();
     }
 
     function loadPreset(name) {
-        const saves = JSON.parse(localStorage.getItem('mySignPresets'));
+        const saves = JSON.parse(localStorage.getItem('mySignPresets') || '{}');
         if (saves && saves[name]) {
             const s = saves[name];
-            document.getElementById('headlineInput').value = s.headline;
-            if(quill) quill.root.innerHTML = s.content;
-            document.getElementById('signType').value = s.signType;
-            document.getElementById('logoSelect').value = s.logo;
-            document.getElementById('footerText').value = s.footer;
-            if(s.headerText) document.getElementById('headerTextInput').value = s.headerText;
-            if(s.headerColor) document.getElementById('headerColorInput').value = s.headerColor;
-            
-            // Icon mapping for backwards compatibility with old names
-            const mapIcon = (name) => {
-                if (name === 'triangle-alert') return 'alert-triangle';
-                if (name === 'cctv') return 'camera';
-                if (name === 'slippery') return 'accessibility';
-                return name || 'none';
-            };
+            document.getElementById('headlineInput').value = s.headline || '';
+            if (s.headlineColor) document.getElementById('headlineColor').value = s.headlineColor;
+            if (s.headlineSize) document.getElementById('headlineSize').value = s.headlineSize;
+            if (s.headlineAlign) document.getElementById('headlineAlign').value = s.headlineAlign;
 
-            if(s.icon && !s.icon1) {
-                document.getElementById('iconSelect1').value = mapIcon(s.icon);
+            if (quill) quill.root.innerHTML = sanitizeHtml(s.content || '');
+            if (s.contentSize) document.getElementById('contentSize').value = s.contentSize;
+            if (s.contentAlign) document.getElementById('contentAlign').value = s.contentAlign;
+            if (s.contentVerticalAlign) document.getElementById('contentVerticalAlign').value = s.contentVerticalAlign;
+
+            document.getElementById('signType').value = s.signType || 'none';
+            document.getElementById('headerTextInput').value = s.headerText || '';
+            document.getElementById('headerColorInput').value = s.headerColor || (safetyStyles[s.signType] ? safetyStyles[s.signType].bg : '#000000');
+
+            document.getElementById('borderStyle').value = s.borderStyle || 'none';
+            document.getElementById('bgColor').value = s.bgColor || '#ffffff';
+            document.getElementById('logoSelect').value = s.logo || 'crac';
+            document.getElementById('footerText').value = s.footer ?? '';
+            document.getElementById('qrUrl').value = s.qrUrl || '';
+            document.getElementById('qrPosition').value = s.qrPosition || 'right';
+            document.getElementById('qrSize').value = s.qrSize || '100';
+            document.getElementById('imagePosition').value = s.imagePosition || 'top';
+
+            if (s.icon && !s.icon1) {
+                document.getElementById('iconSelect1').value = mapLegacyIcon(s.icon);
                 document.getElementById('iconColor1').value = s.iconColor || '#000000';
                 document.getElementById('iconSelect2').value = 'none';
                 document.getElementById('iconSelect3').value = 'none';
             } else {
-                document.getElementById('iconSelect1').value = mapIcon(s.icon1);
+                document.getElementById('iconSelect1').value = mapLegacyIcon(s.icon1);
                 document.getElementById('iconColor1').value = s.iconColor1 || '#000000';
-                document.getElementById('iconSelect2').value = mapIcon(s.icon2);
+                document.getElementById('iconSelect2').value = mapLegacyIcon(s.icon2);
                 document.getElementById('iconColor2').value = s.iconColor2 || '#000000';
-                document.getElementById('iconSelect3').value = mapIcon(s.icon3);
+                document.getElementById('iconSelect3').value = mapLegacyIcon(s.icon3);
                 document.getElementById('iconColor3').value = s.iconColor3 || '#000000';
             }
-            if(s.iconSize) document.getElementById('iconSize').value = s.iconSize;
+            if (s.iconSize) document.getElementById('iconSize').value = s.iconSize;
             
             handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
-            handleSignTypeChange();
-            updatePreview();
+            handleSignTypeChange(true);
         }
     }
 
     function deletePreset(name) {
-        if(confirm('Delete preset: ' + name + '?')) {
-            const saves = JSON.parse(localStorage.getItem('mySignPresets'));
+        if (confirm('Delete preset: ' + name + '?')) {
+            const saves = JSON.parse(localStorage.getItem('mySignPresets') || '{}');
             delete saves[name];
             localStorage.setItem('mySignPresets', JSON.stringify(saves));
             refreshSavedList();
@@ -924,12 +1027,24 @@
             keys.forEach(k => {
                 const badge = document.createElement('div');
                 badge.className = "flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded border border-blue-200";
-                badge.innerHTML = `
-                    <span class="cursor-pointer font-medium mr-2" onclick="loadPreset('${k}')">${k}</span>
-                    <button onclick="deletePreset('${k}')" class="text-blue-400 hover:text-red-500"><i data-lucide="x" class="w-3 h-3"></i></button>
-                `;
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = "cursor-pointer font-medium mr-2";
+                labelSpan.textContent = k;
+                labelSpan.addEventListener('click', () => loadPreset(k));
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = "text-blue-500 hover:text-red-600 flex items-center";
+                delBtn.setAttribute('aria-label', `Delete ${k}`);
+                delBtn.innerHTML = '<i data-lucide="x" class="w-3 h-3"></i>';
+                delBtn.addEventListener('click', () => deletePreset(k));
+
+                badge.appendChild(labelSpan);
+                badge.appendChild(delBtn);
                 list.appendChild(badge);
             });
+            lucide.createIcons();
         } else {
             container.classList.add('hidden');
         }
@@ -938,8 +1053,18 @@
     function shareLink() {
         const params = new URLSearchParams();
         params.set('headline', document.getElementById('headlineInput').value);
+        params.set('headlineColor', document.getElementById('headlineColor').value);
+        params.set('headlineSize', document.getElementById('headlineSize').value);
+        params.set('headlineAlign', document.getElementById('headlineAlign').value);
         params.set('body', quill ? quill.root.innerHTML : '');
+        params.set('contentSize', document.getElementById('contentSize').value);
+        params.set('contentAlign', document.getElementById('contentAlign').value);
+        params.set('contentVerticalAlign', document.getElementById('contentVerticalAlign').value);
         params.set('type', document.getElementById('signType').value);
+        if (document.getElementById('signType').value !== 'none') {
+            params.set('headerText', document.getElementById('headerTextInput').value);
+            params.set('headerColor', document.getElementById('headerColorInput').value);
+        }
         params.set('logo', document.getElementById('logoSelect').value);
         params.set('border', document.getElementById('borderStyle').value);
         params.set('bg', document.getElementById('bgColor').value);
@@ -955,7 +1080,11 @@
         params.set('iconSize', document.getElementById('iconSize').value);
         
         // QR Code
-        params.set('qr', document.getElementById('qrUrl').value);
+        if (document.getElementById('qrUrl').value.trim()) {
+            params.set('qr', document.getElementById('qrUrl').value);
+            params.set('qrPosition', document.getElementById('qrPosition').value);
+            params.set('qrSize', document.getElementById('qrSize').value);
+        }
         
         const baseUrl = window.location.href.split('?')[0];
         const shareUrl = `${baseUrl}?${params.toString()}`;
@@ -970,6 +1099,7 @@
 
     // Init & Check URL Parameters
     document.addEventListener('DOMContentLoaded', () => {
+        populateIconSelects();
         lucide.createIcons();
         refreshSavedList();
 
@@ -993,8 +1123,17 @@
         const params = new URLSearchParams(window.location.search);
         
         const headlineParam = params.get('headline');
+        const headlineColorParam = params.get('headlineColor');
+        const headlineSizeParam = params.get('headlineSize');
+        const headlineAlignParam = params.get('headlineAlign');
         const bodyParam = params.get('body');
+        const contentSizeParam = params.get('contentSize');
+        const contentAlignParam = params.get('contentAlign');
+        const contentVerticalAlignParam = params.get('contentVerticalAlign');
         const typeParam = params.get('type');
+        const headerTextParam = params.get('headerText');
+        const headerColorParam = params.get('headerColor');
+        const facilityParam = params.get('facility');
         const logoParam = params.get('logo');
         const borderParam = params.get('border');
         const bgParam = params.get('bg');
@@ -1008,36 +1147,51 @@
         const iconColor3Param = params.get('iconColor3');
         const iconSizeParam = params.get('iconSize');
         const qrParam = params.get('qr');
+        const qrPosParam = params.get('qrPosition');
+        const qrSizeParam = params.get('qrSize');
 
-        let hasParams = false;
-        
-        if (headlineParam !== null) { document.getElementById('headlineInput').value = headlineParam; hasParams = true; }
-        if (bodyParam !== null) { quill.root.innerHTML = bodyParam; hasParams = true; }
-        if (typeParam !== null) { document.getElementById('signType').value = typeParam; hasParams = true; }
-        if (logoParam !== null) { document.getElementById('logoSelect').value = logoParam; hasParams = true; }
-        if (borderParam !== null) { document.getElementById('borderStyle').value = borderParam; hasParams = true; }
-        if (bgParam !== null) { document.getElementById('bgColor').value = bgParam; hasParams = true; }
-        if (footerParam !== null) { document.getElementById('footerText').value = footerParam; hasParams = true; }
-        
-        if (icon1Param !== null) { document.getElementById('iconSelect1').value = icon1Param; hasParams = true; }
-        if (iconColor1Param !== null) { document.getElementById('iconColor1').value = iconColor1Param; hasParams = true; }
-        if (icon2Param !== null) { document.getElementById('iconSelect2').value = icon2Param; hasParams = true; }
-        if (iconColor2Param !== null) { document.getElementById('iconColor2').value = iconColor2Param; hasParams = true; }
-        if (icon3Param !== null) { document.getElementById('iconSelect3').value = icon3Param; hasParams = true; }
-        if (iconColor3Param !== null) { document.getElementById('iconColor3').value = iconColor3Param; hasParams = true; }
-        if (iconSizeParam !== null) { document.getElementById('iconSize').value = iconSizeParam; hasParams = true; }
-        
-        if (qrParam !== null) { document.getElementById('qrUrl').value = qrParam; hasParams = true; }
+        let hasCustomHeader = false;
 
-        if (hasParams) {
-            handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
-            handleSignTypeChange();
-        } else {
-            // Default load
-            handleSignTypeChange();
+        if (facilityParam !== null) {
+            if (/yamba/i.test(facilityParam)) {
+                document.getElementById('logoSelect').value = 'ycp';
+                document.getElementById('footerText').value = 'Yamba Community Pool';
+            } else {
+                document.getElementById('logoSelect').value = 'crac';
+                document.getElementById('footerText').value = 'Clarence Regional Aquatic Centre';
+            }
         }
+        
+        if (headlineParam !== null) { document.getElementById('headlineInput').value = headlineParam; }
+        if (headlineColorParam !== null) { document.getElementById('headlineColor').value = headlineColorParam; }
+        if (headlineSizeParam !== null) { document.getElementById('headlineSize').value = headlineSizeParam; }
+        if (headlineAlignParam !== null) { document.getElementById('headlineAlign').value = headlineAlignParam; }
+        if (bodyParam !== null) { quill.root.innerHTML = sanitizeHtml(bodyParam); }
+        if (contentSizeParam !== null) { document.getElementById('contentSize').value = contentSizeParam; }
+        if (contentAlignParam !== null) { document.getElementById('contentAlign').value = contentAlignParam; }
+        if (contentVerticalAlignParam !== null) { document.getElementById('contentVerticalAlign').value = contentVerticalAlignParam; }
+        if (typeParam !== null && safetyStyles[typeParam]) { document.getElementById('signType').value = typeParam; }
+        if (headerTextParam !== null) { document.getElementById('headerTextInput').value = headerTextParam; hasCustomHeader = true; }
+        if (headerColorParam !== null) { document.getElementById('headerColorInput').value = headerColorParam; hasCustomHeader = true; }
+        if (logoParam !== null) { document.getElementById('logoSelect').value = logoParam; }
+        if (borderParam !== null) { document.getElementById('borderStyle').value = borderParam; }
+        if (bgParam !== null) { document.getElementById('bgColor').value = bgParam; }
+        if (footerParam !== null) { document.getElementById('footerText').value = footerParam; }
+        
+        if (icon1Param !== null) { document.getElementById('iconSelect1').value = mapLegacyIcon(icon1Param); }
+        if (iconColor1Param !== null) { document.getElementById('iconColor1').value = iconColor1Param; }
+        if (icon2Param !== null) { document.getElementById('iconSelect2').value = mapLegacyIcon(icon2Param); }
+        if (iconColor2Param !== null) { document.getElementById('iconColor2').value = iconColor2Param; }
+        if (icon3Param !== null) { document.getElementById('iconSelect3').value = mapLegacyIcon(icon3Param); }
+        if (iconColor3Param !== null) { document.getElementById('iconColor3').value = iconColor3Param; }
+        if (iconSizeParam !== null) { document.getElementById('iconSize').value = iconSizeParam; }
+        
+        if (qrParam !== null) { document.getElementById('qrUrl').value = qrParam; }
+        if (qrPosParam !== null) { document.getElementById('qrPosition').value = qrPosParam; }
+        if (qrSizeParam !== null) { document.getElementById('qrSize').value = qrSizeParam; }
 
-        updatePreview();
+        handleIconSelect(1); handleIconSelect(2); handleIconSelect(3);
+        handleSignTypeChange(hasCustomHeader);
     });
 
 </script>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Request Portal - Version 4.1</title>
+    <script src="https://cdn.tailwindcss.com?version=3.4.4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .fc .fc-toolbar-title { font-weight: 800; color: #1e3a8a; font-size: 1.25rem !important; }
+        .fc-event { border-radius: 6px; padding: 3px 5px; font-weight: 700; cursor: pointer; border: none; font-size: 0.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s;}
+        .fc-event:hover { transform: scale(1.02); }
+        #modalRewrittenPost p { margin-bottom: 0.75rem; line-height: 1.6; }
+        #modalRewrittenPost strong { font-weight: 700; color: #1e3a8a; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Structured Submission Form -->
+        <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 h-fit">
+            <div class="mb-8 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-blue-900 leading-tight">Marketing Brief</h2>
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Structured Input Engine v4.1</p>
+                </div>
+                <button type="button" id="openBulkModalBtn" class="text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-200 transition-all flex items-center gap-1.5 shadow-sm active:scale-95">
+                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span>Bulk Load</span>
+                </button>
+            </div>
+            
+            <form id="requestForm" class="space-y-5">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Staff Name</label>
+                        <input type="text" id="staffName" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Date Needed</label>
+                        <input type="date" id="requestDate" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Facility</label>
+                    <select id="facility" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none transition-all">
+                        <option value="" disabled selected>Select centre...</option>
+                        <option value="Clarence Regional Aquatic Centre">Clarence Regional (CRAC)</option>
+                        <option value="Yamba Community Pool">Yamba Community Pool</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-blue-600 uppercase mb-1">Primary Category</label>
+                    <select id="requestCategory" required class="w-full bg-blue-50 border border-blue-100 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-bold text-blue-900 transition-all">
+                        <option value="" disabled selected>Choose type...</option>
+                        <option value="Important Notice">General / Important Notice</option>
+                        <option value="Maintenance Closure">Maintenance / Facility Closure</option>
+                        <option value="Swim School General">Swim School (Term/Admin)</option>
+                        <option value="Swim School Intensive">Swim School (Intensives)</option>
+                        <option value="Squad Training">Squad / Training Update</option>
+                        <option value="Lane Availability">Public Swim / Lane Availability</option>
+                        <option value="Community Event">Event / BBQ / Fun Day</option>
+                        <option value="Staff Spotlight">Staff Spotlight / Careers</option>
+                        <option value="Health Fitness">Health & Fitness / Aqua</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Publish To (Select all that apply)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-blue-200 transition-all has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 group">
+                            <input type="checkbox" name="channels" value="Social" checked class="hidden">
+                            <svg class="w-5 h-5 text-slate-400 group-has-[:checked]:text-blue-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                            <span class="text-[9px] font-black text-slate-500 group-has-[:checked]:text-blue-900 uppercase">Social</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-pink-200 transition-all has-[:checked]:border-pink-600 has-[:checked]:bg-pink-50 group">
+                            <input type="checkbox" name="channels" value="Newsletter" class="hidden">
+                            <svg class="w-5 h-5 text-slate-400 group-has-[:checked]:text-pink-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            <span class="text-[9px] font-black text-slate-500 group-has-[:checked]:text-pink-900 uppercase">News</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-slate-100 bg-slate-50 cursor-pointer hover:border-emerald-200 transition-all has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50 group">
+                            <input type="checkbox" name="channels" value="Website" class="hidden">
+                            <svg class="w-5 h-5 text-slate-400 group-has-[:checked]:text-emerald-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                            <span class="text-[9px] font-black text-slate-500 group-has-[:checked]:text-emerald-900 uppercase">Web</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Specific Topic / Detail</label>
+                    <input type="text" id="requestTitle" placeholder="e.g. Pump repair on Main Pool" required class="w-full bg-slate-50 border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Raw Message Details (Facts Only)</label>
+                    <textarea id="keyMessage" rows="4" required placeholder="Paste dates, times, and specific instructions here..." class="w-full bg-slate-50 border rounded-xl p-3 outline-none resize-none transition-all"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Attach Photo</label>
+                        <input type="file" id="assetUpload" accept="image/*,.pdf" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 cursor-pointer">
+                    </div>
+                    <div class="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 mt-4">
+                        <input type="checkbox" id="generateSign" class="w-4 h-4 rounded text-blue-600">
+                        <label for="generateSign" class="text-[10px] font-bold text-slate-700">Need physical sign?</label>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-95">Submit Request</button>
+            </form>
+            <div id="successMessage" class="hidden mt-6 bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-200 text-sm font-bold text-center">Request Logged Successfully</div>
+        </div>
+
+        <!-- Calendar Area -->
+        <div class="lg:col-span-2 bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 flex flex-col">
+            
+            <!-- Calendar Controls -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-6">
+                <div>
+                    <h3 class="text-xl font-extrabold text-blue-900">Campaign Schedule</h3>
+                    <!-- Visual Legend -->
+                    <div class="flex flex-wrap gap-3 items-center text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">
+                        <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-blue-600"></div> CRAC (Live)</span>
+                        <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-blue-200"></div> CRAC (Pending)</span>
+                        <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-teal-600"></div> Yamba (Live)</span>
+                        <span class="flex items-center gap-1"><div class="w-2.5 h-2.5 rounded bg-teal-200"></div> Yamba (Pending)</span>
+                    </div>
+                </div>
+                
+                <!-- Facility Filter Dropdown -->
+                <div class="w-full md:w-auto">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Filter Facility</label>
+                    <select id="calendarFilter" class="w-full md:w-56 bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer transition-all">
+                        <option value="all">👁️ Show Both Facilities</option>
+                        <option value="Clarence">🔵 Clarence Regional (CRAC)</option>
+                        <option value="Yamba">🟢 Yamba Community Pool</option>
+                    </select>
+                </div>
+
+                <!-- Status Filter Dropdown -->
+                <div class="w-full md:w-auto">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Filter Status</label>
+                    <select id="statusFilter" class="w-full md:w-56 bg-slate-50 border border-slate-200 text-sm font-bold text-slate-700 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer transition-all">
+                        <option value="all">📝 Show All Requests</option>
+                        <option value="Approved">✅ Approved Only</option>
+                        <option value="Pending">⏳ Pending Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id='calendar' class="flex-grow"></div>
+        </div>
+    </div>
+
+    <!-- View Modal -->
+    <div id="eventModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col p-6">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 id="modalTitle" class="text-2xl font-extrabold text-blue-900 leading-tight">-</h3>
+                    <div class="flex gap-2 mt-2">
+                        <div id="modalCategoryBadge" class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase bg-blue-600 tracking-widest">Category</div>
+                        <div id="modalFacilityBadge" class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-slate-600 uppercase bg-slate-100 border border-slate-200 tracking-widest">Facility</div>
+                    </div>
+                </div>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-700 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-slate-50 p-4 rounded border grid grid-cols-2 gap-4">
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Staff</span><span id="modalStaffName" class="text-sm font-medium text-slate-800">-</span></div>
+                    <div id="modalAssetWrapper" class="hidden text-right"><a id="modalAssetLink" target="_blank" class="text-blue-600 font-bold text-xs underline">View Asset</a></div>
+                    <div class="col-span-2 border-t pt-3"><span class="block text-[10px] font-bold text-slate-400 uppercase">Message Brief</span><p id="modalKeyMessage" class="text-sm mt-1 text-slate-700 whitespace-pre-wrap"></p></div>
+                </div>
+                
+                <div id="modalChannelsWrapper" class="space-y-4">
+                    <!-- Social Content -->
+                    <div id="wrapperSocial" class="hidden">
+                        <h4 class="text-[10px] font-black text-blue-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                            Social Media Copy
+                        </h4>
+                        <div id="contentSocial" class="bg-blue-50 p-4 rounded border border-blue-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                    <!-- News Content -->
+                    <div id="wrapperNews" class="hidden">
+                        <h4 class="text-[10px] font-black text-pink-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            Newsletter / Email Copy
+                        </h4>
+                        <div id="contentNews" class="bg-pink-50 p-4 rounded border border-pink-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                    <!-- Web Content -->
+                    <div id="wrapperWeb" class="hidden">
+                        <h4 class="text-[10px] font-black text-emerald-800 uppercase mb-2 border-b pb-1 flex items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                            Website Alert Copy
+                        </h4>
+                        <div id="contentWeb" class="bg-emerald-50 p-4 rounded border border-emerald-100 text-sm text-slate-800 italic">Awaiting review...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bulk Import Backdoor Modal -->
+    <div id="bulkModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col p-6 border border-slate-100">
+            <div class="flex justify-between items-start mb-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h3 class="text-xl font-extrabold text-blue-900 flex items-center gap-2">
+                        <span class="p-1.5 bg-blue-100 text-blue-600 rounded-lg">⚡</span>
+                        Bulk Campaign Importer
+                    </h3>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Paste raw Markdown briefs (e.g. Entry 1, Entry 2...) or JSON array to batch-insert into Firestore.</p>
+                </div>
+                <button id="closeBulkModalBtn" class="text-slate-400 hover:text-slate-700 transition p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-grow flex flex-col space-y-4 overflow-hidden">
+                <textarea id="bulkInputText" rows="12" placeholder="Paste your campaign schedule markdown or JSON here...
+
+Example:
+Entry 1: Monday, 14/09/2026
+STAFF NAME: Avram Parker
+DATE NEEDED: 14/09/2026
+FACILITY: Clarence Regional Aquatic Centre
+PRIMARY CATEGORY: Facilities / Promotion
+PUBLISH TO: [x] SOCIAL   [ ] NEWS   [x] WEB
+Need physical sign?: [x]
+SPECIFIC TOPIC / DETAIL: Concession Multi-Pass Campaign
+RAW MESSAGE DETAILS (FACTS ONLY):
+10-visit multi-passes go live on 1 October..." class="w-full flex-grow p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                
+                <div id="bulkStatusBox" class="hidden p-3 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                    <span id="bulkStatusText">Processing...</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+                <button type="button" id="bulkClearBtn" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Clear</button>
+                <div class="flex gap-2">
+                    <button type="button" id="bulkCancelBtn" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+                    <button type="button" id="bulkExecuteBtn" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2">
+                        <span>Load Entries to Calendar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+        const UPLOAD_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWDWX8ioKgdeUhkuqVS0YGYdIB9ygWrtSYxVOPV01ItNhvQI4xhcPwBQBt4Y5HXwb_/exec"; 
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-AwiFvSq3_AuDVZE5l1Pn4oAIfZTFmOM",
+            authDomain: "opsf---comms-task-tracker.firebaseapp.com",
+            projectId: "opsf---comms-task-tracker",
+            storageBucket: "opsf---comms-task-tracker.firebasestorage.app",
+            messagingSenderId: "489224390639",
+            appId: "1:489224390639:web:c5da72d0dc302d8332581a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let allRequests = [];
+        let calendar;
+        let unsubscribe = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth',
+                eventClick: (info) => {
+                    const p = info.event.extendedProps;
+                    document.getElementById('modalTitle').innerText = info.event.title.split(' | ')[0].replace('✅ ', '').replace('⏳ ', '');
+                    document.getElementById('modalStaffName').innerText = p.staffName;
+                    document.getElementById('modalKeyMessage').innerText = p.keyMessage;
+                    document.getElementById('modalCategoryBadge').innerText = p.category || 'Request';
+                    document.getElementById('modalFacilityBadge').innerText = p.facility && p.facility.includes('Clarence') ? 'CRAC' : 'Yamba';
+                    
+                    const asset = document.getElementById('modalAssetWrapper');
+                    if(p.assetUrl) { asset.classList.remove('hidden'); document.getElementById('modalAssetLink').href = p.assetUrl; }
+                    else { asset.classList.add('hidden'); }
+                    
+                    // Channel content population
+                    const channels = p.channels || [];
+                    const isApproved = p.status === 'Approved';
+
+                    const updateSection = (id, wrapperId, content, channelKey) => {
+                        const wrapper = document.getElementById(wrapperId);
+                        const display = document.getElementById(id);
+                        if (!wrapper || !display) return;
+                        
+                        // Show section if requested OR if it has approved content
+                        const hasApprovedContent = isApproved && content && content.trim() !== '' && content !== 'Awaiting review...';
+                        const isRequested = channels.includes(channelKey);
+
+                        if (isRequested || hasApprovedContent) {
+                            wrapper.classList.remove('hidden');
+                            if (hasApprovedContent) {
+                                display.innerHTML = content;
+                                display.classList.remove('italic');
+                            } else if (isApproved) {
+                                display.innerText = "Copy not provided.";
+                                display.classList.add('italic');
+                            } else {
+                                display.innerText = "Processing draft...";
+                                display.classList.add('italic');
+                            }
+                        } else {
+                            wrapper.classList.add('hidden');
+                        }
+                    };
+
+                    updateSection('contentSocial', 'wrapperSocial', p.rewrittenPost, 'Social');
+                    updateSection('contentNews', 'wrapperNews', p.rewrittenNewsletter, 'Newsletter');
+                    updateSection('contentWeb', 'wrapperWeb', p.rewrittenWebsite, 'Website');
+
+                    document.getElementById('eventModal').classList.remove('hidden');
+                }
+            });
+            calendar.render();
+            document.getElementById('closeModalBtn').onclick = () => document.getElementById('eventModal').classList.add('hidden');
+
+            // Listen for Filter Changes
+            document.getElementById('calendarFilter').addEventListener('change', renderCalendarEvents);
+            document.getElementById('statusFilter').addEventListener('change', renderCalendarEvents);
+
+            // Auth & Fetch Data
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    console.log("Connected to Comms Engine");
+                    if (unsubscribe) unsubscribe();
+                    unsubscribe = onSnapshot(collection(db, 'requests'), (snap) => {
+                        allRequests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderCalendarEvents();
+                    });
+                } else {
+                    signInAnonymously(auth).catch(err => console.error("Database Connection Failed:", err));
+                }
+            });
+
+            document.getElementById('requestForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('submitBtn');
+                btn.disabled = true; btn.innerText = "Sending Brief...";
+                
+                let assetUrl = null;
+                const file = document.getElementById('assetUpload').files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    const b64 = await new Promise(res => { reader.onload = () => res(reader.result.split(',')[1]); reader.readAsDataURL(file); });
+                    const uploadRes = await fetch(UPLOAD_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ filename: file.name, mimeType: file.type, base64: b64 })});
+                    const json = await uploadRes.json();
+                    if(json.status === 'success') assetUrl = json.url;
+                }
+
+                const channels = Array.from(document.querySelectorAll('input[name="channels"]:checked')).map(cb => cb.value);
+
+                await addDoc(collection(db, "requests"), {
+                    staffName: document.getElementById('staffName').value,
+                    date: document.getElementById('requestDate').value,
+                    title: document.getElementById('requestTitle').value,
+                    category: document.getElementById('requestCategory').value,
+                    facility: document.getElementById('facility').value,
+                    keyMessage: document.getElementById('keyMessage').value,
+                    channels: channels,
+                    generateSign: document.getElementById('generateSign').checked,
+                    status: "Pending",
+                    assetUrl: assetUrl,
+                    timestamp: serverTimestamp()
+                });
+
+                document.getElementById('requestForm').reset();
+                document.getElementById('successMessage').classList.remove('hidden');
+                setTimeout(() => document.getElementById('successMessage').classList.add('hidden'), 4000);
+                btn.disabled = false; btn.innerText = "Submit Request";
+            };
+
+            // Bulk Loader Modal Handlers
+            const bulkModal = document.getElementById('bulkModal');
+            const bulkInput = document.getElementById('bulkInputText');
+            const bulkStatusBox = document.getElementById('bulkStatusBox');
+            const bulkStatusText = document.getElementById('bulkStatusText');
+            const bulkExecuteBtn = document.getElementById('bulkExecuteBtn');
+
+            document.getElementById('openBulkModalBtn').onclick = () => {
+                bulkModal.classList.remove('hidden');
+                bulkInput.focus();
+            };
+            document.getElementById('closeBulkModalBtn').onclick = () => bulkModal.classList.add('hidden');
+            document.getElementById('bulkCancelBtn').onclick = () => bulkModal.classList.add('hidden');
+            document.getElementById('bulkClearBtn').onclick = () => {
+                bulkInput.value = '';
+                bulkStatusBox.classList.add('hidden');
+            };
+
+            function parseBulkText(text) {
+                // Check if JSON
+                try {
+                    const parsedJson = JSON.parse(text);
+                    if (Array.isArray(parsedJson)) return parsedJson;
+                } catch(e) {}
+
+                // Parse Markdown / Structured Text
+                const results = [];
+                const chunks = text.split(/Entry\s+\d+:/i).slice(1);
+                
+                // If no "Entry X:" prefix found, try splitting by double line breaks with STAFF NAME or DATE NEEDED
+                const blocks = chunks.length > 0 ? chunks : text.split(/(?=STAFF\s+NAME:|DATE\s+NEEDED:)/i);
+
+                for (const raw of blocks) {
+                    if (!raw.trim()) continue;
+                    let staffName = 'Staff';
+                    let dateStr = '';
+                    let facility = 'Clarence Regional Aquatic Centre';
+                    let category = 'Important Notice';
+                    let channels = [];
+                    let generateSign = false;
+                    let title = '';
+                    let keyMessage = '';
+
+                    const dateMatch = raw.match(/DATE\s+NEEDED:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+                    if (dateMatch) {
+                        const [d, m, y] = dateMatch[1].split('/');
+                        dateStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                    }
+
+                    const staffMatch = raw.match(/STAFF\s+NAME:\s*([^\n\r]+)/i);
+                    if (staffMatch) staffName = staffMatch[1].trim();
+
+                    const facMatch = raw.match(/FACILITY:\s*([^\n\r]+)/i);
+                    if (facMatch) {
+                        facility = /yamba/i.test(facMatch[1]) ? 'Yamba Community Pool' : 'Clarence Regional Aquatic Centre';
+                    }
+
+                    const catMatch = raw.match(/PRIMARY\s+CATEGORY:\s*([^\n\r]+)/i);
+                    if (catMatch) {
+                        const c = catMatch[1].trim();
+                        if (/fitness|aqua|health/i.test(c)) category = 'Health Fitness';
+                        else if (/squad/i.test(c)) category = 'Squad Training';
+                        else if (/intensive/i.test(c)) category = 'Swim School Intensive';
+                        else if (/swim school/i.test(c)) category = 'Swim School General';
+                        else if (/event|bbq/i.test(c)) category = 'Community Event';
+                        else category = 'Important Notice';
+                    }
+
+                    if (/\[x\]\s*SOCIAL/i.test(raw)) channels.push('Social');
+                    if (/\[x\]\s*NEWS/i.test(raw)) channels.push('Newsletter');
+                    if (/\[x\]\s*WEB/i.test(raw)) channels.push('Website');
+
+                    if (/Need physical sign\?:\s*\[x\]/i.test(raw)) generateSign = true;
+
+                    const topicMatch = raw.match(/SPECIFIC\s+TOPIC\s*\/\s*DETAIL:\s*([^\n\r]+)/i);
+                    if (topicMatch) title = topicMatch[1].trim();
+
+                    const rawMsgMatch = raw.match(/RAW\s+MESSAGE\s+DETAILS\s*\(FACTS ONLY\):\s*([\s\S]*)/i);
+                    if (rawMsgMatch) keyMessage = rawMsgMatch[1].trim();
+
+                    if (dateStr && title) {
+                        results.push({ staffName, date: dateStr, facility, category, channels, generateSign, title, keyMessage });
+                    }
+                }
+                return results;
+            }
+
+            bulkExecuteBtn.onclick = async () => {
+                const text = bulkInput.value.trim();
+                if (!text) {
+                    alert('Please paste campaign markdown or JSON data.');
+                    return;
+                }
+
+                const parsed = parseBulkText(text);
+                if (parsed.length === 0) {
+                    alert('Could not parse any valid entries. Please check the format (Date, Topic, and Staff Name are required).');
+                    return;
+                }
+
+                bulkExecuteBtn.disabled = true;
+                bulkStatusBox.classList.remove('hidden');
+                bulkStatusText.innerText = `Preparing to upload ${parsed.length} entries...`;
+
+                let successCount = 0;
+                for (let i = 0; i < parsed.length; i++) {
+                    const item = parsed[i];
+                    bulkStatusText.innerText = `Uploading [${i + 1}/${parsed.length}]: "${item.title}"...`;
+                    try {
+                        await addDoc(collection(db, "requests"), {
+                            staffName: item.staffName || 'Staff',
+                            date: item.date,
+                            title: item.title,
+                            category: item.category || 'Important Notice',
+                            facility: item.facility || 'Clarence Regional Aquatic Centre',
+                            keyMessage: item.keyMessage || '',
+                            channels: item.channels || [],
+                            generateSign: !!item.generateSign,
+                            status: item.status || "Pending",
+                            assetUrl: item.assetUrl || null,
+                            timestamp: serverTimestamp()
+                        });
+                        successCount++;
+                    } catch(err) {
+                        console.error('Error inserting bulk item:', item, err);
+                    }
+                }
+
+                bulkStatusText.innerText = `🎉 Successfully loaded ${successCount} of ${parsed.length} entries!`;
+                bulkExecuteBtn.disabled = false;
+                setTimeout(() => {
+                    bulkModal.classList.add('hidden');
+                    bulkInput.value = '';
+                    bulkStatusBox.classList.add('hidden');
+                }, 2000);
+            };
+        });
+
+        // Smart Calendar Rendering Function
+        function renderCalendarEvents() {
+            calendar.removeAllEvents();
+            const filterVal = document.getElementById('calendarFilter').value;
+            const statusVal = document.getElementById('statusFilter').value;
+            
+            allRequests.forEach(d => {
+                // Apply Dropdown Filter
+                if (filterVal !== 'all' && (!d.facility || !d.facility.includes(filterVal))) return;
+                
+                // Apply Status Filter
+                if (statusVal !== 'all' && d.status !== statusVal) return;
+                
+                const isApproved = d.status === 'Approved';
+                const isCrac = d.facility && d.facility.includes('Clarence');
+                
+                // Clear Visual Hierarchy
+                // CRAC = Blue | Yamba = Teal | Approved = Solid | Pending = Faded
+                const bgColor = isCrac ? (isApproved ? '#2563eb' : '#bfdbfe') : (isApproved ? '#0d9488' : '#99f6e4');
+                const txtColor = isApproved ? '#ffffff' : '#1e293b';
+                const statusEmoji = isApproved ? '✅ ' : '⏳ ';
+                
+                // Channel Shorthand
+                let channelsStr = '';
+                const channels = d.channels || [];
+                if (channels.length > 0) {
+                    channelsStr = ' | ' + channels.map(c => c[0]).join('/');
+                }
+                
+                calendar.addEvent({ 
+                    id: d.id, 
+                    title: statusEmoji + d.title + channelsStr, 
+                    start: d.date, 
+                    backgroundColor: bgColor,
+                    borderColor: bgColor,
+                    textColor: txtColor,
+                    extendedProps: d 
+                });
+            });
+        }
+    </script>
+    <script src="../nav.js" data-title="Social Calendar" data-icon="ph-share-network" data-help="Submit and schedule requests for the Clarence Regional Aquatic Centre and YCP social media channels, email newsletters, and website updates."></script>
+</body>
+</html>
