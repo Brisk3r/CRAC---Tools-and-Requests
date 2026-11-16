@@ -68,6 +68,22 @@
 
     <!-- Main Dashboard -->
     <div id="mainDashboard" class="dashboard-locked max-w-7xl mx-auto p-4 md:p-8">
+        <!-- Local Admin Sandbox Banner -->
+        <div id="localAdminBanner" class="hidden mb-6 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
+            <div class="flex items-start gap-3">
+                <span class="px-2.5 py-1 rounded-lg bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5">Local Admin Sandbox</span>
+                <div>
+                    <p class="text-sm font-extrabold text-amber-950">Auto-logged in for local testing — managing <span id="localAdminCount">0</span> local request(s) in browser storage.</p>
+                    <p class="text-xs text-amber-800">Synced with <code class="bg-amber-100 px-1 rounded">soccal.html</code> local tests. All edits, drafts, and approvals stay local (live Firestore untouched).</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button type="button" id="localAdminSeedBtn" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition">Load Sample Briefs</button>
+                <button type="button" id="localAdminPullLiveBtn" class="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-800 border border-amber-300 text-xs font-bold transition">Peek Live (Read-Only)</button>
+                <button type="button" id="localAdminClearBtn" class="px-3 py-1.5 rounded-xl bg-white hover:bg-red-50 text-red-700 border border-amber-300 text-xs font-bold transition">Clear Local Tests</button>
+            </div>
+        </div>
+
         <div class="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-xl ring-1 ring-slate-100 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
@@ -143,6 +159,9 @@
                     <span id="counterApproved" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-extrabold border border-emerald-200 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 0 Approved
                     </span>
+                    <span id="counterSignage" class="px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs font-extrabold border border-amber-200 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> 0 Signage
+                    </span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span id="filterActiveNotice" class="hidden text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">Filters Active</span>
@@ -179,6 +198,7 @@
                         <option value="Social">🔵 Social Media</option>
                         <option value="Newsletter">🔴 Newsletter / Email</option>
                         <option value="Website">🟢 Website Alert</option>
+                        <option value="Signage">🪧 Physical A4 Sign</option>
                     </select>
 
                     <!-- Search Input -->
@@ -251,8 +271,10 @@
                                 <option value="Lane Availability">Public Swim / Lane Availability</option>
                                 <option value="Community Event">Event / BBQ / Fun Day</option>
                                 <option value="Staff Spotlight">Staff Spotlight / Careers</option>
-                                <option value="Health Fitness">Health & Fitness / Aqua</option>
+                                <option value="Health Fitness">Health &amp; Fitness / Aqua</option>
+                                <option value="__custom__">✏️ Other / Custom Category...</option>
                             </select>
+                            <input type="text" id="categoryCustomInput" placeholder="Enter custom category..." class="hidden mt-2 w-full bg-white border border-blue-200 rounded-lg p-1.5 text-xs font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
                         <div class="bg-slate-50 p-3 rounded-xl border">
@@ -267,20 +289,48 @@
                         </div>
 
                         <div class="bg-slate-50 p-3 rounded-xl border">
-                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-2">Publish To</span>
-                            <div class="flex gap-4">
+                            <span class="block text-[9px] text-slate-400 uppercase font-black mb-2">Deliverables</span>
+                            <div class="grid grid-cols-2 gap-2">
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" name="editChannels" value="Social" class="rounded text-blue-600">
                                     <span class="text-[10px] font-bold text-slate-700">Social</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" name="editChannels" value="Newsletter" class="rounded text-pink-600">
-                                    <span class="text-[10px] font-bold text-slate-700">News</span>
+                                    <input type="checkbox" name="editChannels" value="Newsletter" id="editChannelNewsletter" class="rounded text-pink-600">
+                                    <span class="text-[10px] font-bold text-slate-700">News / Email</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" name="editChannels" value="Website" class="rounded text-emerald-600">
-                                    <span class="text-[10px] font-bold text-slate-700">Web</span>
+                                    <span class="text-[10px] font-bold text-slate-700">Web Alert</span>
                                 </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="editGenerateSign" class="rounded text-amber-600">
+                                    <span class="text-[10px] font-bold text-amber-800">🪧 Physical Sign</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Newsletter Format Metadata -->
+                        <div id="editNewsletterMetaBox" class="hidden bg-pink-50/70 p-3 rounded-xl border border-pink-200 space-y-2">
+                            <span class="block text-[9px] text-pink-700 uppercase font-black">Newsletter / Email Format</span>
+                            <div>
+                                <label class="block text-[9px] text-pink-800 font-bold uppercase mb-0.5">Target Audience</label>
+                                <select id="editNewsletterAudience" class="w-full bg-white border border-pink-200 rounded-lg p-1.5 text-xs font-bold text-slate-700 outline-none">
+                                    <option value="">Not specified</option>
+                                    <option value="All Centre Members">All Centre Members</option>
+                                    <option value="Swim School Parents">Swim School Parents</option>
+                                    <option value="Squad Families">Squad Families</option>
+                                    <option value="Health & Fitness / Aqua">Health &amp; Fitness / Aqua</option>
+                                    <option value="Lap Swimmers">Lap Swimmers</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-pink-800 font-bold uppercase mb-0.5">Email Heading / Subject</label>
+                                <input type="text" id="editNewsletterSubject" class="w-full bg-white border border-pink-200 rounded-lg p-1.5 text-xs font-semibold text-slate-800 outline-none" placeholder="e.g. Term 4 Enrolments Open">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-pink-800 font-bold uppercase mb-0.5">Action / Booking Link (CTA URL)</label>
+                                <input type="url" id="editNewsletterCtaUrl" class="w-full bg-white border border-pink-200 rounded-lg p-1.5 text-xs text-slate-800 outline-none" placeholder="https://...">
                             </div>
                         </div>
 
@@ -375,21 +425,38 @@
                         <div id="quillEditor" class="bg-white rounded-xl shadow-inner"></div>
                         
                         <!-- Signage Control Panel -->
-                        <div id="signageControls" class="bg-slate-100 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="md:col-span-3 border-b border-slate-200 pb-2 mb-1 flex justify-between items-center">
-                                <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Signage Tool Parameters</h5>
-                                <a id="signLinkBtn" target="_blank" class="hidden bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded-lg text-[9px] font-bold items-center gap-1.5 shadow-sm transition-all uppercase hover:bg-slate-50">
-                                    <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-2h6a2 2 0 002-2v-4a2 2 0 012-2H5a2 2 0 012 2v4a2 2 0 002 2m2-2h2m-4-3h4"></path></svg>
-                                    Launch Sign Tool
+                        <div id="signageControls" class="bg-amber-50/70 p-4 rounded-xl border border-amber-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="md:col-span-3 border-b border-amber-200/80 pb-2 mb-1 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <h5 class="text-[10px] font-black text-amber-900 uppercase tracking-widest">🪧 Physical A4 Signage Parameters</h5>
+                                    <span id="signRequestedBadge" class="hidden px-2 py-0.5 rounded bg-amber-200 text-amber-950 text-[8px] font-black uppercase">Requested</span>
+                                </div>
+                                <a id="signLinkBtn" target="_blank" class="bg-white border border-amber-300 text-amber-900 px-3 py-1 rounded-lg text-[9px] font-extrabold flex items-center gap-1.5 shadow-sm transition-all uppercase hover:bg-amber-100">
+                                    <svg class="w-3 h-3 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-2h6a2 2 0 002-2v-4a2 2 0 012-2H5a2 2 0 012 2v4a2 2 0 002 2m2-2h2m-4-3h4"></path></svg>
+                                    Launch Sign Tool ↗
                                 </a>
                             </div>
                             <div class="md:col-span-1">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Headline</label>
-                                <input type="text" id="signHeadline" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700" placeholder="e.g. POOL CLOSURE">
+                                <label class="block text-[9px] font-bold text-amber-900 uppercase mb-1">Header Style</label>
+                                <select id="editSignType" class="w-full p-2 text-xs bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-bold text-slate-700">
+                                    <option value="notice">NOTICE (Blue)</option>
+                                    <option value="warning">WARNING (Yellow)</option>
+                                    <option value="danger">DANGER (Red)</option>
+                                    <option value="information">INFORMATION (Green)</option>
+                                    <option value="none">Standard (No Banner)</option>
+                                </select>
                             </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Sign Body Summary</label>
-                                <input type="text" id="signBody" class="w-full p-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-700" placeholder="A short 1-2 sentence version for signage...">
+                            <div class="md:col-span-1">
+                                <label class="block text-[9px] font-bold text-amber-900 uppercase mb-1">Headline</label>
+                                <input type="text" id="signHeadline" class="w-full p-2 text-xs bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-bold text-slate-700" placeholder="e.g. POOL CLOSURE">
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="block text-[9px] font-bold text-amber-900 uppercase mb-1">Display Location / Copies</label>
+                                <input type="text" id="editSignLocation" class="w-full p-2 text-xs bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-700" placeholder="e.g. Reception + Main Door (x2)">
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-[9px] font-bold text-amber-900 uppercase mb-1">Sign Body Summary</label>
+                                <input type="text" id="signBody" class="w-full p-2 text-xs bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-slate-700" placeholder="Short patron instructions for the A4 sign...">
                             </div>
                         </div>
                     </div>
@@ -602,8 +669,54 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        const LOCAL_STORAGE_KEY = 'crac_soccal_local_test_requests';
+        const isLocalHost = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+        const isLocalTestMode = isLocalHost || new URLSearchParams(window.location.search).get('localTest') === '1';
+
         let currentEditingId = null;
         let globalRequestsArray = [];
+        let localTestItems = [];
+        let livePeekItems = [];
+
+        function loadLocalSandboxItems() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                console.warn('Could not read local test items:', e);
+                return [];
+            }
+        }
+
+        function saveLocalSandboxItems(items) {
+            localTestItems = items;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+            syncLocalAdminView();
+        }
+
+        function syncLocalAdminView() {
+            const countEl = document.getElementById('localAdminCount');
+            if (countEl) countEl.innerText = localTestItems.length;
+            globalRequestsArray = [...localTestItems, ...livePeekItems];
+            globalRequestsArray.sort((a, b) => (a.status === 'Pending' ? -1 : 1) || new Date(a.date) - new Date(b.date));
+            window.globalRequestsArray = globalRequestsArray;
+            renderRequests();
+        }
+
+        function unlockLocalSandboxDashboard() {
+            document.getElementById('authOverlay').classList.add('hidden');
+            document.getElementById('mainDashboard').classList.remove('dashboard-locked');
+            const badge = document.getElementById('userBadge');
+            if (badge) {
+                badge.innerText = 'Local Admin (Auto)';
+                badge.classList.remove('hidden');
+            }
+            const banner = document.getElementById('localAdminBanner');
+            if (banner) banner.classList.remove('hidden');
+            localTestItems = loadLocalSandboxItems();
+            syncLocalAdminView();
+        }
         let isManualReviewMode = false;
         let pendingReviewQueue = [];
         let currentTab = 'Social';
@@ -911,6 +1024,11 @@
         if (directAccessBtn) {
             directAccessBtn.onclick = async () => {
                 clearLoginError();
+                if (isLocalTestMode) {
+                    manualSignOut = false;
+                    unlockLocalSandboxDashboard();
+                    return;
+                }
                 directAccessBtn.disabled = true;
                 directAccessBtn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></span> Connecting...`;
                 try {
@@ -928,6 +1046,11 @@
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
             manualSignOut = true;
+            if (isLocalTestMode) {
+                document.getElementById('authOverlay').classList.remove('hidden');
+                document.getElementById('mainDashboard').classList.add('dashboard-locked');
+                return;
+            }
             signOut(auth);
         });
 
@@ -1113,50 +1236,114 @@
             };
         }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('authOverlay').classList.add('hidden');
-                document.getElementById('mainDashboard').classList.remove('dashboard-locked');
-                const badgeLabel = user.email || (user.isAnonymous ? 'Staff (Direct)' : 'Admin');
-                document.getElementById('userBadge').innerText = badgeLabel;
-                document.getElementById('userBadge').classList.remove('hidden');
-                if (user.uid !== listenerUid || !unsubscribeFirestore) {
-                    listenerUid = user.uid;
-                    startFirestoreListener();
+        if (isLocalTestMode) {
+            // Auto-login immediately on localhost / localTest=1 without hitting live Firestore
+            unlockLocalSandboxDashboard();
+
+            document.getElementById('localAdminSeedBtn')?.addEventListener('click', () => {
+                const today = new Date();
+                const fmt = (offset) => {
+                    const d = new Date(today.getTime() + offset * 86400000 - today.getTimezoneOffset() * 60000);
+                    return d.toISOString().split('T')[0];
+                };
+                const samples = [
+                    {
+                        id: 'local-sample-sign-' + Date.now(),
+                        isLocalTest: true,
+                        staffName: 'Avram Parker',
+                        date: fmt(1),
+                        title: '50m Pool Pump Maintenance',
+                        category: 'Maintenance Closure',
+                        facility: 'Clarence Regional Aquatic Centre',
+                        keyMessage: 'The 50m Outdoor Pool will be closed from 6:00am to 12:00pm for scheduled pump repairs. The 25m Indoor Pool and Program Pool remain open.',
+                        channels: ['Website'],
+                        generateSign: true,
+                        signType: 'warning',
+                        signHeadline: '50m Pool Closed',
+                        signBody: 'Closed 6:00am - 12:00pm today for pump maintenance.\nThe 25m Indoor Pool remains open for lap swimming.',
+                        signLocation: 'Reception desk & 50m Pool glass doors (x2)',
+                        status: 'Pending'
+                    },
+                    {
+                        id: 'local-sample-news-' + (Date.now() + 1),
+                        isLocalTest: true,
+                        staffName: 'Swim School Coordinator',
+                        date: fmt(3),
+                        title: 'Term 4 Swim School Enrolments',
+                        category: 'Swim School General',
+                        facility: 'Yamba Community Pool',
+                        keyMessage: 'Term 4 Learn to Swim enrolments open Monday 9:00am. Active Kids vouchers accepted at reception or online via the Client Portal.',
+                        channels: ['Newsletter', 'Social'],
+                        newsletterAudience: 'Swim School Parents',
+                        newsletterSubject: 'Term 4 Learn to Swim Enrolments Open Monday',
+                        newsletterCtaUrl: 'https://clarenceaquatic.perfectgym.com.au/clientportal2/#/Login',
+                        generateSign: false,
+                        status: 'Pending'
+                    }
+                ];
+                saveLocalSandboxItems([...samples, ...localTestItems]);
+            });
+
+            document.getElementById('localAdminClearBtn')?.addEventListener('click', () => {
+                livePeekItems = [];
+                saveLocalSandboxItems([]);
+            });
+
+            document.getElementById('localAdminPullLiveBtn')?.addEventListener('click', async () => {
+                const btn = document.getElementById('localAdminPullLiveBtn');
+                btn.innerText = 'Loading Live...';
+                try {
+                    if (!auth.currentUser) await signInAnonymously(auth);
+                    startFirestoreListener(true);
+                    btn.innerText = 'Live Peek Active ✓';
+                } catch (err) {
+                    console.warn('Live peek note:', err);
+                    btn.innerText = 'Live Peek Failed';
                 }
-            } else {
-                listenerUid = null;
-                if (unsubscribeFirestore) {
-                    try { unsubscribeFirestore(); } catch(e) {}
-                    unsubscribeFirestore = null;
-                }
-                // If loaded via file: URL or localhost, seamlessly authenticate so the user is never stuck
-                if (!manualSignOut && (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-                    signInAnonymously(auth).catch((err) => {
-                        console.warn("Auto direct authentication note:", err);
-                        document.getElementById('authOverlay').classList.remove('hidden');
-                        document.getElementById('mainDashboard').classList.add('dashboard-locked');
-                    });
+            });
+        } else {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    document.getElementById('authOverlay').classList.add('hidden');
+                    document.getElementById('mainDashboard').classList.remove('dashboard-locked');
+                    const badgeLabel = user.email || (user.isAnonymous ? 'Staff (Direct)' : 'Admin');
+                    document.getElementById('userBadge').innerText = badgeLabel;
+                    document.getElementById('userBadge').classList.remove('hidden');
+                    if (user.uid !== listenerUid || !unsubscribeFirestore) {
+                        listenerUid = user.uid;
+                        startFirestoreListener(false);
+                    }
                 } else {
+                    listenerUid = null;
+                    if (unsubscribeFirestore) {
+                        try { unsubscribeFirestore(); } catch(e) {}
+                        unsubscribeFirestore = null;
+                    }
                     document.getElementById('authOverlay').classList.remove('hidden');
                     document.getElementById('mainDashboard').classList.add('dashboard-locked');
                 }
-            }
-        });
+            });
+        }
 
         // Resilient Firestore snapshot stream with backoff reconnection
         let unsubscribeFirestore = null;
         let isReconnecting = false;
         let listenerUid = null;
 
-        function startFirestoreListener() {
+        function startFirestoreListener(readOnlyPeek = false) {
             if (unsubscribeFirestore) {
                 try { unsubscribeFirestore(); } catch(e) {}
                 unsubscribeFirestore = null;
             }
             try {
                 unsubscribeFirestore = onSnapshot(collection(db, 'requests'), (snapshot) => {
-                    globalRequestsArray = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data(), ...(readOnlyPeek ? { isLiveReadOnly: true } : {}) }));
+                    if (readOnlyPeek) {
+                        livePeekItems = docs;
+                        syncLocalAdminView();
+                        return;
+                    }
+                    globalRequestsArray = docs;
                     window.globalRequestsArray = globalRequestsArray;
                     
                     // Live Update Open Modal when background regeneration finishes or when editor is not actively focused
@@ -1172,6 +1359,8 @@
                             updateCharCounter();
                             if (freshData.signHeadline) document.getElementById('signHeadline').value = freshData.signHeadline;
                             if (freshData.signBody) document.getElementById('signBody').value = freshData.signBody;
+                            if (freshData.signType) document.getElementById('editSignType').value = freshData.signType;
+                            if (freshData.signLocation) document.getElementById('editSignLocation').value = freshData.signLocation;
                             if (freshData.generateSign) updateSignLink(freshData);
                             const statusInd = document.getElementById('statusIndicator');
                             if (statusInd && freshData.status) {
@@ -1259,12 +1448,15 @@
             const ycpPending = globalRequestsArray.filter(r => r.status === 'Pending' && r.facility && r.facility.includes('Yamba')).length;
             const draftReady = globalRequestsArray.filter(r => r.status === 'Draft Ready').length;
             const approved = globalRequestsArray.filter(r => r.status === 'Approved').length;
+            const signageCount = globalRequestsArray.filter(r => !!r.generateSign).length;
 
             document.getElementById('counterTotal').innerText = `${total} Total`;
             document.getElementById('counterCracPending').innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-600"></span> ${cracPending} CRAC Pending`;
             document.getElementById('counterYcpPending').innerHTML = `<span class="w-2 h-2 rounded-full bg-teal-600"></span> ${ycpPending} Yamba Pending`;
             document.getElementById('counterDraftReady').innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-600"></span> ${draftReady} Draft Ready`;
             document.getElementById('counterApproved').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${approved} Approved`;
+            const counterSignEl = document.getElementById('counterSignage');
+            if (counterSignEl) counterSignEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> ${signageCount} Signage`;
 
             // Filter state notice
             const isFiltered = currentFacilityFilter !== 'All' || currentStatusFilter !== 'All' || currentChannelFilter !== 'All' || currentSearchQuery !== '';
@@ -1277,12 +1469,16 @@
                 if (currentFacilityFilter === 'Yamba' && !(item.facility && item.facility.includes('Yamba'))) return false;
                 // Status
                 if (currentStatusFilter !== 'All' && item.status !== currentStatusFilter) return false;
-                // Channel
-                if (currentChannelFilter !== 'All' && !(item.channels && item.channels.includes(currentChannelFilter))) return false;
+                // Channel / Signage
+                if (currentChannelFilter === 'Signage') {
+                    if (!item.generateSign) return false;
+                } else if (currentChannelFilter !== 'All' && !(item.channels && item.channels.includes(currentChannelFilter))) {
+                    return false;
+                }
                 // Search
                 if (currentSearchQuery) {
                     const q = currentSearchQuery.toLowerCase();
-                    const textBlob = `${item.title || ''} ${item.staffName || ''} ${item.category || ''} ${item.keyMessage || ''} ${item.date || ''}`.toLowerCase();
+                    const textBlob = `${item.title || ''} ${item.staffName || ''} ${item.category || ''} ${item.keyMessage || ''} ${item.date || ''} ${item.signHeadline || ''} ${item.signLocation || ''} ${item.newsletterAudience || ''} ${item.newsletterSubject || ''}`.toLowerCase();
                     if (!textBlob.includes(q)) return false;
                 }
                 return true;
@@ -1323,12 +1519,16 @@
                              </div>
                            </div>`;
 
-                    const channelBadges = (data.channels || []).map(c => {
-                        if (c === 'Social') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black border border-blue-200"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>SOCIAL</span>`;
-                        if (c === 'Newsletter') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-pink-50 text-pink-700 rounded text-[7px] font-black border border-pink-200"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>NEWS</span>`;
-                        if (c === 'Website') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[7px] font-black border border-emerald-200"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>WEB</span>`;
-                        return '';
-                    }).join('');
+                    const channelBadges = [
+                        ...(data.channels || []).map(c => {
+                            if (c === 'Social') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black border border-blue-200"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>SOCIAL</span>`;
+                            if (c === 'Newsletter') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-pink-50 text-pink-700 rounded text-[7px] font-black border border-pink-200"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>NEWS</span>`;
+                            if (c === 'Website') return `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[7px] font-black border border-emerald-200"><svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>WEB</span>`;
+                            return '';
+                        }),
+                        data.generateSign ? `<span class="flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded text-[7px] font-black border border-amber-300">🪧 SIGN</span>` : '',
+                        data.isLocalTest ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded text-[7px] font-black border border-amber-300">🧪 LOCAL</span>` : ''
+                    ].filter(Boolean).join('');
 
                     const facilityPill = isClarence 
                         ? `<span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[8px] font-black uppercase tracking-wider border border-blue-200 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>CRAC</span>`
@@ -1369,7 +1569,7 @@
                 const isApproved = data.status === 'Approved';
                 const isDraftReady = data.status === 'Draft Ready';
                 const isClarence = data.facility && data.facility.includes('Clarence');
-                const prefix = isClarence ? '[CRAC]' : '[YCP]';
+                const prefix = `${data.isLocalTest ? '🧪 ' : ''}${isClarence ? '[CRAC]' : '[YCP]'}${data.generateSign ? ' 🪧' : ''}`;
                 
                 let eventColor = '#3b82f6';
                 if (isDraftReady) {
@@ -1479,12 +1679,22 @@
 
                     const statusPill = getStatusPillHtml(data.status);
 
-                    const channelBadges = (data.channels || []).map(c => {
-                        if (c === 'Social') return `<span class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black border border-blue-200">🔵 SOCIAL</span>`;
-                        if (c === 'Newsletter') return `<span class="px-1.5 py-0.5 bg-pink-50 text-pink-700 rounded text-[7px] font-black border border-pink-200">🔴 NEWS</span>`;
-                        if (c === 'Website') return `<span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[7px] font-black border border-emerald-200">🟢 WEB</span>`;
-                        return '';
-                    }).join(' ');
+                    const channelBadges = [
+                        ...(data.channels || []).map(c => {
+                            if (c === 'Social') return `<span class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[7px] font-black border border-blue-200">🔵 SOCIAL</span>`;
+                            if (c === 'Newsletter') return `<span class="px-1.5 py-0.5 bg-pink-50 text-pink-700 rounded text-[7px] font-black border border-pink-200">🔴 NEWS${data.newsletterAudience ? ' · ' + data.newsletterAudience : ''}</span>`;
+                            if (c === 'Website') return `<span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[7px] font-black border border-emerald-200">🟢 WEB</span>`;
+                            return '';
+                        }),
+                        data.generateSign ? `<span class="px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded text-[7px] font-black border border-amber-300">🪧 SIGN${data.signType ? ' (' + data.signType.toUpperCase() + ')' : ''}</span>` : '',
+                        data.isLocalTest ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded text-[7px] font-black border border-amber-300">🧪 LOCAL</span>` : '',
+                        data.isLiveReadOnly ? `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[7px] font-black border border-slate-300">LIVE PEEK</span>` : ''
+                    ].filter(Boolean).join(' ');
+
+                    const metaBits = [
+                        data.signLocation ? `🪧 ${data.signLocation}` : '',
+                        data.newsletterSubject ? `✉️ ${data.newsletterSubject}` : ''
+                    ].filter(Boolean).join(' · ');
 
                     const previewText = (data.draftCopy || data.rewrittenPost || data.keyMessage || 'No brief summary available.').replace(/<[^>]*>?/gm, '').trim();
                     const snippet = previewText.length > 140 ? previewText.substring(0, 140) + '...' : previewText;
@@ -1496,10 +1706,11 @@
                                     ${facilityPill}
                                     ${getCategoryBadgeHtml(data.category)}
                                     ${statusPill}
-                                    <div class="flex items-center gap-1">${channelBadges}</div>
+                                    <div class="flex flex-wrap items-center gap-1">${channelBadges}</div>
                                 </div>
                                 <h4 class="font-extrabold text-slate-800 text-sm hover:text-blue-600 transition-colors">${data.title}</h4>
                                 <p class="text-xs text-slate-500 line-clamp-1 leading-relaxed">${snippet}</p>
+                                ${metaBits ? `<p class="text-[11px] font-semibold text-slate-600">${metaBits}</p>` : ''}
                             </div>
                             <div class="flex items-center gap-3 shrink-0 self-end md:self-center">
                                 <span class="text-[9px] font-bold text-slate-400">By ${data.staffName || 'Staff'}</span>
@@ -1663,11 +1874,20 @@
             document.getElementById('staffNameDisplay').innerText = isNew ? "Admin Entry" : (data.staffName || "Staff Member");
             document.getElementById('editDate').value = data.date || "";
             
-            // Set Channels
+            // Set Channels & Signage
             const channels = data.channels || [];
             document.querySelectorAll('input[name="editChannels"]').forEach(cb => {
                 cb.checked = channels.includes(cb.value);
             });
+            const genSignCheckbox = document.getElementById('editGenerateSign');
+            if (genSignCheckbox) genSignCheckbox.checked = !!data.generateSign;
+
+            // Newsletter Metadata
+            const newsMetaBox = document.getElementById('editNewsletterMetaBox');
+            if (newsMetaBox) newsMetaBox.classList.toggle('hidden', !channels.includes('Newsletter'));
+            document.getElementById('editNewsletterAudience').value = data.newsletterAudience || '';
+            document.getElementById('editNewsletterSubject').value = data.newsletterSubject || '';
+            document.getElementById('editNewsletterCtaUrl').value = data.newsletterCtaUrl || '';
 
             // Set active channels indicators on tabs
             Object.keys(tabs).forEach(key => {
@@ -1688,7 +1908,20 @@
             }
 
             const categorySelect = document.getElementById('categorySelect');
-            categorySelect.value = data.category || "General Update";
+            const categoryCustomInput = document.getElementById('categoryCustomInput');
+            const incomingCat = (data.category || 'Important Notice').trim();
+            const builtInCats = Array.from(categorySelect.options)
+                .map(opt => opt.value)
+                .filter(v => v && v !== '__custom__');
+            if (builtInCats.includes(incomingCat)) {
+                categorySelect.value = incomingCat;
+                categoryCustomInput.value = '';
+                categoryCustomInput.classList.add('hidden');
+            } else {
+                categorySelect.value = '__custom__';
+                categoryCustomInput.value = incomingCat;
+                categoryCustomInput.classList.remove('hidden');
+            }
 
             document.getElementById('editKeyMessage').value = data.keyMessage || "";
             document.getElementById('editTitle').value = isNew ? "" : data.title;
@@ -1701,14 +1934,14 @@
             } else assetBox.classList.add('hidden');
             
             // Signage Bridge Controls
+            document.getElementById('editSignType').value = data.signType || 'notice';
             document.getElementById('signHeadline').value = data.signHeadline || '';
+            document.getElementById('editSignLocation').value = data.signLocation || '';
             document.getElementById('signBody').value = data.signBody || '';
             
-            const signBtn = document.getElementById('signLinkBtn');
-            if (!isNew && data.generateSign) {
-                signBtn.classList.remove('hidden'); signBtn.classList.add('flex');
-                updateSignLink(data);
-            } else signBtn.classList.add('hidden');
+            const signBadge = document.getElementById('signRequestedBadge');
+            if (signBadge) signBadge.classList.toggle('hidden', !data.generateSign);
+            updateSignLink(data);
 
             // Initialize multi-channel drafts (prefer latest AI rewrittenPost and normalize for Quill)
             channelDrafts = {
@@ -1734,17 +1967,53 @@
         }
         window.openModal = openModal;
 
-        function updateSignLink(data) {
-            let h = document.getElementById('signHeadline').value || data.title || 'NOTICE';
-            let b = document.getElementById('signBody').value || data.keyMessage || '';
+        function updateSignLink(data = {}) {
+            const fac = document.getElementById('facilitySelect')?.value || data.facility || 'Clarence Regional Aquatic Centre';
+            const signType = document.getElementById('editSignType')?.value || data.signType || 'notice';
+            let h = document.getElementById('signHeadline').value || document.getElementById('editTitle').value || data.title || 'NOTICE';
+            let b = document.getElementById('signBody').value || document.getElementById('editKeyMessage').value || data.keyMessage || '';
             h = h.replace(/\*\*/g, '');
             b = b.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            document.getElementById('signLinkBtn').href = `https://brisk3r.github.io/CRAC---Tools-and-Requests/NoticeSignGenerator.html?headline=${encodeURIComponent(h)}&body=${encodeURIComponent(b)}`;
+            const params = new URLSearchParams();
+            params.set('facility', fac);
+            params.set('type', signType);
+            params.set('headline', h);
+            params.set('body', b);
+            document.getElementById('signLinkBtn').href = `../NoticeSignGenerator.html?${params.toString()}`;
         }
 
-        // Live update sign link when inputs change
-        document.getElementById('signHeadline').oninput = () => { if(currentEditingId) updateSignLink(globalRequestsArray.find(r => r.id === currentEditingId)); };
-        document.getElementById('signBody').oninput = () => { if(currentEditingId) updateSignLink(globalRequestsArray.find(r => r.id === currentEditingId)); };
+        function getSelectedAdminCategory() {
+            const sel = document.getElementById('categorySelect');
+            const custom = document.getElementById('categoryCustomInput');
+            if (sel && sel.value === '__custom__') {
+                return (custom?.value || '').trim() || 'Important Notice';
+            }
+            return sel ? sel.value : 'Important Notice';
+        }
+
+        document.getElementById('categorySelect')?.addEventListener('change', (e) => {
+            const custom = document.getElementById('categoryCustomInput');
+            if (!custom) return;
+            const isCustom = e.target.value === '__custom__';
+            custom.classList.toggle('hidden', !isCustom);
+            if (isCustom) custom.focus();
+        });
+
+        // Live sync signage & newsletter panels when inputs change
+        const refreshCurrentSignLink = () => {
+            const existing = currentEditingId ? globalRequestsArray.find(r => r.id === currentEditingId) : {};
+            updateSignLink(existing || {});
+        };
+        document.getElementById('signHeadline').oninput = refreshCurrentSignLink;
+        document.getElementById('signBody').oninput = refreshCurrentSignLink;
+        document.getElementById('editSignType').onchange = refreshCurrentSignLink;
+        document.getElementById('facilitySelect').onchange = refreshCurrentSignLink;
+        document.getElementById('editChannelNewsletter')?.addEventListener('change', (e) => {
+            document.getElementById('editNewsletterMetaBox')?.classList.toggle('hidden', !e.target.checked);
+        });
+        document.getElementById('editGenerateSign')?.addEventListener('change', (e) => {
+            document.getElementById('signRequestedBadge')?.classList.toggle('hidden', !e.target.checked);
+        });
 
         // Multi-Channel Playbook Drafter (Direct Engine + Resilient Playbook Fallback)
         function toAuSpelling(str) {
@@ -2002,6 +2271,13 @@
                 : 'https://www.clarence.nsw.gov.au/crac#zone-availability';
             const portalUrl = 'https://clarenceaquatic.perfectgym.com.au/clientportal2/#/Login';
 
+            const extraMeta = [
+                req.newsletterAudience ? `- Newsletter Target Audience: ${req.newsletterAudience}` : '',
+                req.newsletterSubject ? `- Newsletter Preferred Heading: ${req.newsletterSubject}` : '',
+                req.newsletterCtaUrl ? `- Newsletter Action / Booking URL: ${req.newsletterCtaUrl}` : '',
+                req.generateSign ? `- Physical A4 Sign Requested: Yes (${(req.signType || 'notice').toUpperCase()})${req.signLocation ? ' at ' + req.signLocation : ''}` : ''
+            ].filter(Boolean).join('\n');
+
             const prompt = `ROLE: Senior Communications & Marketing Lead for Clarence Regional Aquatic Centre (Grafton, NSW) and Yamba Community Pool (Yamba, NSW).
 TASK: Generate elite, engaging, Playbook-compliant multi-channel marketing copy for:
 - Facility: ${req.facility}
@@ -2009,6 +2285,7 @@ TASK: Generate elite, engaging, Playbook-compliant multi-channel marketing copy 
 - Target Date: ${req.date || 'Upcoming'}
 - Specific Topic / Goal: ${req.title}
 - Brief Details & Facts: ${req.keyMessage}
+${extraMeta}
 
 EMPIRICAL PLAYBOOK RULES (derived from historical top-performing posts and CRAC Playbook):
 1. Voice & Persona: Active, friendly, knowledgeable local aquatic coach on pool deck. Warm, community-minded, encouraging, and clear. Zero administrative or municipal jargon.
@@ -2097,22 +2374,31 @@ Return STRICTLY valid JSON:
                     title: document.getElementById('editTitle').value || "Updated Campaign",
                     keyMessage: document.getElementById('editKeyMessage').value,
                     facility: document.getElementById('facilitySelect').value,
-                    category: document.getElementById('categorySelect').value,
-                    channels: selectedChannels.length > 0 ? selectedChannels : ['Social']
+                    category: getSelectedAdminCategory(),
+                    channels: selectedChannels.length > 0 ? selectedChannels : ['Social'],
+                    generateSign: document.getElementById('editGenerateSign')?.checked || false,
+                    signType: document.getElementById('editSignType')?.value || 'notice',
+                    signLocation: document.getElementById('editSignLocation')?.value.trim() || '',
+                    newsletterAudience: document.getElementById('editNewsletterAudience')?.value || '',
+                    newsletterSubject: document.getElementById('editNewsletterSubject')?.value.trim() || '',
+                    newsletterCtaUrl: document.getElementById('editNewsletterCtaUrl')?.value.trim() || ''
                 };
 
                 const previousSocial = (channelDrafts.Social || '').trim();
+                const isLocalItem = isLocalTestMode || String(currentEditingId).startsWith('local-');
 
-                // 1. Sync current modal inputs and set PRIORITY in Firestore
-                await updateDoc(doc(db, "requests", currentEditingId), reqPayload);
+                if (!isLocalItem) {
+                    // 1. Sync current modal inputs and set PRIORITY in Firestore
+                    await updateDoc(doc(db, "requests", currentEditingId), reqPayload);
+                }
 
                 statusText.innerText = "Drafting...";
 
                 // 2. Tier 1: Try Direct Engine Key if configured in Settings
                 let generated = await draftViaDirectEngine(reqPayload);
 
-                // 3. Tier 2: Try Cloud Apps Script Web App if Direct Engine wasn't used
-                if (!generated) {
+                // 3. Tier 2: Try Cloud Apps Script Web App if Direct Engine wasn't used (Live items only)
+                if (!generated && !isLocalItem) {
                     const appsScriptUrl = getAppsScriptUrl();
                     if (appsScriptUrl) {
                         try {
@@ -2142,17 +2428,25 @@ Return STRICTLY valid JSON:
                     generated = buildPlaybookDrafts(reqPayload);
                 }
 
-                // Persist the newly generated drafts into Firestore and update the open Quill editor live
+                // Persist the newly generated drafts
                 const updateFields = {
                     rewrittenPost: generated.social || '',
                     rewrittenNewsletter: generated.news || '',
                     rewrittenWebsite: generated.web || '',
                     priority: false
                 };
-                if (generated.signH) updateFields.signHeadline = generated.signH;
-                if (generated.signB) updateFields.signBody = generated.signB;
+                if (generated.signH && !document.getElementById('signHeadline').value.trim()) updateFields.signHeadline = generated.signH;
+                if (generated.signB && !document.getElementById('signBody').value.trim()) updateFields.signBody = generated.signB;
 
-                await updateDoc(doc(db, "requests", currentEditingId), updateFields);
+                if (isLocalItem) {
+                    const idx = localTestItems.findIndex(r => r.id === currentEditingId);
+                    if (idx !== -1) {
+                        localTestItems[idx] = { ...localTestItems[idx], ...reqPayload, ...updateFields };
+                        saveLocalSandboxItems(localTestItems);
+                    }
+                } else {
+                    await updateDoc(doc(db, "requests", currentEditingId), updateFields);
+                }
 
                 channelDrafts = {
                     Social: normalizeForQuill(generated.social || ''),
@@ -2161,8 +2455,9 @@ Return STRICTLY valid JSON:
                 };
                 quill.root.innerHTML = channelDrafts[currentTab] || '';
                 updateCharCounter();
-                if (generated.signH) document.getElementById('signHeadline').value = generated.signH;
-                if (generated.signB) document.getElementById('signBody').value = generated.signB;
+                if (updateFields.signHeadline) document.getElementById('signHeadline').value = updateFields.signHeadline;
+                if (updateFields.signBody) document.getElementById('signBody').value = updateFields.signBody;
+                refreshCurrentSignLink();
 
                 statusText.innerText = "Updated! ✓";
                 statusText.classList.add('text-emerald-600');
@@ -2776,17 +3071,19 @@ Return STRICTLY valid JSON with these keys:
             const btn = document.getElementById('processAutoBtn');
             btn.innerHTML = `<div class="animate-spin h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full inline-block mr-2"></div> Running...`;
             
-            const appsScriptUrl = getAppsScriptUrl();
-            if (appsScriptUrl) {
-                try {
-                    await fetch(appsScriptUrl, { mode: 'no-cors' });
-                } catch(e) {
-                    console.warn("Apps Script trigger note:", e);
+            if (!isLocalTestMode) {
+                const appsScriptUrl = getAppsScriptUrl();
+                if (appsScriptUrl) {
+                    try {
+                        await fetch(appsScriptUrl, { mode: 'no-cors' });
+                    } catch(e) {
+                        console.warn("Apps Script trigger note:", e);
+                    }
                 }
             }
 
             // Ensure any Pending entries that remain undrafted are populated with Playbook-compliant multi-channel copy
-            const undraftedPending = globalRequestsArray.filter(r => r.status === 'Pending' && !(r.rewrittenPost || '').replace(/<[^>]*>/g, '').trim());
+            const undraftedPending = globalRequestsArray.filter(r => r.status === 'Pending' && !(r.rewrittenPost || '').replace(/<[^>]*>/g, '').trim() && !r.isLiveReadOnly);
             let draftedCount = 0;
             for (const item of undraftedPending) {
                 try {
@@ -2798,14 +3095,23 @@ Return STRICTLY valid JSON with these keys:
                         rewrittenWebsite: generated.web || '',
                         priority: false
                     };
-                    if (generated.signH) updateFields.signHeadline = generated.signH;
-                    if (generated.signB) updateFields.signBody = generated.signB;
-                    await updateDoc(doc(db, "requests", item.id), updateFields);
+                    if (generated.signH && !item.signHeadline) updateFields.signHeadline = generated.signH;
+                    if (generated.signB && !item.signBody) updateFields.signBody = generated.signB;
+
+                    if (isLocalTestMode || String(item.id).startsWith('local-')) {
+                        const idx = localTestItems.findIndex(r => r.id === item.id);
+                        if (idx !== -1) {
+                            localTestItems[idx] = { ...localTestItems[idx], ...updateFields };
+                        }
+                    } else {
+                        await updateDoc(doc(db, "requests", item.id), updateFields);
+                    }
                     draftedCount++;
                 } catch(err) {
                     console.warn("Batch draft fallback note for", item.id, err);
                 }
             }
+            if (isLocalTestMode && draftedCount > 0) saveLocalSandboxItems(localTestItems);
 
             alert(`Batch processing complete. ${draftedCount > 0 ? `${draftedCount} pending campaign(s) newly drafted according to CRAC & YCP Playbook standards.` : 'All pending items have active drafts ready for review.'}`);
             btn.innerHTML = "Auto (Background)";
@@ -2831,6 +3137,7 @@ Return STRICTLY valid JSON with these keys:
             channelDrafts[currentTab] = editorHtml;
             
             const channels = Array.from(document.querySelectorAll('input[name="editChannels"]:checked')).map(cb => cb.value);
+            const generateSign = document.getElementById('editGenerateSign')?.checked || false;
             
             const payload = {
                 status: status,
@@ -2839,10 +3146,16 @@ Return STRICTLY valid JSON with these keys:
                 rewrittenWebsite: channelDrafts.Website,
                 date: document.getElementById('editDate').value,
                 keyMessage: document.getElementById('editKeyMessage').value,
+                generateSign: generateSign,
+                signType: document.getElementById('editSignType')?.value || 'notice',
                 signHeadline: document.getElementById('signHeadline').value,
+                signLocation: document.getElementById('editSignLocation')?.value.trim() || '',
                 signBody: document.getElementById('signBody').value,
+                newsletterAudience: document.getElementById('editNewsletterAudience')?.value || '',
+                newsletterSubject: document.getElementById('editNewsletterSubject')?.value.trim() || '',
+                newsletterCtaUrl: document.getElementById('editNewsletterCtaUrl')?.value.trim() || '',
                 facility: document.getElementById('facilitySelect').value,
-                category: document.getElementById('categorySelect').value,
+                category: getSelectedAdminCategory(),
                 channels: channels,
                 title: document.getElementById('editTitle').value || "Updated Campaign"
             };
@@ -2855,7 +3168,24 @@ Return STRICTLY valid JSON with these keys:
             }
 
             try {
-                if (currentEditingId) {
+                if (isLocalTestMode) {
+                    if (currentEditingId && String(currentEditingId).startsWith('local-')) {
+                        const idx = localTestItems.findIndex(r => r.id === currentEditingId);
+                        if (idx !== -1) {
+                            localTestItems[idx] = { ...localTestItems[idx], ...payload };
+                            saveLocalSandboxItems(localTestItems);
+                        }
+                    } else {
+                        // Clones live peek item or creates new Admin Entry strictly in local sandbox
+                        const newLocal = {
+                            id: 'local-admin-' + Date.now(),
+                            isLocalTest: true,
+                            staffName: currentEditingId ? 'Cloned to Local Sandbox' : 'Admin Entry',
+                            ...payload
+                        };
+                        saveLocalSandboxItems([newLocal, ...localTestItems]);
+                    }
+                } else if (currentEditingId) {
                     await updateDoc(doc(db, "requests", currentEditingId), payload);
                 } else {
                     payload.staffName = "Admin Entry";
@@ -2878,8 +3208,12 @@ Return STRICTLY valid JSON with these keys:
             document.getElementById('adminModal').classList.add('hidden'); 
         };
         document.getElementById('deleteBtn').onclick = async () => {
-            if(confirm("Delete permanently?") && currentEditingId) {
-                await deleteDoc(doc(db, "requests", currentEditingId));
+            if (confirm("Delete permanently?") && currentEditingId) {
+                if (isLocalTestMode || String(currentEditingId).startsWith('local-')) {
+                    saveLocalSandboxItems(localTestItems.filter(r => r.id !== currentEditingId));
+                } else {
+                    await deleteDoc(doc(db, "requests", currentEditingId));
+                }
                 isModalOpen = false;
                 if (isManualReviewMode) loadNextInQueue();
                 else document.getElementById('adminModal').classList.add('hidden');
@@ -2965,10 +3299,13 @@ Return STRICTLY valid JSON with these keys:
                 let title = '';
                 let keyMessage = '';
 
-                const dateMatch = raw.match(/DATE\s+NEEDED:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
-                if (dateMatch) {
-                    const [d, m, y] = dateMatch[1].split('/');
+                const dmyMatch = raw.match(/DATE\s+NEEDED:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+                const isoMatch = raw.match(/DATE\s+NEEDED:\s*(\d{4}-\d{2}-\d{2})/i);
+                if (dmyMatch) {
+                    const [d, m, y] = dmyMatch[1].split('/');
                     dateStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                } else if (isoMatch) {
+                    dateStr = isoMatch[1];
                 }
 
                 const staffMatch = raw.match(/STAFF\s+NAME:\s*([^\n\r]+)/i);
@@ -2982,12 +3319,16 @@ Return STRICTLY valid JSON with these keys:
                 const catMatch = raw.match(/PRIMARY\s+CATEGORY:\s*([^\n\r]+)/i);
                 if (catMatch) {
                     const c = catMatch[1].trim();
-                    if (/fitness|aqua|health/i.test(c)) category = 'Health Fitness';
+                    if (/maintenance|closure/i.test(c)) category = 'Maintenance Closure';
+                    else if (/lane/i.test(c)) category = 'Lane Availability';
+                    else if (/spotlight|career/i.test(c)) category = 'Staff Spotlight';
+                    else if (/fitness|aqua|health/i.test(c)) category = 'Health Fitness';
                     else if (/squad/i.test(c)) category = 'Squad Training';
                     else if (/intensive/i.test(c)) category = 'Swim School Intensive';
                     else if (/swim school/i.test(c)) category = 'Swim School General';
                     else if (/event|bbq/i.test(c)) category = 'Community Event';
-                    else category = 'Important Notice';
+                    else if (/important|general/i.test(c)) category = 'Important Notice';
+                    else category = c || 'Important Notice';
                 }
 
                 if (/\[x\]\s*SOCIAL/i.test(raw)) channels.push('Social');
@@ -2996,6 +3337,13 @@ Return STRICTLY valid JSON with these keys:
 
                 if (/Need physical sign\?:\s*\[x\]/i.test(raw)) generateSign = true;
 
+                const signTypeMatch = raw.match(/SIGN\s+TYPE:\s*([^\n\r]+)/i);
+                const signHeadlineMatch = raw.match(/SIGN\s+HEADLINE:\s*([^\n\r]+)/i);
+                const signLocMatch = raw.match(/SIGN\s+LOCATION:\s*([^\n\r]+)/i);
+                const newsAudMatch = raw.match(/NEWSLETTER\s+AUDIENCE:\s*([^\n\r]+)/i);
+                const newsSubjMatch = raw.match(/NEWSLETTER\s+SUBJECT:\s*([^\n\r]+)/i);
+                const newsLinkMatch = raw.match(/NEWSLETTER\s+LINK:\s*([^\n\r]+)/i);
+
                 const topicMatch = raw.match(/SPECIFIC\s+TOPIC\s*\/\s*DETAIL:\s*([^\n\r]+)/i);
                 if (topicMatch) title = topicMatch[1].trim();
 
@@ -3003,7 +3351,14 @@ Return STRICTLY valid JSON with these keys:
                 if (rawMsgMatch) keyMessage = rawMsgMatch[1].trim();
 
                 if (dateStr && title) {
-                    results.push({ staffName, date: dateStr, facility, category, channels, generateSign, title, keyMessage });
+                    const entry = { staffName, date: dateStr, facility, category, channels, generateSign, title, keyMessage };
+                    if (signTypeMatch) entry.signType = signTypeMatch[1].trim().toLowerCase();
+                    if (signHeadlineMatch) entry.signHeadline = signHeadlineMatch[1].trim();
+                    if (signLocMatch) entry.signLocation = signLocMatch[1].trim();
+                    if (newsAudMatch) entry.newsletterAudience = newsAudMatch[1].trim();
+                    if (newsSubjMatch) entry.newsletterSubject = newsSubjMatch[1].trim();
+                    if (newsLinkMatch) entry.newsletterCtaUrl = newsLinkMatch[1].trim();
+                    results.push(entry);
                 }
             }
             return results;
@@ -3024,39 +3379,65 @@ Return STRICTLY valid JSON with these keys:
 
             bulkAdminExecuteBtn.disabled = true;
             bulkAdminStatusBox.classList.remove('hidden');
-            bulkAdminStatusText.innerText = `Preparing to upload ${parsed.length} entries...`;
+            bulkAdminStatusText.innerText = isLocalTestMode
+                ? `Loading ${parsed.length} local test entries...`
+                : `Preparing to upload ${parsed.length} entries...`;
 
             let successCount = 0;
+            const newLocalEntries = [];
             for (let i = 0; i < parsed.length; i++) {
                 const item = parsed[i];
-                bulkAdminStatusText.innerText = `Uploading [${i + 1}/${parsed.length}]: "${item.title}"...`;
-                try {
-                    await addDoc(collection(db, "requests"), {
-                        staffName: item.staffName || 'Staff',
-                        date: item.date,
-                        title: item.title,
-                        category: item.category || 'Important Notice',
-                        facility: item.facility || 'Clarence Regional Aquatic Centre',
-                        keyMessage: item.keyMessage || '',
-                        channels: item.channels || [],
-                        generateSign: !!item.generateSign,
-                        status: item.status || "Pending",
-                        assetUrl: item.assetUrl || null,
-                        timestamp: serverTimestamp()
-                    });
+                const payload = {
+                    staffName: item.staffName || 'Staff',
+                    date: item.date,
+                    title: item.title,
+                    category: item.category || 'Important Notice',
+                    facility: item.facility || 'Clarence Regional Aquatic Centre',
+                    keyMessage: item.keyMessage || '',
+                    channels: item.channels || [],
+                    generateSign: !!item.generateSign,
+                    signType: item.signType || undefined,
+                    signHeadline: item.signHeadline || undefined,
+                    signBody: item.signBody || undefined,
+                    signLocation: item.signLocation || undefined,
+                    newsletterAudience: item.newsletterAudience || undefined,
+                    newsletterSubject: item.newsletterSubject || undefined,
+                    newsletterCtaUrl: item.newsletterCtaUrl || undefined,
+                    status: item.status || "Pending",
+                    assetUrl: item.assetUrl || null
+                };
+                Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+                if (isLocalTestMode) {
+                    newLocalEntries.push({ id: `local-bulk-${Date.now()}-${i}`, isLocalTest: true, ...payload });
                     successCount++;
-                } catch(err) {
-                    console.error('Error inserting bulk item:', item, err);
+                } else {
+                    bulkAdminStatusText.innerText = `Uploading [${i + 1}/${parsed.length}]: "${item.title}"...`;
+                    try {
+                        await addDoc(collection(db, "requests"), {
+                            ...payload,
+                            timestamp: serverTimestamp()
+                        });
+                        successCount++;
+                    } catch(err) {
+                        console.error('Error inserting bulk item:', item, err);
+                    }
                 }
             }
 
-            bulkAdminStatusText.innerText = `🎉 Successfully loaded ${successCount} of ${parsed.length} entries!`;
+            if (isLocalTestMode && newLocalEntries.length > 0) {
+                saveLocalSandboxItems([...newLocalEntries, ...localTestItems]);
+            }
+
+            bulkAdminStatusText.innerText = isLocalTestMode
+                ? `🧪 Loaded ${successCount} of ${parsed.length} local test entries!`
+                : `🎉 Successfully loaded ${successCount} of ${parsed.length} entries!`;
             bulkAdminExecuteBtn.disabled = false;
             setTimeout(() => {
                 bulkAdminModal.classList.add('hidden');
                 bulkAdminInput.value = '';
                 bulkAdminStatusBox.classList.add('hidden');
-            }, 2000);
+            }, 1500);
         };
         </script>
         <script src="../nav.js" data-title="Comms Admin" data-icon="ph-megaphone-simple" data-help="Comms Admin Dashboard. Review, coordinate, and manage scheduled social posts, campaigns, and pending team requests. Supports export options and bulk status changes."></script>

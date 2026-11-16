@@ -82,7 +82,9 @@
                         <option value="Community Event">Event / BBQ / Fun Day</option>
                         <option value="Staff Spotlight">Staff Spotlight / Careers</option>
                         <option value="Health Fitness">Health &amp; Fitness / Aqua</option>
+                        <option value="__custom__">✏️ Other / Custom Category...</option>
                     </select>
+                    <input type="text" id="requestCategoryCustom" placeholder="Enter custom category (e.g. School Carnival, Holiday Hours)" class="hidden mt-2 w-full bg-white border border-blue-200 rounded-xl p-2.5 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                 </div>
 
                 <div>
@@ -536,6 +538,17 @@ The 50m pool will close from 6am-12pm on 14 September for pump maintenance." cla
                 };
             }
 
+            // Custom category toggle
+            const reqCategorySelect = document.getElementById('requestCategory');
+            const reqCategoryCustom = document.getElementById('requestCategoryCustom');
+            function toggleCustomCategory() {
+                const isCustom = reqCategorySelect.value === '__custom__';
+                reqCategoryCustom.classList.toggle('hidden', !isCustom);
+                reqCategoryCustom.required = isCustom;
+                if (isCustom) reqCategoryCustom.focus();
+            }
+            reqCategorySelect.addEventListener('change', toggleCustomCategory);
+
             // Deliverable conditional panels
             document.getElementById('channelNewsletter').addEventListener('change', toggleDeliverablePanels);
             document.getElementById('generateSign').addEventListener('change', toggleDeliverablePanels);
@@ -736,11 +749,23 @@ The 50m pool will close from 6am-12pm on 14 September for pump maintenance." cla
 
                     const titleVal = document.getElementById('requestTitle').value.trim();
                     const keyMsgVal = document.getElementById('keyMessage').value.trim();
+                    const resolvedCategory = reqCategorySelect.value === '__custom__'
+                        ? reqCategoryCustom.value.trim()
+                        : reqCategorySelect.value;
+
+                    if (!resolvedCategory) {
+                        errorBox.innerText = 'Please select a category or enter a custom category.';
+                        errorBox.classList.remove('hidden');
+                        btn.disabled = false;
+                        btn.innerText = "Submit Request";
+                        return;
+                    }
+
                     const payload = {
                         staffName: document.getElementById('staffName').value.trim(),
                         date: document.getElementById('requestDate').value,
                         title: titleVal,
-                        category: document.getElementById('requestCategory').value,
+                        category: resolvedCategory,
                         facility: document.getElementById('facility').value,
                         keyMessage: keyMsgVal,
                         channels: channels,
@@ -781,6 +806,7 @@ The 50m pool will close from 6am-12pm on 14 September for pump maintenance." cla
                     }
 
                     document.getElementById('requestForm').reset();
+                    toggleCustomCategory();
                     if (dateInput) {
                         const now = new Date();
                         dateInput.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0];
@@ -869,7 +895,8 @@ The 50m pool will close from 6am-12pm on 14 September for pump maintenance." cla
                         else if (/intensive/i.test(c)) category = 'Swim School Intensive';
                         else if (/swim school/i.test(c)) category = 'Swim School General';
                         else if (/event|bbq/i.test(c)) category = 'Community Event';
-                        else category = 'Important Notice';
+                        else if (/important|general/i.test(c)) category = 'Important Notice';
+                        else category = c || 'Important Notice';
                     }
 
                     if (/\[x\]\s*SOCIAL/i.test(raw)) channels.push('Social');
